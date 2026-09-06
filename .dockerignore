@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.*
+**/node_modules
+**/dist
+**/__pycache__
+**/*.pyc
+**/venv
+**/.venv
+nginx/logs/
+*.log

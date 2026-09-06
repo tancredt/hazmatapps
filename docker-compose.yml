@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:18-alpine
+    volumes:
+      # Mount directly to the PG 18 data directory so it recognizes when it's empty
+      - postgres_data:/var/lib/postgresql/18/docker
+      # Mount the shell script (NOT .sql)
+      - ./create-app-user.sh:/docker-entrypoint-initdb.d/create-app-user.sh
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_ADMIN_USER}
+      - POSTGRES_PASSWORD=${DB_ADMIN_PASSWORD}
+      # Pass these so the shell script can expand them
+      - DB_APP_USER=${DB_APP_USER}
+      - DB_APP_PASSWORD=${DB_APP_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_ADMIN_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+  web:
+    build: ./backend
+    command: gunicorn inventory.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - ./csv_export:/app/csv_export
+      - ./csv_import:/app/csv_import
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_APP_USER}
+      - DB_PASSWORD=${DB_APP_PASSWORD}
+      - PIN_LOGIN_USERNAME=${PIN_LOGIN_USERNAME}
+      - PIN_LOGIN_PASSWORD_PREFIX=${PIN_LOGIN_PASSWORD_PREFIX}
+      - DB_HOST=db
+      - DB_PORT=${DB_PORT}
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.0.70,192.168.0.250
+      - DJANGO_SECRET_KEY=django-insecure-local-dev-key
+      - DJANGO_DEBUG=True
+      - DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost,http://localhost:8080,http://127.0.0.1:8080,http://192.168.0.70:8080,http://192.168.0.250:8080
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
+    depends_on:
+      - web
+    restart: always
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

@@ -1,0 +1,65 @@
+id,detector,report_dt,reported_by,report_location,status,fault_type,submit_notes,resolved_by,resolve_dt,resolve_notes
+45,668,2026-06-01,WALLY,89,OP,DE,POST Nufarm Incident service,,,"Repaired Unit, cleaned out pump and replaced filters. Cleaned lamp and PID sensor. Manually spanned, all tests passed"
+46,670,2026-05-26,WALLY,89,CL,DE,Post NUFARM incident service,,2026-05-27,"Serviced Unit, Replaced Filter and Orings, Cleaned lamp and pid sensor, all tests OK"
+43,618,2026-05-19,N.Perkins,89,CL,DE,"Nufarm Incident, Detector saturated",Wally,2026-05-20,"Repaired Unit, cleaned out pump and replaced hoses. Cleaned lamp and PID sensor. Manually spanned, all tests passed."
+44,623,2026-05-19,N.Perkins,89,OP,DE,"Pump fault, PID fault",Wally,2026-05-20,"Repaired Unit, cleaned out pump and replaced hoses. Cleaned lamp and PID sensor. Manually spanned, all tests passed"
+47,607,2026-05-18,WALLY,89,CL,DE,Post NUFARM incident service,Wally,2026-05-20,"Serviced Unit, Replaced Filter and Orings, Cleaned lamp and pid sensor, all tests OK"
+48,610,2026-05-18,WALLY,89,CL,DE,Post NUFARM incident service,Wally,2026-05-19,"Serviced Unit, Replaced Filter and Orings, Cleaned pump, all tests OK"
+40,583,2026-05-11,??,19,CL,BF,failed bump,Wally,2026-05-12,No fault found
+39,414,2026-04-28,??,9,CL,SF,CO failed,Wally,2026-05-04,Replaced Sensor and Calibrated
+38,417,2026-04-27,??,9,CL,BF,failed bump CO,Wally,2026-05-04,"Calibrated, All Ok"
+37,675,2026-04-20,Sonja,90,CL,BF,O2 high reading,Wally,2026-04-20,"Inspected unit, re-calibrated. no fault found"
+42,626,2026-04-17,,33,CL,DC,Probe quick release failed,Wally,2026-05-13,"Replaced quickrelease, Serviced Unit, Checked config, Cleaned pump, Replaced filters, All ok"
+41,631,2026-04-17,??,89,CL,DE,PUMP WOULD NOT STALL,Wally,2026-04-20,"Serviced Unit, Checked config, Cleaned pump, Replaced filters, All ok"
+33,203,2026-04-13,QFF HAMPSON,13,CL,BF,FAILED BUMP X 2 HCN,Wally,2026-04-13,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+34,304,2026-04-13,??,7,CL,BF,failed bump x 2 hcn,Wally,2026-04-13,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+32,322,2026-04-13,DANIEL,111,CL,BF,FAILED BUMP,Wally,2026-04-13,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+31,406,2026-04-13,??,111,CL,BF,FAILED BUMP X 2,Wally,2026-04-13,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+36,73,2026-04-10,??,104,CL,BF,FAILED BUMP X 2 HCN,Wally,2026-04-13,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+25,33,2026-04-08,??,6,CL,WS,WONT TURN ON,Wally,2026-04-08,REPLCED AGED BATTERY
+30,54,2026-04-08,LFF KELLY,15,CL,WS,"WILL NOT TURN ON, NOT CHARGING",Wally,2026-04-08,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok REPLACED BATTERY"
+28,86,2026-04-08,??,106,OP,BF,failed bump,Wally,2026-04-08,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+27,377,2026-04-08,??,104,CL,BF,failed bump,Wally,2026-04-08,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+26,450,2026-04-08,llf crabtree,38,CL,DE,"Passed Bump, but continued to alarm",Wally,2026-04-08,"Due for Cal
+Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+35,528,2026-04-08,LFF BEN,111,CL,BF,FAILED HCN BUMP X 2,Wally,2026-04-13,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+29,381,2026-04-03,FF thomson,33,CL,BF,FAILED BUMP X 2 HCN,Wally,2026-04-08,"Serviced Unit, Checked Config, Checked sensors, Calibrated, All Ok"
+22,608,2026-04-01,Peter,89,CL,BF,Failed O2 bump and cal,Wally,2026-04-27,"Serviced Unit, Checked config, Cleaned pump, Replaced filters, All ok"
+24,23,2026-04-01,llf donaldson,54,CL,CE,Cal due,Wally,2026-04-01,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+17,118,2026-04-01,tom,99,OP,DE,not identifying in dock,,,
+19,129,2026-04-01,???,27,CL,BF,FAILED BUMP X X 2 HCN,Wally,2026-04-01,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+18,251,2026-04-01,??,19,CL,BF,failed bump x 2 HCN,Wally,2026-04-01,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+23,296,2026-04-01,Moloney,29,CL,BF,Failed Bump x 2 HCN,Wally,2026-04-01,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+21,398,2026-04-01,??,110,CL,BF,Failed Bump x 2,Wally,2026-04-01,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+20,281,2026-03-31,ash,29,CL,BF,failed bump x 2 HCN,Wally,2026-04-01,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+16,87,2026-03-28,ROB,2,CL,DE,"UNIT STUCK IN ALARM, AND WILL NOT REGISTER IN DOCK",Wally,2026-03-30,"Found ribbon loose internally, re-attached and all ok."
+3,660,2026-03-25,WALLY,95,CL,SF,CO Sensor would not span cal.,Wally,2026-03-26,Replaced Sensor (warranty) Cal'd unit all ok.
+10,193,2026-03-25,QFF STEPHENS,40,CL,BF,HCN FAILED X 2 BUMP TESTS,Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+7,302,2026-03-25,LFF MURTACH,18,CL,BF,DUE FOR CAL,Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+8,583,2026-03-25,FF ENSTACK,9,CL,SF,STUCK IN LEL,Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+9,583,2026-03-25,LFF ENSTEAC,9,CL,SF,LEL IN ALARM,Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+13,446,2026-03-24,Conner,98,CL,WS,Will not indentify in Cal dock,Wally,2026-03-26,Found Ribbon loose on board. Re-attached and all ok now.
+2,460,2026-03-24,Simon Taylor,106,CL,BF,Failed HCN bump,Wally,2026-03-24,"Inspected Unit. Calibrated, Verified OK."
+1,236,2026-03-23,reg 12297,98,CL,BF,Failed HCN bump x 2,Wal,2026-03-23,Serviced and Calibrated
+4,9,2026-03-20,LFF CURRAN,11,CL,BF,HCN FAILED BUMP X 2,Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+11,181,2026-03-18,SO DAMMOUS,46,CL,BF,FAILED HCN X 2 BUMPS,Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+14,623,2026-03-18,Ruby,89,CL,DE,Wrong Date/Time,Wally,2026-03-27,Updated Config setting.
+5,474,2026-03-16,d.phillips,1,CL,SF,"LEL high reading, will not zero.",Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+6,220,2026-03-14,LFFMACKEY,36,CL,BF,FAILED BUMP X 2,Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+12,148,2026-03-12,FS31,29,CL,BF,HCN FAILED BUMP X 2,Wally,2026-03-26,"Serviced Unit, Checked config, 
+sensors and filter, Calibrated, All ok"
+15,42,2026-03-10,fs 02,98,CL,WS,"Wont turn on, charged all day",Wally,2026-03-30,Battery Repalced

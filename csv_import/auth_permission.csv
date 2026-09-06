@@ -1,0 +1,81 @@
+id,content_type_id,codename,name
+1,1,add_logentry,Can add log entry
+2,1,change_logentry,Can change log entry
+3,1,delete_logentry,Can delete log entry
+4,1,view_logentry,Can view log entry
+5,3,add_permission,Can add permission
+6,3,change_permission,Can change permission
+7,3,delete_permission,Can delete permission
+8,3,view_permission,Can view permission
+9,2,add_group,Can add group
+10,2,change_group,Can change group
+11,2,delete_group,Can delete group
+12,2,view_group,Can view group
+13,4,add_user,Can add user
+14,4,change_user,Can change user
+15,4,delete_user,Can delete user
+16,4,view_user,Can view user
+17,5,add_contenttype,Can add content type
+18,5,change_contenttype,Can change content type
+19,5,delete_contenttype,Can delete content type
+20,5,view_contenttype,Can view content type
+21,6,add_session,Can add session
+22,6,change_session,Can change session
+23,6,delete_session,Can delete session
+24,6,view_session,Can view session
+25,10,add_detector,Can add detector
+26,10,change_detector,Can change detector
+27,10,delete_detector,Can delete detector
+28,10,view_detector,Can view detector
+29,12,add_detectormodel,Can add detector model
+30,12,change_detectormodel,Can change detector model
+31,12,delete_detectormodel,Can delete detector model
+32,12,view_detectormodel,Can view detector model
+33,20,add_sensortype,Can add sensor type
+34,20,change_sensortype,Can change sensor type
+35,20,delete_sensortype,Can delete sensor type
+36,20,view_sensortype,Can view sensor type
+37,9,add_cylindertype,Can add cylinder type
+38,9,change_cylindertype,Can change cylinder type
+39,9,delete_cylindertype,Can delete cylinder type
+40,9,view_cylindertype,Can view cylinder type
+41,7,add_cylinder,Can add cylinder
+42,7,change_cylinder,Can change cylinder
+43,7,delete_cylinder,Can delete cylinder
+44,7,view_cylinder,Can view cylinder
+45,13,add_detectormodelconfiguration,Can add detector model configuration
+46,13,change_detectormodelconfiguration,Can change detector model configuration
+47,13,delete_detectormodelconfiguration,Can delete detector model configuration
+48,13,view_detectormodelconfiguration,Can view detector model configuration
+49,14,add_location,Can add location
+50,14,change_location,Can change location
+51,14,delete_location,Can delete location
+52,14,view_location,Can view location
+53,11,add_detectorfault,Can add detector fault
+54,11,change_detectorfault,Can change detector fault
+55,11,delete_detectorfault,Can delete detector fault
+56,11,view_detectorfault,Can view detector fault
+57,8,add_cylinderfault,Can add cylinder fault
+58,8,change_cylinderfault,Can change cylinder fault
+59,8,delete_cylinderfault,Can delete cylinder fault
+60,8,view_cylinderfault,Can view cylinder fault
+61,15,add_locationdetectorslot,Can add location detector slot
+62,15,change_locationdetectorslot,Can change location detector slot
+63,15,delete_locationdetectorslot,Can delete location detector slot
+64,15,view_locationdetectorslot,Can view location detector slot
+65,16,add_maintenance,Can add maintenance
+66,16,change_maintenance,Can change maintenance
+67,16,delete_maintenance,Can delete maintenance
+68,16,view_maintenance,Can view maintenance
+69,17,add_maintenancetask,Can add maintenance task
+70,17,change_maintenancetask,Can change maintenance task
+71,17,delete_maintenancetask,Can delete maintenance task
+72,17,view_maintenancetask,Can view maintenance task
+73,18,add_sensor,Can add sensor
+74,18,change_sensor,Can change sensor
+75,18,delete_sensor,Can delete sensor
+76,18,view_sensor,Can view sensor
+77,19,add_sensorslot,Can add sensor slot
+78,19,change_sensorslot,Can change sensor slot
+79,19,delete_sensorslot,Can delete sensor slot
+80,19,view_sensorslot,Can view sensor slot
