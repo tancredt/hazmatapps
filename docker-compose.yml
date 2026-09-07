@@ -23,7 +23,6 @@ services:
       start_period: 30s
   web:
     build: ./backend
-    command: gunicorn inventory.wsgi:application --bind 0.0.0.0:8000 --workers 3
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media

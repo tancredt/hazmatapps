@@ -1,10 +1,6 @@
 import pgtrigger
 from django.db import models
 
-import pgtrigger
-from django.db import models
-
-
 class LocationType(models.TextChoices):
     STATION = "ST", "Station"
     APPLIANCE = "AP", "Appliance"
@@ -180,6 +176,7 @@ class SensorStatus(models.TextChoices):
 
 class District(models.TextChoices):
     WESTERN1 = "W1", "W1"
+    EASTERN1 = "E1", "E1"
     
 ###############-----Main Models----------#######################        
 
@@ -465,7 +462,7 @@ class SensorType(models.Model):
         return f"{self.part_number} - {self.get_sensorgas_display()}"
             
 class Sensor(models.Model):
-    serial = models.CharField(max_length=32, null=True, blank=True, unique=True)
+    serial = models.CharField(max_length=32, null=True, blank=True)
     sensor_type = models.ForeignKey(SensorType, on_delete=models.CASCADE)
     detector = models.ForeignKey(Detector, on_delete=models.PROTECT, null=True)
     status = models.CharField(max_length=2, choices=SensorStatus.choices, default=SensorStatus.ONORDER)
