@@ -37,7 +37,7 @@ services:
       - PIN_LOGIN_PASSWORD_PREFIX=${PIN_LOGIN_PASSWORD_PREFIX}
       - DB_HOST=db
       - DB_PORT=${DB_PORT}
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.0.70,192.168.0.250
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.0.70,192.168.0.250,192,168.0.80
       - DJANGO_SECRET_KEY=django-insecure-local-dev-key
       - DJANGO_DEBUG=True
       - DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost,http://localhost:8080,http://127.0.0.1:8080,http://192.168.0.70:8080,http://192.168.0.250:8080,http://192.168.0.80:8080
@@ -63,4 +63,3 @@ volumes:
   postgres_data:
   static_volume:
   media_volume:
-  
