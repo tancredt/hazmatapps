@@ -310,9 +310,6 @@ class SensorSlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = SensorSlot
         fields = "__all__"
-        
-
-
 
 class ChangeDetectorLocationSerializer(serializers.Serializer):
     detector_id = serializers.IntegerField()
@@ -379,13 +376,13 @@ def sync_detector_sensor_slots(detector):
 ####################################################################
 ####  These is for the changing locations app  #########################
 ####################################################################
-
 class DetectorLabelOnlySerializer(serializers.ModelSerializer):
     location_label = serializers.CharField(source='location.label', read_only=True)
+    location_district = serializers.CharField(source='location.district', read_only=True)
     
     class Meta:
         model = Detector
-        fields = ['id', 'label', 'location_label', 'district']
+        fields = ['id', 'label', 'location_label', 'location_district']
         read_only_fields = fields
 
 class DetectorLocationStatusUpdateSerializer(serializers.Serializer):
