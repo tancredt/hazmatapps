@@ -1,8 +1,0 @@
-id,object_id,object_repr,action_flag,change_message,content_type_id,user_id,action_time
-1,2,Wally,1,"[{""added"": {}}]",4,1,2026-05-25 23:06:56.747497
-2,2,Wally,2,"[{""changed"": {""fields"": [""User permissions""]}}]",4,1,2026-05-25 23:08:30.411435
-3,652,AM32 W01B00001749,2,"[{""changed"": {""fields"": [""Firmware""]}}]",10,1,2026-06-24 04:39:20.244857
-4,660,AM42 W01B00002491,2,"[{""changed"": {""fields"": [""Serial"", ""Firmware""]}}]",10,1,2026-06-24 04:39:38.911335
-5,661,AM43 W01B00002499,2,"[{""changed"": {""fields"": [""Serial"", ""Firmware""]}}]",10,1,2026-06-24 04:39:51.168355
-6,5,Blue (MultiRAE),2,"[{""changed"": {""fields"": [""Sensor gases""]}}]",13,1,2026-08-24 00:26:57.096017
-7,4,Red (MultiRAE),2,"[{""changed"": {""fields"": [""Sensor gases""]}}]",13,1,2026-08-24 00:28:06.955591

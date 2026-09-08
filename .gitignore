@@ -34,6 +34,7 @@ media/
 staticfiles/
 collected_static/
 *.egg-info/
+*.csv
 
 # ==========================================
 # FRONTEND (Vue / Vite / Node.js)
