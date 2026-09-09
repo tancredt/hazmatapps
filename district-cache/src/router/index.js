@@ -13,21 +13,21 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/:district/:location_label',
+    path: '/swap/:district/:location_label',
     name: 'LocationChanger',
     component: LocationChanger,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/:district/return',
+    path: '/return/:district',
     name: 'Return',
     component: ReturnScreen,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/:district/restock/',
+    path: 'restock/:district/',
     name: 'Restock',
     component: RestockScreen,
     props: true,
