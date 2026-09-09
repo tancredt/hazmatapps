@@ -2,6 +2,7 @@ import csv
 import os
 from django.core.management.base import BaseCommand
 from django.apps import apps
+from django.db import models  # 🎯 Added to check field types for formatting
 
 class Command(BaseCommand):
     help = "Export database models to CSV files compatible with import_csv.py"
@@ -21,13 +22,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         prefix = options["prefix"]
         export_dir = options["dir"]
-        
+
         # Create the export directory if it doesn't exist
         os.makedirs(export_dir, exist_ok=True)
 
         # Import order respects foreign-key dependencies
+        # (stuff.District is excluded as it is now a TextChoices enum)
         model_order = [
-            "stuff.District",
             "stuff.Location",
             "stuff.DetectorModel",
             "stuff.DetectorModelConfiguration",
@@ -54,17 +55,19 @@ class Command(BaseCommand):
         app_label, model_name = model_path.split(".")
         csv_name = f"{prefix}_{model_name.lower()}.csv"
         csv_path = os.path.join(export_dir, csv_name)
-        
+
         model = apps.get_model(model_path)
+        
+        # 🎯 Export ALL fields (including created_at, updated_at, location_updated, updated)
         fields = model._meta.fields
         headers = [f.name for f in fields]
-        
+
         self.stdout.write(f"Exporting {model_path} → {csv_name}")
-        
+
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=headers)
             writer.writeheader()
-            
+
             count = 0
             for obj in model.objects.all().iterator():
                 row = {}
@@ -75,8 +78,16 @@ class Command(BaseCommand):
                     else:
                         val = getattr(obj, field.name)
                     
+                    # 🎯 Format Date and DateTime fields to match import_csv.py expectations
+                    if val is not None:
+                        if isinstance(field, models.DateTimeField):
+                            val = val.strftime("%Y-%m-%d %H:%M:%S")
+                        elif isinstance(field, models.DateField):
+                            val = val.strftime("%Y-%m-%d")
+
                     row[field.name] = "" if val is None else val
+
                 writer.writerow(row)
                 count += 1
-                
+
         self.stdout.write(self.style.SUCCESS(f"  → Exported {count} rows"))

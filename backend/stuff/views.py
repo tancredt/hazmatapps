@@ -11,7 +11,7 @@ from django.db import models, transaction
 from django.contrib.auth.decorators import login_required
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
-
+from .serializers import PerformSwapSerializer # Add to your imports at the top
 
 from .models import (
     District,
@@ -768,3 +768,43 @@ class DetectorLocationStatusUpdateView(APIView):
             return Response({"success": True}, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PerformSwapView(APIView):
+    """
+    Atomic endpoint to perform a detector swap and create a fault report simultaneously.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PerformSwapSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        data = serializer.validated_data
+        fault_data = data.pop('fault_data')
+        
+        try:
+            with transaction.atomic():
+                # 1. Create Detector Fault
+                DetectorFault.objects.create(**fault_data)
+                
+                # 2. Update Removed Detector
+                removed_det = Detector.objects.select_for_update().get(id=data['removed_detector_id'])
+                removed_det.location_id = data['removed_location_id']
+                removed_det.status = data['removed_status']
+                # save() triggers the pgtrigger to log the location change
+                removed_det.save(update_fields=['location', 'status'])
+                
+                # 3. Update Replacement Detector
+                replacement_det = Detector.objects.select_for_update().get(id=data['replacement_detector_id'])
+                replacement_det.location_id = data['replacement_location_id']
+                replacement_det.status = data['replacement_status']
+                replacement_det.save(update_fields=['location', 'status'])
+                
+        except Detector.DoesNotExist as e:
+            return Response({"error": f"Detector not found: {e}"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            # If ANY step fails, the transaction.atomic() block automatically rolls back ALL changes
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        return Response({"success": True}, status=status.HTTP_200_OK)

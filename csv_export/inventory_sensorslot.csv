@@ -2459,7 +2459,7 @@ id,detector,sensor,sensorgas,is_current
 2459,612,,NH,True
 2460,612,,PH,True
 2461,612,2247,LE,True
-2462,612,2253,O2,True
+2462,612,2503,O2,True
 2463,613,,CO,True
 2464,613,2272,HC,True
 2465,613,,NH,True

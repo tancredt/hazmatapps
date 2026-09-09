@@ -1,11 +1,15 @@
 import csv
 import os
+import pgtrigger
 from datetime import datetime
 from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction, models
 from django.apps import apps
-
+from django.utils import timezone
+# 🎯 Import Django's robust date/datetime parsers
+from django.utils.dateparse import parse_date as django_parse_date
+from django.utils.dateparse import parse_datetime as django_parse_datetime
 
 class Command(BaseCommand):
     help = "Import CSV files into the database using Django ORM."
@@ -31,7 +35,6 @@ class Command(BaseCommand):
         self.prefix = options["prefix"]
         self.csv_dir = options["dir"]
 
-        # Import order respects foreign-key dependencies
         self.model_order = [
             "stuff.Location",
             "stuff.DetectorModel",
@@ -50,13 +53,22 @@ class Command(BaseCommand):
             "stuff.LocationDetectorLog",
         ]
 
-        for model_path in self.model_order:
-            self.import_model(model_path)
+        trigger_uri = "stuff.Detector:log_detector_location_change"
 
-        if options["reset_sequences"]:
-            self.reset_sequences()
+        self.stdout.write("🛡️ Disabling pgtrigger for Detector...")
+        pgtrigger.uninstall(trigger_uri)
 
-        self.stdout.write(self.style.SUCCESS("\n✅ Import complete!"))
+        try:
+            for model_path in self.model_order:
+                self.import_model(model_path)
+
+            if options["reset_sequences"]:
+                self.reset_sequences()
+
+            self.stdout.write(self.style.SUCCESS("\n✅ Import complete!"))
+        finally:
+            self.stdout.write("🛡️ Re-enabling pgtrigger for Detector...")
+            pgtrigger.install(trigger_uri)
 
     def import_model(self, model_path):
         app_label, model_name = model_path.split(".")
@@ -71,7 +83,6 @@ class Command(BaseCommand):
         field_map = self.get_field_map(model)
 
         self.stdout.write(f"Load  {csv_name} → {model_path}")
-
         with open(csv_path, "r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             if not reader.fieldnames:
@@ -79,30 +90,53 @@ class Command(BaseCommand):
                 return
 
             valid_cols, skipped_cols = self.validate_columns(reader.fieldnames, field_map)
-
             if skipped_cols:
                 self.stdout.write(f"  Ignore columns: {skipped_cols}")
-
             if not valid_cols:
                 self.stdout.write(self.style.ERROR("  No valid columns"))
                 return
 
-            success = 0
-            errors = 0
+            # Temporarily disable auto_now and auto_now_add ONLY for fields in the CSV
+            original_states = {}
+            for csv_col in valid_cols.keys():
+                field = field_map[csv_col]
+                if getattr(field, 'auto_now', False) or getattr(field, 'auto_now_add', False):
+                    original_states[field.name] = {
+                        'auto_now': field.auto_now,
+                        'auto_now_add': field.auto_now_add
+                    }
+                    field.auto_now = False
+                    field.auto_now_add = False
 
-            with transaction.atomic():
+            try:
+                objects_to_create = []
+                errors = 0
+                success = 0
+
                 for row_num, row in enumerate(reader, start=2):
                     try:
                         data = self.convert_row(row, valid_cols, field_map)
-                        model.objects.create(**data)
+                        obj = model(**data)
+                        objects_to_create.append(obj)
                         success += 1
                     except Exception as e:
                         errors += 1
                         if errors <= 5:
                             self.stdout.write(self.style.ERROR(f"  Row {row_num}: {e}"))
 
-            status = "OK" if errors == 0 else f"{errors} ERR"
-            self.stdout.write(self.style.SUCCESS(f"  → {success} rows ({status})"))
+                if objects_to_create:
+                    with transaction.atomic():
+                        model.objects.bulk_create(objects_to_create, batch_size=1000)
+
+                status = "OK" if errors == 0 else f"{errors} ERR"
+                self.stdout.write(self.style.SUCCESS(f"  → {success} rows ({status})"))
+            
+            finally:
+                # Restore auto_now and auto_now_add states
+                for field_name, states in original_states.items():
+                    field = model._meta.get_field(field_name)
+                    field.auto_now = states['auto_now']
+                    field.auto_now_add = states['auto_now_add']
 
     def get_field_map(self, model):
         field_map = {}
@@ -140,30 +174,37 @@ class Command(BaseCommand):
         if raw == "":
             if isinstance(field, (models.CharField, models.TextField)):
                 return ""
+            if getattr(field, 'auto_now', False) or getattr(field, 'auto_now_add', False):
+                return timezone.now()
             return None
-
+        
         if isinstance(field, (models.AutoField, models.BigAutoField, models.IntegerField)):
             return int(raw)
-
         if isinstance(field, models.DecimalField):
             return Decimal(raw)
-
         if isinstance(field, models.BooleanField):
             return raw.lower() in ("1", "true", "t", "yes", "on")
-
-        if isinstance(field, models.DateField):
-            return self.parse_date(raw)
-
+        
+        # 🎯 FIX 1: Check DateTimeField BEFORE DateField!
+        # DateTimeField is a subclass of DateField in Django, so checking DateField first 
+        # will incorrectly catch all datetimes and try to parse them as dates.
         if isinstance(field, models.DateTimeField):
             return self.parse_datetime(raw)
-
+        if isinstance(field, models.DateField):
+            return self.parse_date(raw)
+            
         if isinstance(field, models.ForeignKey):
             return int(raw)
-
         return raw
 
     def parse_date(self, value):
-        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"):
+        # 🎯 FIX 2: Use Django's built-in parser (handles YYYY-MM-DD perfectly)
+        parsed = django_parse_date(value)
+        if parsed:
+            return parsed
+        
+        # Fallback for other formats
+        for fmt in ("%d/%m/%Y", "%m/%d/%Y"):
             try:
                 return datetime.strptime(value, fmt).date()
             except ValueError:
@@ -171,23 +212,20 @@ class Command(BaseCommand):
         raise ValueError(f"bad date: {value}")
 
     def parse_datetime(self, value):
-        for fmt in (
-            "%Y-%m-%d %H:%M:%S.%f",
-            "%Y-%m-%d %H:%M:%S",
-            "%Y-%m-%dT%H:%M:%S.%f",
-            "%Y-%m-%dT%H:%M:%S",
-            "%Y-%m-%d",
-        ):
-            try:
-                return datetime.strptime(value, fmt)
-            except ValueError:
-                continue
+        # 🎯 FIX 3: Use Django's built-in parser. 
+        # It effortlessly handles ISO8601, spaces, microseconds, and timezone offsets like +00:00
+        parsed = django_parse_datetime(value)
+        if parsed:
+            # If the parsed datetime is naive (no timezone), make it aware using Django's default timezone
+            if timezone.is_naive(parsed):
+                parsed = timezone.make_aware(parsed)
+            return parsed
+            
         raise ValueError(f"bad datetime: {value}")
 
     def reset_sequences(self):
         self.stdout.write("\nReset sequences...")
         from django.db import connection
-
         with connection.cursor() as cursor:
             for model_path in self.model_order:
                 model = apps.get_model(model_path)

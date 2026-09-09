@@ -1,118 +1,115 @@
 <template>
-  <div class="restock-wrapper">
-    <header class="app-header">
-      <h1>FRV - District Cache Restock</h1>
-      <p>{{ district }}</p>
-    </header>
+  <div class="swap-screen">
+    <h2>FRV - District Cache Restock</h2>
+    <h3>{{ district }}</h3>
 
-    <!-- Model Selector -->
-    <div class="selector-bar">
-      <select v-model="restock.selectedModelId" @change="reloadData" class="select-input" disabled>
+    <div class="model-selector">
+      <label>Detector Model:</label>
+      <select v-model="restock.selectedModelId" @change="restock.fetchCacheAndTransit(); restock.fetchBurnleyDetectors()">
         <option v-for="model in restock.models" :key="model.id" :value="model.id">
           {{ model.label }}
         </option>
       </select>
     </div>
 
-    <div v-if="restock.isLoading" class="state-message">Loading equipment...</div>
-    <div v-else-if="restock.error" class="state-message error">{{ restock.error }}</div>
-    <div v-else-if="!restock.diLocation" class="state-message error">Could not find district cache.</div>
+    <div v-if="restock.isLoading" class="loading">Loading equipment...</div>
+    <div v-if="restock.error" class="error">{{ restock.error }}</div>
 
-    <div v-else class="content-area">
-      <section class="card">
-        <div class="card-header cache-header">
-          <h2>District Cache: {{ restock.district }}</h2>
-          <span class="badge">{{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit / {{ restock.slotCount }} slots</span>
-        </div>
-        <div class="card-body">
-          <!-- Slot Grid -->
-          <div class="slots-grid">
-            <div 
-              v-for="(slot, index) in slots" 
-              :key="'slot-' + index"
-              class="slot-box"
-              :class="{ 
-                'slot-occupied': slot.detector && !slot.isTransit, 
-                'slot-transit': slot.detector && slot.isTransit,
-                'slot-empty': !slot.detector 
-              }"
-            >
-              <span v-if="slot.detector" class="slot-label">
-                {{ slot.label }}
-                <span v-if="slot.isTransit" class="transit-mark">(in-transit)</span>
-              </span>
-              <span v-else class="slot-label slot-empty-label">Empty</span>
-            </div>
+    <div class="swap-container" v-if="!restock.isLoading && !restock.error">
+      
+      <!-- ================= DISTRICT CACHE SECTION ================= -->
+      <div class="location-section">
+        <h3>District Cache: {{ district }}</h3>
+        <p class="section-subtitle">
+          {{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit / {{ restock.slotCount }} slots
+        </p>
+        
+        <!-- Slot Rectangles for Cache -->
+        <div class="slots-grid">
+          <div 
+            v-for="i in restock.slotCount" 
+            :key="'cache-slot-' + i" 
+            class="slot-rectangle empty"
+          >
+            <template v-if="cacheSlottedDetectors[i-1]">
+              {{ cacheSlottedDetectors[i-1].label }}
+            </template>
+            <template v-else>
+              Empty
+            </template>
           </div>
+        </div>
 
-          <!-- Overflow -->
-          <div v-if="overflowDetectors.length > 0" class="overflow-section">
-            <p class="overflow-title">Overflow Detectors</p>
-            <div 
-              v-for="det in overflowDetectors" 
-              :key="det.id"
-              class="list-item"
-            >
-              <span>{{ det.label }} <span class="transit-mark">(in-transit)</span></span>
+        <!-- Overflow Area for Cache -->
+        <div v-if="cacheOverflowDetectors.length > 0" class="overflow-area">
+          <h4>Overflow Detectors ({{ cacheOverflowDetectors.length }})</h4>
+          <div class="overflow-list">
+            <div v-for="det in cacheOverflowDetectors" :key="'cache-ov-' + det.id" class="overflow-item">
+              {{ det.label }}
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <div class="action-bar">
-        <button @click="handleAddDetector" class="btn-primary btn-large">
-          Add Detector
-        </button>
+      <!-- ================= IN TRANSIT SECTION ================= -->
+      <div class="location-section">
+        <h3>In Transit</h3>
+        <p class="section-subtitle">Detectors returning to this district</p>
+        
+        <div v-if="restock.transitDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
+          <div v-for="det in restock.transitDetectors" :key="'tr-' + det.id" class="overflow-item">
+            {{ det.label }} (in-transit)
+          </div>
+        </div>
+        <p v-else class="empty-text">No detectors currently in transit.</p>
       </div>
     </div>
 
-    <!-- Full Cache Error Dialog -->
-    <div v-if="showFullError" class="modal-overlay" @click.self="showFullError = false">
+    <!-- ================= BURNLEY SELECTION SECTION ================= -->
+    <div class="location-section" v-if="!restock.isLoading && !restock.error" style="margin-top: 20px;">
+      <h3>Available at Burnley</h3>
+      <p class="section-subtitle">Select a detector to add to the cache</p>
+      
+      <div v-if="restock.burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
+        <div 
+          v-for="det in restock.burnleyDetectors" 
+          :key="'burnley-' + det.id" 
+          class="overflow-item"
+          :class="{ selected: selectedBurnleyId === det.id }"
+          @click="selectBurnleyDetector(det.id)"
+        >
+          {{ det.label }}
+        </div>
+      </div>
+      <p v-else class="empty-text">No available detectors at Burnley.</p>
+    </div>
+
+    <!-- ACTION BUTTON -->
+    <div class="action-bar" v-if="selectedBurnleyId">
+      <button class="btn-primary" @click="attemptAddToCache" :disabled="isProcessing">
+        {{ isProcessing ? 'Adding...' : 'Add to Cache' }}
+      </button>
+    </div>
+
+    <!-- ================= CACHE FULL MODAL ================= -->
+    <div v-if="showCacheFullModal" class="modal-overlay">
       <div class="modal-content">
         <h3>Cache Full</h3>
-        <p>The detector cache for district {{ district }} is full.</p>
-        <button @click="showFullError = false" class="btn-primary" style="margin-top: 12px; width: 100%;">OK</button>
-      </div>
-    </div>
-
-    <!-- Burnley Detector Selection Dialog -->
-    <div v-if="showBurnleyDialog" class="modal-overlay" @click.self="showBurnleyDialog = false">
-      <div class="modal-content dialog-wide">
-        <h3>Select Detector from Burnley</h3>
-        <div v-if="restock.burnleyDetectors.length === 0" class="empty-state">
-          No available detectors at Burnley.
-        </div>
-        <div v-else class="detector-list dialog-list">
-          <button
-            v-for="det in restock.burnleyDetectors"
-            :key="det.id"
-            class="list-item"
-            :class="{ selected: selectedBurnleyId === det.id }"
-            @click="selectedBurnleyId = det.id"
-          >
-            <span class="det-label">{{ det.label }}</span>
-            <span v-if="selectedBurnleyId === det.id" class="check">✓</span>
-          </button>
-        </div>
+        <p>The detector cache for district {{ district }} is full. Please return some detectors before restocking.</p>
         <div class="modal-actions">
-          <button 
-            @click="addSelectedToCache" 
-            :disabled="!selectedBurnleyId || isAdding"
-            class="btn-success"
-          >
-            {{ isAdding ? 'Adding...' : 'Add to cache' }}
-          </button>
-          <button @click="showBurnleyDialog = false" class="btn-danger">Cancel</button>
+          <button class="btn-confirm" @click="showCacheFullModal = false">OK</button>
         </div>
       </div>
     </div>
 
-    <!-- Success Dialog -->
-    <div v-if="showSuccess" class="modal-overlay" @click.self="showSuccess = false">
+    <!-- ================= SUCCESS MODAL ================= -->
+    <div v-if="showSuccessModal" class="modal-overlay">
       <div class="modal-content">
         <h3>Success</h3>
-        <p>Detector has been transferred to district cache.</p>
-        <button @click="showSuccess = false" class="btn-primary" style="margin-top: 12px; width: 100%;">OK</button>
+        <p>Detector has been transferred to the district cache.</p>
+        <div class="modal-actions">
+          <button class="btn-confirm" @click="closeSuccessModal">OK</button>
+        </div>
       </div>
     </div>
   </div>
@@ -122,329 +119,118 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRestockStore } from '../stores/restock'
 
-const props = defineProps({
-  district: String
-})
-
+const props = defineProps({ district: String })
 const restock = useRestockStore()
-const showFullError = ref(false)
-const showBurnleyDialog = ref(false)
-const showSuccess = ref(false)
+
+const isProcessing = ref(false)
 const selectedBurnleyId = ref(null)
-const isAdding = ref(false)
+const showCacheFullModal = ref(false)
+const showSuccessModal = ref(false)
 
-const slots = computed(() => {
-  const count = restock.slotCount
-  const cache = restock.cacheDetectors
-  const transit = restock.transitDetectors
-  const result = []
+// Split cache detectors into slotted and overflow
+const cacheSlottedDetectors = computed(() => restock.cacheDetectors.slice(0, restock.slotCount))
+const cacheOverflowDetectors = computed(() => restock.cacheDetectors.slice(restock.slotCount))
 
-  for (let i = 0; i < count; i++) {
-    if (i < cache.length) {
-      result.push({ detector: cache[i], isTransit: false })
-    } else if (i < cache.length + transit.length) {
-      result.push({ detector: transit[i - cache.length], isTransit: true })
-    } else {
-      result.push({ detector: null, isTransit: false })
-    }
-  }
-  return result
-})
-
-const overflowDetectors = computed(() => {
-  const cache = restock.cacheDetectors
-  const transit = restock.transitDetectors
-  const count = restock.slotCount
-  
-  if (cache.length >= count) {
-    return [...cache.slice(count), ...transit]
-  }
-  
-  const transitInSlots = count - cache.length
-  return transit.slice(transitInSlots)
-})
-
-const reloadData = async () => {
-  await restock.fetchSlotCount()
-  await restock.fetchCacheAndTransit()
+const selectBurnleyDetector = (id) => {
+  selectedBurnleyId.value = selectedBurnleyId.value === id ? null : id
 }
 
-const handleAddDetector = async () => {
-  const total = restock.cacheDetectors.length + restock.transitDetectors.length
-  if (total >= restock.slotCount) {
-    showFullError.value = true
-    return
-  }
-  
-  selectedBurnleyId.value = null
-  await restock.fetchBurnleyDetectors()
-  showBurnleyDialog.value = true
-}
-
-const addSelectedToCache = async () => {
+const attemptAddToCache = async () => {
   if (!selectedBurnleyId.value) return
   
-  isAdding.value = true
+  if (!restock.hasSpace) {
+    showCacheFullModal.value = true
+    return
+  }
+
+  isProcessing.value = true
   try {
     await restock.addToCache(selectedBurnleyId.value)
-    showBurnleyDialog.value = false
-    showSuccess.value = true
-    await reloadData()
+    selectedBurnleyId.value = null
+    showSuccessModal.value = true
   } catch (err) {
-    alert('Failed to add detector to cache.')
+    console.error('Failed to add to cache:', err)
+    alert('Failed to add detector. Please try again.')
   } finally {
-    isAdding.value = false
+    isProcessing.value = false
   }
+}
+
+const closeSuccessModal = () => {
+  showSuccessModal.value = false
+  restock.fetchCacheAndTransit()
+  restock.fetchBurnleyDetectors()
 }
 
 onMounted(async () => {
-  restock.district = props.district
   await restock.fetchModels()
   await restock.resolveDistrictAndDI(props.district)
-  await reloadData()
+  await restock.fetchSlotCount()
+  await restock.fetchCacheAndTransit()
+  await restock.fetchBurnleyDetectors()
 })
 </script>
 
 <style scoped>
-.restock-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: #f3f4f6;
+/* --- EXACT SAME STYLES AS SWAPSCREEN --- */
+.swap-screen { padding: 20px; font-family: system-ui, -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; color: #333; }
+.model-selector { margin-bottom: 20px; }
+.model-selector select { padding: 8px 12px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; }
+.swap-container { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
+.location-section { flex: 1; min-width: 320px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
+.section-subtitle { color: #666; margin-top: -5px; margin-bottom: 15px; font-size: 0.95rem; }
+.empty-text { color: #adb5bd; font-style: italic; text-align: center; padding: 20px 0; }
+
+.slots-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
+.slot-rectangle {
+  width: 110px; height: 70px; border: 2px solid #adb5bd; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: 0.9rem; font-weight: 600; background: #ffffff; color: #333;
+  padding: 5px; box-sizing: border-box; word-break: break-word;
 }
-.app-header {
-  background: #1f2937;
-  color: white;
-  padding: 16px;
-  text-align: center;
+.slot-rectangle.empty { color: #adb5bd; font-style: italic; font-weight: 400; background: #f8f9fa; border-style: dashed; }
+
+.overflow-area { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ced4da; }
+.overflow-area h4 { margin: 0 0 12px 0; color: #d35400; font-size: 1rem; font-weight: 600; }
+.overflow-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.overflow-item {
+  padding: 8px 14px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 20px;
+  cursor: pointer; font-size: 0.9rem; font-weight: 500; color: #333; transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent; user-select: none;
 }
-.app-header h1 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-.app-header p {
-  margin: 4px 0 0;
-  opacity: 0.8;
-  font-size: 0.875rem;
-}
-.selector-bar {
-  padding: 12px 16px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-}
-.select-input {
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-}
-.content-area {
-  flex: 1;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-.card-header {
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.cache-header {
-  background: #dcfce7;
-  color: #166534;
-}
-.card-header h2 {
-  margin: 0;
-  font-size: 1rem;
-}
-.badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.1);
-}
-.card-body {
-  padding: 16px;
-}
-.slots-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
-}
-.slot-box {
-  min-height: 48px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 12px 8px;
-  border: 2px solid transparent;
-}
-.slot-occupied {
-  background: #22c55e;
-  color: white;
-}
-.slot-transit {
-  background: #f59e0b;
-  color: white;
-}
-.slot-empty {
-  background: #ef4444;
-  color: white;
-}
-.slot-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  word-break: break-word;
-  line-height: 1.3;
-}
-.transit-mark {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 400;
-  opacity: 0.9;
-}
-.slot-empty-label {
-  opacity: 0.9;
-  font-weight: 400;
-}
-.overflow-section {
-  border-top: 1px dashed #d1d5db;
-  padding-top: 12px;
-}
-.overflow-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #6b7280;
-  margin: 0 0 8px;
-}
-.list-item {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 6px;
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  font-size: 0.9375rem;
-}
-.list-item.selected {
-  background: #eff6ff;
-  border-color: #2563eb;
-}
-.det-label {
-  font-weight: 600;
-}
-.check {
-  color: #2563eb;
-  font-weight: 700;
-  font-size: 1.125rem;
-}
-.action-bar {
-  padding: 0 16px 16px;
-}
+.overflow-item:hover { background: #ffe69c; transform: translateY(-1px); }
+.overflow-item.selected { background: #e8f8f2; color: #333; border-color: #42b883; border-width: 2px; }
+
+.action-bar { margin-top: 30px; text-align: center; }
 .btn-primary {
-  width: 100%;
-  padding: 14px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
+  padding: 12px 32px; background: #42b883; color: white; border: none; border-radius: 6px;
+  font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
 }
-.btn-primary:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-}
-.btn-large {
-  font-size: 1.125rem;
-  padding: 16px;
-}
+.btn-primary:hover:not(:disabled) { background: #38a373; }
+.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+
+.loading, .error { text-align: center; padding: 20px; font-size: 1.1rem; }
+.error { color: #e74c3c; background: #fdecea; border-radius: 6px; }
+
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+  padding: 20px; animation: fadeIn 0.2s ease-out;
 }
 .modal-content {
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 320px;
-  text-align: center;
+  background: white; padding: 24px; border-radius: 12px; width: 100%; max-width: 400px;
+  text-align: center; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); animation: slideUp 0.2s ease-out;
 }
-.dialog-wide {
-  max-width: 400px;
+.modal-content h3 { margin: 0 0 12px 0; color: #333; font-size: 1.25rem; }
+.modal-content p { color: #666; margin-bottom: 20px; font-size: 1rem; line-height: 1.4; }
+.modal-actions { display: flex; gap: 12px; }
+.btn-cancel, .btn-confirm {
+  flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 1rem;
+  font-weight: 600; cursor: pointer; transition: opacity 0.2s;
 }
-.dialog-list {
-  max-height: 300px;
-  overflow-y: auto;
-  margin: 12px 0;
-}
-.modal-content h3 {
-  margin: 0 0 8px;
-}
-.empty-state {
-  text-align: center;
-  color: #6b7280;
-  padding: 24px;
-}
-.modal-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-}
-.btn-success {
-  flex: 1;
-  padding: 12px;
-  background: #16a34a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-success:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-}
-.btn-danger {
-  flex: 1;
-  padding: 12px;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.state-message {
-  padding: 40px;
-  text-align: center;
-  color: #6b7280;
-}
-.error {
-  color: #dc2626;
-}
+.btn-cancel { background: #e9ecef; color: #495057; }
+.btn-confirm { background: #42b883; color: white; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 </style>

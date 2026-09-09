@@ -11,7 +11,7 @@ from .views import (
     SensorGasView, SensorSlotViewSet, SensorStatusView, SensorTypeViewSet,
     SensorViewSet, SupplierView, cylinders_pdf, detector_detail_pdf, detectors_pdf,
     faults_pdf, maintenance_pdf, sensors_pdf, DetectorLabelOnlyViewSet,
-    DetectorLocationStatusUpdateView,
+    DetectorLocationStatusUpdateView, PerformSwapView,
 )
 from .views_auth import (
     CsrfTokenView,
@@ -41,6 +41,7 @@ router.register(r"detector-labels", DetectorLabelOnlyViewSet, basename="detector
 
 urlpatterns = [
     path("detectors/update-location-status/", DetectorLocationStatusUpdateView.as_view(), name="detector-update-location-status"),
+    path("detectors/perform-swap/", PerformSwapView.as_view(), name="detetor-perform-swap"),
     
     path("", include(router.urls)),
     # Choice/list endpoints

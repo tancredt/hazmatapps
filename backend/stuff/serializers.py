@@ -250,9 +250,10 @@ class MaintenanceTaskSerializer(serializers.ModelSerializer):
         fields = "__all__"
         
 class DetectorFaultSerializer(serializers.ModelSerializer):
-    report_dt = serializers.DateField(allow_null=True, required=False)
+    # 🎯 CHANGE THIS FROM DateField TO DateTimeField
+    report_dt = serializers.DateTimeField(allow_null=True, required=False) 
     resolve_dt = serializers.DateField(allow_null=True, required=False)
-
+    
     class Meta:
         model = DetectorFault
         fields = "__all__"
@@ -390,4 +391,11 @@ class DetectorLocationStatusUpdateSerializer(serializers.Serializer):
     location_id = serializers.IntegerField()
     status = serializers.CharField(max_length=2)
 
-
+class PerformSwapSerializer(serializers.Serializer):
+    removed_detector_id = serializers.IntegerField()
+    removed_location_id = serializers.IntegerField()
+    removed_status = serializers.CharField(max_length=2)
+    replacement_detector_id = serializers.IntegerField()
+    replacement_location_id = serializers.IntegerField()
+    replacement_status = serializers.CharField(max_length=2)
+    fault_data = DetectorFaultSerializer()

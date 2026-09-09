@@ -9,7 +9,8 @@ class LocationType(models.TextChoices):
     WAREHOUSE = "WA", "Warehouse"
     WORKSHOP = "WK", "Workshop"
     EXTERNAL = "EX", "External"
-    TRANSIT = "TR", "In transit"
+    TRANSIT = "TR", "Transit"
+    ETHER = "ET", "Ether"
     
     
 class Manufacturer(models.TextChoices):
@@ -108,6 +109,7 @@ class DetectorFaultType(models.TextChoices):
     CALIBRATIONEXPIRED = "CE", "Calibration Expired"
     DISPLAYSERROR = "DE", "Displays Error"
     WONTSTART = "WS", "Will not turn on"
+    MISSINGDETECTOR = "MD", "Detector Missing"
     DAMAGEDDISPLAY = "DD", "Damaged Display"
     DAMAGEDCASING = "DC", "Damaged Casing"
     MISSINGATTACHMENT = "MA", "Missing Attachment"
@@ -177,6 +179,7 @@ class SensorStatus(models.TextChoices):
 class District(models.TextChoices):
     WESTERN1 = "W1", "W1"
     EASTERN1 = "E1", "E1"
+    ALL = "AL", "AL"
     
 ###############-----Main Models----------#######################        
 
@@ -301,7 +304,7 @@ class LocationDetectorLog(models.Model):
     
 class DetectorFault(models.Model):
     detector = models.ForeignKey(Detector, on_delete=models.CASCADE, related_name="faults")
-    report_dt = models.DateField()
+    report_dt = models.DateTimeField()
     reported_by = models.CharField(max_length=32, blank=True)
     report_location = models.ForeignKey(Location, on_delete=models.CASCADE)
     status = models.CharField(max_length=2, choices=DetectorFaultStatus.choices, default="OP")

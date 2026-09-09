@@ -20,8 +20,7 @@ export const useSwapStore = defineStore('swap', () => {
 
   const fetchModels = async () => {
     try {
-      // 👇 No /api/inventory prefix needed
-      const data = await apiFetch('/detectormodels/') 
+      const data = await apiFetch('/detectormodels/')
       models.value = data
       const microRae = data.find(m => m.label === 'MicroRAE')
       if (microRae) selectedModelId.value = microRae.id
@@ -32,26 +31,35 @@ export const useSwapStore = defineStore('swap', () => {
   const resolveLocations = async (district, locationLabel) => {
     error.value = null
     try {
+      // 1. Station Location
       const stationResults = await apiFetch(`/locations/?label=${encodeURIComponent(locationLabel)}&district=${encodeURIComponent(district)}`)
       stationLocation.value = stationResults[0] || null
 
+      // 2. District Cache Location
       const districtResults = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(district)}`)
       districtLocation.value = districtResults[0] || null
 
+      // 3. Transit Location (Specific to this district)
       const trResults = await apiFetch(`/locations/?location_type=TR&district=${encodeURIComponent(district)}`)
       trLocation.value = trResults[0] || null
 
-      const unknownResults = await apiFetch(`/locations/?label=${encodeURIComponent('Unknown')}`)
+      // 🎯 4. Unknown Location (Type: ET, District: AL)
+      const unknownResults = await apiFetch(`/locations/?location_type=ET&district=AL`)
       unknownLocation.value = unknownResults[0] || null
 
+      // Validation Errors
       if (!stationLocation.value) error.value = `Station location "${locationLabel}" not found.`
       if (!districtLocation.value) error.value = `District Cache not found for district "${district}".`
-      if (!trLocation.value) error.value = `Transit location not found for district "${district}".`
+      if (!trLocation.value) error.value = `Transit (TR) location not found for district "${district}".`
+      if (!unknownLocation.value) error.value = `Unknown (ET/AL) location not found in database.`
+      
     } catch (err) {
       error.value = 'Failed to resolve locations.'
       console.error(err)
     }
   }
+
+
 
   const fetchSlotCounts = async () => {
     if (!stationLocation.value || !districtLocation.value || !selectedModelId.value) return
