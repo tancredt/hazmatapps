@@ -8,6 +8,11 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+# --------------------------------
+# Proxy
+# ----------------------
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # ------------------------------------------------------------------------------
 # Core Django settings
 # ------------------------------------------------------------------------------
@@ -16,7 +21,7 @@ SECRET_KEY = os.environ.get(
     "django-insecure-change-me-in-production"
 )
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","localhost,127.0.0.1").split(",")
 
 # ------------------------------------------------------------------------------
 # Installed apps
@@ -166,8 +171,8 @@ REST_FRAMEWORK = {
 # ------------------------------------------------------------------------------
 # CSRF / session cookie settings
 # ------------------------------------------------------------------------------
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 SECURE_SSL_REDIRECT = False
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
