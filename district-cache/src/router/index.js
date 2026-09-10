@@ -27,7 +27,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: 'restock/:district/',
+    path: '/restock/:district/',
     name: 'Restock',
     component: RestockScreen,
     props: true,

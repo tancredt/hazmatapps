@@ -1,118 +1,106 @@
 <template>
-  <div class="swap-screen">
-    <h2>FRV - District Cache Restock</h2>
-    <h3>{{ district }}</h3>
-
-    <div class="model-selector">
-      <label>Detector Model:</label>
-      <select v-model="restock.selectedModelId" @change="restock.fetchCacheAndTransit(); restock.fetchBurnleyDetectors()">
-        <option v-for="model in restock.models" :key="model.id" :value="model.id">
-          {{ model.label }}
-        </option>
-      </select>
-    </div>
-
-    <div v-if="restock.isLoading" class="loading">Loading equipment...</div>
-    <div v-if="restock.error" class="error">{{ restock.error }}</div>
-
-    <div class="swap-container" v-if="!restock.isLoading && !restock.error">
-      
-      <!-- ================= DISTRICT CACHE SECTION ================= -->
-      <div class="location-section">
-        <h3>District Cache: {{ district }}</h3>
-        <p class="section-subtitle">
-          {{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit / {{ restock.slotCount }} slots
-        </p>
-        
-        <!-- Slot Rectangles for Cache -->
-        <div class="slots-grid">
-          <div 
-            v-for="i in restock.slotCount" 
-            :key="'cache-slot-' + i" 
-            class="slot-rectangle empty"
-          >
-            <template v-if="cacheSlottedDetectors[i-1]">
-              {{ cacheSlottedDetectors[i-1].label }}
-            </template>
-            <template v-else>
-              Empty
-            </template>
-          </div>
-        </div>
-
-        <!-- Overflow Area for Cache -->
-        <div v-if="cacheOverflowDetectors.length > 0" class="overflow-area">
-          <h4>Overflow Detectors ({{ cacheOverflowDetectors.length }})</h4>
-          <div class="overflow-list">
-            <div v-for="det in cacheOverflowDetectors" :key="'cache-ov-' + det.id" class="overflow-item">
-              {{ det.label }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================= IN TRANSIT SECTION ================= -->
-      <div class="location-section">
-        <h3>In Transit</h3>
-        <p class="section-subtitle">Detectors returning to this district</p>
-        
-        <div v-if="restock.transitDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
-          <div v-for="det in restock.transitDetectors" :key="'tr-' + det.id" class="overflow-item">
-            {{ det.label }} (in-transit)
-          </div>
-        </div>
-        <p v-else class="empty-text">No detectors currently in transit.</p>
-      </div>
-    </div>
-
-    <!-- ================= BURNLEY SELECTION SECTION ================= -->
-    <div class="location-section" v-if="!restock.isLoading && !restock.error" style="margin-top: 20px;">
-      <h3>Available at Burnley</h3>
-      <p class="section-subtitle">Select a detector to add to the cache</p>
-      
-      <div v-if="restock.burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
-        <div 
-          v-for="det in restock.burnleyDetectors" 
-          :key="'burnley-' + det.id" 
-          class="overflow-item"
-          :class="{ selected: selectedBurnleyId === det.id }"
-          @click="selectBurnleyDetector(det.id)"
-        >
-          {{ det.label }}
-        </div>
-      </div>
-      <p v-else class="empty-text">No available detectors at Burnley.</p>
-    </div>
-
-    <!-- ACTION BUTTON -->
-    <div class="action-bar" v-if="selectedBurnleyId">
-      <button class="btn-primary" @click="attemptAddToCache" :disabled="isProcessing">
-        {{ isProcessing ? 'Adding...' : 'Add to Cache' }}
-      </button>
-    </div>
-
-    <!-- ================= CACHE FULL MODAL ================= -->
-    <div v-if="showCacheFullModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Cache Full</h3>
-        <p>The detector cache for district {{ district }} is full. Please return some detectors before restocking.</p>
-        <div class="modal-actions">
-          <button class="btn-confirm" @click="showCacheFullModal = false">OK</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================= SUCCESS MODAL ================= -->
-    <div v-if="showSuccessModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Success</h3>
-        <p>Detector has been transferred to the district cache.</p>
-        <div class="modal-actions">
-          <button class="btn-confirm" @click="closeSuccessModal">OK</button>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="swap-screen">
+<h2>FRV - District Cache Restock</h2>
+<h3>{{ district }}</h3>
+<div class="model-selector">
+   <label>Detector Model:</label>
+   <select v-model="restock.selectedModelId" @change="restock.fetchCacheAndTransit(); restock.fetchBurnleyDetectors()">
+     <option v-for="model in restock.models" :key="model.id" :value="model.id">
+       {{ model.label }}
+     </option>
+   </select>
+ </div>
+ <div v-if="restock.isLoading" class="loading">Loading equipment...</div>
+ <div v-if="restock.error" class="error">{{ restock.error }}</div>
+ <div class="swap-container" v-if="!restock.isLoading && !restock.error">
+   <!-- ================= DISTRICT CACHE SECTION ================= -->
+   <div class="location-section">
+     <h3>District Cache: {{ district }}</h3>
+     <p class="section-subtitle">
+       {{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit / {{ restock.slotCount }} slots
+     </p>
+     <!-- Slot Rectangles for Cache -->
+     <div class="slots-grid">
+       <div 
+         v-for="i in restock.slotCount" 
+         :key="'cache-slot-' + i" 
+         class="slot-rectangle"
+         :class="{ empty: !cacheSlottedDetectors[i-1] }"
+       >
+         <template v-if="cacheSlottedDetectors[i-1]">
+           {{ cacheSlottedDetectors[i-1].label }}
+         </template>
+         <template v-else>
+           Empty
+         </template>
+       </div>
+     </div>
+     <!-- Overflow Area for Cache -->
+     <div v-if="cacheOverflowDetectors.length > 0" class="overflow-area">
+       <h4>Overflow Detectors ({{ cacheOverflowDetectors.length }})</h4>
+       <div class="overflow-list">
+         <div v-for="det in cacheOverflowDetectors" :key="'cache-ov-' + det.id" class="overflow-item">
+           {{ det.label }}
+         </div>
+       </div>
+     </div>
+   </div>
+   <!-- ================= IN TRANSIT SECTION ================= -->
+   <div class="location-section">
+     <h3>In Transit</h3>
+     <p class="section-subtitle">Detectors returning to this district</p>
+     <div v-if="restock.transitDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
+       <div v-for="det in restock.transitDetectors" :key="'tr-' + det.id" class="overflow-item">
+         {{ det.label }} (in-transit)
+       </div>
+     </div>
+     <p v-else class="empty-text">No detectors currently in transit.</p>
+   </div>
+ </div>
+ <!-- ================= BURNLEY SELECTION SECTION ================= -->
+ <div class="location-section" v-if="!restock.isLoading && !restock.error" style="margin-top: 20px;">
+   <h3>Available at Burnley</h3>
+   <p class="section-subtitle">Select a detector to add to the cache</p>
+   <div v-if="restock.burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
+     <div 
+       v-for="det in restock.burnleyDetectors" 
+       :key="'burnley-' + det.id" 
+       class="overflow-item"
+       :class="{ selected: selectedBurnleyId === det.id }"
+       @click="selectBurnleyDetector(det.id)"
+     >
+       {{ det.label }}
+     </div>
+   </div>
+   <p v-else class="empty-text">No available detectors at Burnley.</p>
+ </div>
+ <!-- ACTION BUTTON -->
+ <div class="action-bar" v-if="selectedBurnleyId">
+   <button class="btn-primary" @click="attemptAddToCache" :disabled="isProcessing">
+     {{ isProcessing ? 'Adding...' : 'Add to Cache' }}
+   </button>
+ </div>
+ <!-- ================= CACHE FULL MODAL ================= -->
+ <div v-if="showCacheFullModal" class="modal-overlay">
+   <div class="modal-content">
+     <h3>Cache Full</h3>
+     <p>The detector cache for district {{ district }} is full. Please return some detectors before restocking.</p>
+     <div class="modal-actions">
+       <button class="btn-confirm" @click="showCacheFullModal = false">OK</button>
+     </div>
+   </div>
+ </div>
+ <!-- ================= SUCCESS MODAL ================= -->
+ <div v-if="showSuccessModal" class="modal-overlay">
+   <div class="modal-content">
+     <h3>Success</h3>
+     <p>Detector has been transferred to the district cache.</p>
+     <div class="modal-actions">
+       <button class="btn-confirm" @click="closeSuccessModal">OK</button>
+     </div>
+   </div>
+ </div>
+</div>
 </template>
 
 <script setup>
@@ -127,7 +115,6 @@ const selectedBurnleyId = ref(null)
 const showCacheFullModal = ref(false)
 const showSuccessModal = ref(false)
 
-// Split cache detectors into slotted and overflow
 const cacheSlottedDetectors = computed(() => restock.cacheDetectors.slice(0, restock.slotCount))
 const cacheOverflowDetectors = computed(() => restock.cacheDetectors.slice(restock.slotCount))
 
@@ -137,7 +124,7 @@ const selectBurnleyDetector = (id) => {
 
 const attemptAddToCache = async () => {
   if (!selectedBurnleyId.value) return
-  
+
   if (!restock.hasSpace) {
     showCacheFullModal.value = true
     return
@@ -172,7 +159,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* --- EXACT SAME STYLES AS SWAPSCREEN --- */
 .swap-screen { padding: 20px; font-family: system-ui, -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; color: #333; }
 .model-selector { margin-bottom: 20px; }
 .model-selector select { padding: 8px 12px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; }
@@ -188,7 +174,9 @@ onMounted(async () => {
   font-size: 0.9rem; font-weight: 600; background: #ffffff; color: #333;
   padding: 5px; box-sizing: border-box; word-break: break-word;
 }
-.slot-rectangle.empty { color: #adb5bd; font-style: italic; font-weight: 400; background: #f8f9fa; border-style: dashed; }
+.slot-rectangle.empty { 
+  color: #adb5bd; font-style: italic; font-weight: 400; background: #f8f9fa; border-style: dashed; 
+}
 
 .overflow-area { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ced4da; }
 .overflow-area h4 { margin: 0 0 12px 0; color: #d35400; font-size: 1rem; font-weight: 600; }
