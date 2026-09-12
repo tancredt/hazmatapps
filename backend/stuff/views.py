@@ -11,8 +11,7 @@ from django.db import models, transaction
 from django.contrib.auth.decorators import login_required
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
-from .serializers import PerformSwapSerializer # Add to your imports at the top
-
+from .serializers import PerformSwapSerializer
 from .models import (
     District,
     Location,
@@ -46,7 +45,6 @@ from .models import (
     SensorStatus,
     SensorGas
 )
-
 from .serializers import (
     DistrictChoiceSerializer,
     LocationSerializer,
@@ -84,7 +82,6 @@ from .serializers import (
     DetectorLabelOnlySerializer,
     DetectorLocationStatusUpdateSerializer,
 )
-
 from .filters import (
     LocationFilter,
     DetectorModelFilter,
@@ -104,14 +101,16 @@ from .filters import (
 )
 
 
-# Create your views here.
 ################---Choice Views---#################
+
+
 class LocationTypeView(APIView):
     def get(self, request):
         choices = LocationType.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = LocationTypeChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
+
 
 class ManufacturerView(APIView):
     def get(self, request):
@@ -120,12 +119,14 @@ class ManufacturerView(APIView):
         serializer = ManufacturerChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
 
+
 class DetectorTypeView(APIView):
     def get(self, request):
         choices = DetectorType.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = DetectorTypeChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
+
 
 class SupplierView(APIView):
     def get(self, request):
@@ -134,12 +135,14 @@ class SupplierView(APIView):
         serializer = SupplierChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
 
+
 class DetectorStatusView(APIView):
     def get(self, request):
         choices = DetectorStatus.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = DetectorStatusChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
+
 
 class CylinderStatusView(APIView):
     def get(self, request):
@@ -148,19 +151,22 @@ class CylinderStatusView(APIView):
         serializer = CylinderStatusChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
 
+
 class SensorStatusView(APIView):
     def get(self, request):
         choices = SensorStatus.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = SensorStatusChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
-    
+
+
 class MaintenanceTypeView(APIView):
     def get(self, request):
         choices = MaintenanceType.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = MaintenanceTypeChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
+
 
 class MaintenanceTaskTypeView(APIView):
     def get(self, request):
@@ -169,12 +175,14 @@ class MaintenanceTaskTypeView(APIView):
         serializer = MaintenanceTaskTypeChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
 
+
 class MaintenanceStatusView(APIView):
     def get(self, request):
         choices = MaintenanceStatus.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = MaintenanceStatusChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
+
 
 class DetectorFaultTypeView(APIView):
     def get(self, request):
@@ -183,12 +191,14 @@ class DetectorFaultTypeView(APIView):
         serializer = DetectorFaultTypeChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
 
+
 class CylinderUnitView(APIView):
     def get(self, request):
         choices = CylinderUnit.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = CylinderUnitChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
+
 
 class CylinderGasView(APIView):
     def get(self, request):
@@ -197,12 +207,14 @@ class CylinderGasView(APIView):
         serializer = CylinderGasChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
 
+
 class CylinderVolumeView(APIView):
     def get(self, request):
         choices = CylinderVolume.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = CylinderVolumeChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
+
 
 class SensorGasView(APIView):
     def get(self, request):
@@ -211,14 +223,17 @@ class SensorGasView(APIView):
         serializer = SensorGasChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
 
+
 class DistrictView(APIView):
     def get(self, request):
         choices = District.choices
         choice_list = [{'value': value, 'label': label} for value, label in choices]
         serializer = DistrictChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
-    
+
+
 ##################---Main Views---##########################
+
 
 class LocationViewSet(viewsets.ModelViewSet):
     serializer_class = LocationSerializer
@@ -226,11 +241,13 @@ class LocationViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = LocationFilter
 
+
 class DetectorModelViewSet(viewsets.ModelViewSet):
     serializer_class = DetectorModelSerializer
     queryset = DetectorModel.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = DetectorModelFilter
+
 
 class DetectorViewSet(viewsets.ModelViewSet):
     serializer_class = DetectorSerializer
@@ -238,11 +255,13 @@ class DetectorViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = DetectorFilter
 
+
 class MaintenanceViewSet(viewsets.ModelViewSet):
     serializer_class = MaintenanceSerializer
     queryset = Maintenance.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = MaintenanceFilter
+
 
 class MaintenanceTaskViewSet(viewsets.ModelViewSet):
     serializer_class = MaintenanceTaskSerializer
@@ -250,11 +269,13 @@ class MaintenanceTaskViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = MaintenanceTaskFilter
 
+
 class DetectorFaultViewSet(viewsets.ModelViewSet):
     serializer_class = DetectorFaultSerializer
     queryset = DetectorFault.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = DetectorFaultFilter
+
 
 class CylinderTypeViewSet(viewsets.ModelViewSet):
     serializer_class = CylinderTypeSerializer
@@ -262,11 +283,13 @@ class CylinderTypeViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = CylinderTypeFilter
 
+
 class CylinderViewSet(viewsets.ModelViewSet):
     serializer_class = CylinderSerializer
     queryset = Cylinder.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = CylinderFilter
+
 
 class SensorTypeViewSet(viewsets.ModelViewSet):
     serializer_class = SensorTypeSerializer
@@ -274,11 +297,13 @@ class SensorTypeViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = SensorTypeFilter
 
+
 class SensorViewSet(viewsets.ModelViewSet):
     serializer_class = SensorSerializer
     queryset = Sensor.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = SensorFilter
+
 
 class SensorSlotViewSet(viewsets.ModelViewSet):
     serializer_class = SensorSlotSerializer
@@ -286,17 +311,20 @@ class SensorSlotViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = SensorSlotFilter
 
+
 class DetectorModelConfigurationViewSet(viewsets.ModelViewSet):
     serializer_class = DetectorModelConfigurationSerializer
     queryset = DetectorModelConfiguration.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = DetectorModelConfigurationFilter
 
+
 class LocationDetectorSlotViewSet(viewsets.ModelViewSet):
     serializer_class = LocationDetectorSlotSerializer
     queryset = LocationDetectorSlot.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = LocationDetectorSlotFilter
+
 
 class LocationDetectorLogViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -307,6 +335,7 @@ class LocationDetectorLogViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = LocationDetectorLogFilter
 
+
 class CylinderFaultViewSet(viewsets.ModelViewSet):
     serializer_class = CylinderFaultSerializer
     queryset = CylinderFault.objects.all()
@@ -316,28 +345,23 @@ class CylinderFaultViewSet(viewsets.ModelViewSet):
 
 # ============== PDF Report Views ==============
 
+
 def get_date_context():
-    """Get common date context for PDF templates."""
     today = timezone.now().date()
     eight_weeks = today + timedelta(weeks=8)
     return {'today': today, 'eight_weeks': eight_weeks}
 
+
 @login_required
 def detectors_pdf(request):
-    """Generate PDF report of all detectors with optional filters."""
-    # Get filter parameters from request
     search = request.GET.get('search', '')
     status = request.GET.get('status', '')
     detector_model = request.GET.get('detector_model', '')
     location = request.GET.get('location', '')
     configuration = request.GET.get('configuration', '')
     show_decommissioned = request.GET.get('show_decommissioned', 'false').lower() == 'true'
-    
-    # Get sort parameters from request
     sort_key = request.GET.get('sort_key', 'label')
     sort_direction = request.GET.get('sort_direction', 'asc')
-    
-    # Map frontend sort keys to database fields
     sort_field_map = {
         'label': 'label',
         'serial': 'serial',
@@ -350,17 +374,13 @@ def detectors_pdf(request):
         'location_updated': 'location_updated',
     }
     sort_field = sort_field_map.get(sort_key, 'label')
-    
-    # Apply sort direction
     if sort_direction.lower() == 'desc':
         sort_field = f'-{sort_field}'
-    
-    # Build queryset
+
     detectors = Detector.objects.select_related(
         'detector_model', 'location', 'configuration'
     ).order_by(sort_field)
-    
-    # Apply filters
+
     if search:
         detectors = detectors.filter(
             models.Q(label__icontains=search) | models.Q(serial__icontains=search)
@@ -393,27 +413,21 @@ def detectors_pdf(request):
 
     html_string = render_to_string('inventory/pdf/detectors.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
-
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="detectors.pdf"'
     return response
 
+
 @login_required
 def sensors_pdf(request):
-    """Generate PDF report of all sensors with optional filters."""
-    # Get filter parameters from request
     search = request.GET.get('search', '')
     status = request.GET.get('status', '')
     sensor_type = request.GET.get('sensor_type', '')
     detector = request.GET.get('detector', '')
     expiry_date_lte = request.GET.get('expiry_date_lte', '')
     show_decommissioned = request.GET.get('show_decommissioned', 'false').lower() == 'true'
-    
-    # Get sort parameters from request
     sort_key = request.GET.get('sort_key', 'serial')
     sort_direction = request.GET.get('sort_direction', 'asc')
-    
-    # Map frontend sort keys to database fields
     sort_field_map = {
         'serial': 'serial',
         'sensor_type': 'sensor_type__part_number',
@@ -426,17 +440,11 @@ def sensors_pdf(request):
         'expiry_date': 'expiry_date',
     }
     sort_field = sort_field_map.get(sort_key, 'serial')
-    
-    # Apply sort direction
     if sort_direction.lower() == 'desc':
         sort_field = f'-{sort_field}'
-    
-    # Build queryset
-    sensors = Sensor.objects.select_related(
-        'sensor_type', 'detector'
-    ).order_by(sort_field)
-    
-    # Apply filters
+
+    sensors = Sensor.objects.select_related('sensor_type', 'detector').order_by(sort_field)
+
     if search:
         sensors = sensors.filter(
             models.Q(serial__icontains=search) | models.Q(sensor_type__part_number__icontains=search)
@@ -469,27 +477,21 @@ def sensors_pdf(request):
 
     html_string = render_to_string('inventory/pdf/sensors.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
-
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="sensors.pdf"'
     return response
 
+
 @login_required
 def cylinders_pdf(request):
-    """Generate PDF report of all calibration cylinders with optional filters."""
-    # Get filter parameters from request
     search = request.GET.get('search', '')
     status = request.GET.get('status', '')
     cylinder_type = request.GET.get('cylinder_type', '')
     location = request.GET.get('location', '')
     expiry_date_lte = request.GET.get('expiry_date_lte', '')
     show_empty = request.GET.get('show_empty', 'false').lower() == 'true'
-    
-    # Get sort parameters from request
     sort_key = request.GET.get('sort_key', 'label')
     sort_direction = request.GET.get('sort_direction', 'asc')
-    
-    # Map frontend sort keys to database fields
     sort_field_map = {
         'label': 'cylinder_number',
         'serial': 'serial',
@@ -503,17 +505,11 @@ def cylinders_pdf(request):
         'expiry_date': 'expiry_date',
     }
     sort_field = sort_field_map.get(sort_key, 'cylinder_number')
-    
-    # Apply sort direction
     if sort_direction.lower() == 'desc':
         sort_field = f'-{sort_field}'
-    
-    # Build queryset
-    cylinders = Cylinder.objects.select_related(
-        'cylinder_type', 'location', 'detector'
-    ).order_by(sort_field)
-    
-    # Apply filters
+
+    cylinders = Cylinder.objects.select_related('cylinder_type', 'location', 'detector').order_by(sort_field)
+
     if search:
         query = models.Q(serial__icontains=search)
         cleaned_search = search.strip().upper()
@@ -550,24 +546,21 @@ def cylinders_pdf(request):
 
     html_string = render_to_string('inventory/pdf/cylinders.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
-
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="cylinders.pdf"'
     return response
 
+
 @login_required
 def maintenance_pdf(request):
-    """Generate PDF report of all maintenance records with optional filters."""
     status = request.GET.get('status', '')
     maintenance_type = request.GET.get('maintenance_type', '')
     detector = request.GET.get('detector', '')
     detector_model = request.GET.get('detector__detector_model', '')
     date_due_lte = request.GET.get('date_due_lte', '')
     show_complete = request.GET.get('show_complete', 'false').lower() == 'true'
-
     sort_key = request.GET.get('sort_key', 'date_due')
     sort_direction = request.GET.get('sort_direction', 'asc')
-
     sort_field_map = {
         'maintenance_type': 'maintenance_type',
         'status': 'status',
@@ -581,9 +574,7 @@ def maintenance_pdf(request):
     if sort_direction.lower() == 'desc':
         sort_field = f'-{sort_field}'
 
-    maintenances = Maintenance.objects.select_related(
-        'detector'
-    ).prefetch_related('tasks').order_by(sort_field)
+    maintenances = Maintenance.objects.select_related('detector').prefetch_related('tasks').order_by(sort_field)
 
     if status:
         maintenances = maintenances.filter(status=status)
@@ -612,27 +603,23 @@ def maintenance_pdf(request):
         },
         **get_date_context()
     }
+
     html_string = render_to_string('inventory/pdf/maintenance.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="maintenance.pdf"'
     return response
 
+
 @login_required
 def faults_pdf(request):
-    """Generate PDF report of all fault reports with optional filters."""
-    # Get filter parameters from request
     status = request.GET.get('status', '')
     fault_type = request.GET.get('fault_type', '')
     detector = request.GET.get('detector', '')
     report_dt_lte = request.GET.get('report_dt_lte', '')
     show_closed = request.GET.get('show_closed', 'false').lower() == 'true'
-    
-    # Get sort parameters from request
     sort_key = request.GET.get('sort_key', 'report_dt')
     sort_direction = request.GET.get('sort_direction', 'desc')
-    
-    # Map frontend sort keys to database fields
     sort_field_map = {
         'detector': 'detector__label',
         'fault_type': 'fault_type',
@@ -642,17 +629,11 @@ def faults_pdf(request):
         'resolve_dt': 'resolve_dt',
     }
     sort_field = sort_field_map.get(sort_key, 'report_dt')
-    
-    # Apply sort direction
     if sort_direction.lower() == 'desc':
         sort_field = f'-{sort_field}'
-    
-    # Build queryset
-    faults = DetectorFault.objects.select_related(
-        'detector', 'report_location'
-    ).order_by(sort_field)
-    
-    # Apply filters
+
+    faults = DetectorFault.objects.select_related('detector', 'report_location').order_by(sort_field)
+
     if status:
         faults = faults.filter(status=status)
     if fault_type:
@@ -680,30 +661,22 @@ def faults_pdf(request):
 
     html_string = render_to_string('inventory/pdf/faults.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
-
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="faults.pdf"'
     return response
 
+
 @login_required
 def detector_detail_pdf(request, detector_id):
-    """Generate PDF report for a single detector with all details."""
     from django.shortcuts import get_object_or_404
-    
     detector = get_object_or_404(
-        Detector.objects.select_related(
-            'detector_model', 'location', 'configuration'
-        ),
+        Detector.objects.select_related('detector_model', 'location', 'configuration'),
         id=detector_id
     )
-    
-    sensor_slots = SensorSlot.objects.select_related(
-        'sensor__sensor_type'
-    ).filter(detector=detector, is_current=True).order_by('sensorgas')
-    
+    sensor_slots = SensorSlot.objects.select_related('sensor__sensor_type').filter(detector=detector, is_current=True).order_by('sensorgas')
     maintenances = Maintenance.objects.filter(detector=detector).order_by('-date_due')
     faults = DetectorFault.objects.filter(detector=detector).order_by('-report_dt')
-    
+
     context = {
         'detector': detector,
         'sensor_slots': sensor_slots,
@@ -711,10 +684,9 @@ def detector_detail_pdf(request, detector_id):
         'faults': faults,
         **get_date_context()
     }
-    
+
     html_string = render_to_string('inventory/pdf/detector_detail.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
-
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="detector_{detector.label}.pdf"'
     return response
@@ -724,16 +696,16 @@ def detector_detail_pdf(request, detector_id):
 ###################  These are for the changing locations app  #######
 ################################################################
 
+
 class DetectorLabelOnlyViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = DetectorLabelOnlySerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_class = DetectorFilter 
+    filterset_class = DetectorFilter
 
     def get_queryset(self):
-        return Detector.objects.select_related(
-            'location'
-        )
-        
+        return Detector.objects.select_related('location')
+
+
 class DetectorLocationStatusUpdateView(APIView):
     """
     Restricted endpoint to update only the location and status of detectors.
@@ -745,29 +717,24 @@ class DetectorLocationStatusUpdateView(APIView):
         data = request.data
         if isinstance(data, dict):
             data = [data]
-        
+
         serializer = DetectorLocationStatusUpdateSerializer(data=data, many=True)
         if serializer.is_valid():
             with transaction.atomic():
                 for item in serializer.validated_data:
                     try:
                         detector = Detector.objects.select_for_update().get(id=item['detector_id'])
-                        
-                        # ONLY update location and status
                         detector.location_id = item['location_id']
                         detector.status = item['status']
-                        
-                        # save() will trigger your pgtrigger to log the location change
                         detector.save(update_fields=['location', 'status'])
                     except Detector.DoesNotExist:
                         return Response(
-                            {"error": f"Detector {item['detector_id']} not found"}, 
+                            {"error": f"Detector {item['detector_id']} not found"},
                             status=status.HTTP_404_NOT_FOUND
                         )
-            
             return Response({"success": True}, status=status.HTTP_200_OK)
-        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class PerformSwapView(APIView):
     """
@@ -779,32 +746,27 @@ class PerformSwapView(APIView):
         serializer = PerformSwapSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         data = serializer.validated_data
         fault_data = data.pop('fault_data')
-        
+
         try:
             with transaction.atomic():
-                # 1. Create Detector Fault
                 DetectorFault.objects.create(**fault_data)
-                
-                # 2. Update Removed Detector
+
                 removed_det = Detector.objects.select_for_update().get(id=data['removed_detector_id'])
                 removed_det.location_id = data['removed_location_id']
                 removed_det.status = data['removed_status']
-                # save() triggers the pgtrigger to log the location change
                 removed_det.save(update_fields=['location', 'status'])
-                
-                # 3. Update Replacement Detector
+
                 replacement_det = Detector.objects.select_for_update().get(id=data['replacement_detector_id'])
                 replacement_det.location_id = data['replacement_location_id']
                 replacement_det.status = data['replacement_status']
                 replacement_det.save(update_fields=['location', 'status'])
-                
+
         except Detector.DoesNotExist as e:
             return Response({"error": f"Detector not found: {e}"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            # If ANY step fails, the transaction.atomic() block automatically rolls back ALL changes
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+
         return Response({"success": True}, status=status.HTTP_200_OK)
