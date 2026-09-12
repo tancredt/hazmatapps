@@ -27,7 +27,7 @@
            selected: selectedDetectorId === stationSlottedDetectors[i-1]?.id,
            empty: !stationSlottedDetectors[i-1]
          }"
-         @click="stationSlottedDetectors[i-1] && selectStationDetector(stationSlottedDetectors[i-1].id)"
+         @click="stationSlottedDetectors[i-1] && selectStationDetector($event, stationSlottedDetectors[i-1].id)"
        >
          <template v-if="stationSlottedDetectors[i-1]">
            {{ stationSlottedDetectors[i-1].label }}
@@ -46,7 +46,7 @@
            :key="'st-ov-' + det.id" 
            class="overflow-item"
            :class="{ selected: selectedDetectorId === det.id }"
-           @click="selectStationDetector(det.id)"
+           @click="selectStationDetector($event, det.id)"
          >
            {{ det.label }}
          </div>
@@ -67,7 +67,7 @@
            selected: replacementDetectorId === districtSlottedDetectors[i-1]?.id,
            empty: !districtSlottedDetectors[i-1]
          }"
-         @click="districtSlottedDetectors[i-1] && selectDistrictDetector(districtSlottedDetectors[i-1].id)"
+         @click="districtSlottedDetectors[i-1] && selectDistrictDetector($event, districtSlottedDetectors[i-1].id)"
        >
          <template v-if="districtSlottedDetectors[i-1]">
            {{ districtSlottedDetectors[i-1].label }}
@@ -86,7 +86,7 @@
            :key="'dc-ov-' + det.id" 
            class="overflow-item"
            :class="{ selected: replacementDetectorId === det.id }"
-           @click="selectDistrictDetector(det.id)"
+           @click="selectDistrictDetector($event, det.id)"
          >
            {{ det.label }}
          </div>

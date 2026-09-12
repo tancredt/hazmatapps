@@ -9,13 +9,14 @@ export const useRestockStore = defineStore('restock', () => {
   const diLocation = ref(null)
   const slotCount = ref(0)
   const cacheDetectors = ref([])
-  const transitDetectors = ref([])
   const burnleyDetectors = ref([])
+  const selectedBurnleyIds = ref([])
   const isLoading = ref(false)
   const error = ref(null)
 
-  const totalDetectors = computed(() => cacheDetectors.value.length + transitDetectors.value.length)
-  const hasSpace = computed(() => totalDetectors.value < slotCount.value)
+  const availableSlots = computed(() => slotCount.value - cacheDetectors.value.length)
+  const selectedCount = computed(() => selectedBurnleyIds.value.length)
+  const hasSpace = computed(() => selectedCount.value <= availableSlots.value)
 
   const fetchModels = async () => {
     try {
@@ -50,17 +51,13 @@ export const useRestockStore = defineStore('restock', () => {
     }
   }
 
-  const fetchCacheAndTransit = async () => {
-    if (!diLocation.value || !selectedModelId.value || !district.value) return
+  const fetchCacheDetectors = async () => {
+    if (!diLocation.value || !selectedModelId.value) return
     isLoading.value = true
     error.value = null
     try {
-      const [cacheData, transitData] = await Promise.all([
-        apiFetch(`/detector-labels/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`),
-        apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
-      ])
+      const cacheData = await apiFetch(`/detector-labels/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`)
       cacheDetectors.value = cacheData
-      transitDetectors.value = transitData
     } catch (err) {
       error.value = 'Failed to fetch detectors.'
       console.error(err)
@@ -80,17 +77,34 @@ export const useRestockStore = defineStore('restock', () => {
     }
   }
 
-  const addToCache = async (detectorId) => {
+  const toggleBurnleySelection = (id) => {
+    const idx = selectedBurnleyIds.value.indexOf(id)
+    if (idx > -1) selectedBurnleyIds.value.splice(idx, 1)
+    else selectedBurnleyIds.value.push(id)
+  }
+
+  const clearSelection = () => {
+    selectedBurnleyIds.value = []
+  }
+
+  const addToCache = async () => {
     if (!diLocation.value) throw new Error('District cache location not found')
+    const payload = selectedBurnleyIds.value.map(id => ({
+      detector_id: id,
+      location_id: diLocation.value.id,
+      status: 'IS'
+    }))
     return apiFetch('/detectors/update-location-status/', {
       method: 'POST',
-      body: JSON.stringify([{ detector_id: detectorId, location_id: diLocation.value.id, status: 'IS' }])
+      body: JSON.stringify(payload)
     })
   }
 
   return {
-    models, selectedModelId, district, diLocation, slotCount, cacheDetectors, transitDetectors,
-    burnleyDetectors, isLoading, error, totalDetectors, hasSpace, fetchModels, resolveDistrictAndDI,
-    fetchSlotCount, fetchCacheAndTransit, fetchBurnleyDetectors, addToCache
+    models, selectedModelId, district, diLocation, slotCount, cacheDetectors,
+    burnleyDetectors, selectedBurnleyIds, isLoading, error,
+    availableSlots, selectedCount, hasSpace,
+    fetchModels, resolveDistrictAndDI, fetchSlotCount, fetchCacheDetectors,
+    fetchBurnleyDetectors, toggleBurnleySelection, clearSelection, addToCache
   }
 })

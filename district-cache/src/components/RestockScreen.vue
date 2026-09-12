@@ -1,110 +1,126 @@
 <template>
-<div class="swap-screen">
-<h2>FRV - District Cache Restock</h2>
-<h3>{{ district }}</h3>
-<div class="model-selector">
-   <label>Detector Model:</label>
-   <select v-model="restock.selectedModelId" @change="restock.fetchCacheAndTransit(); restock.fetchBurnleyDetectors()">
-     <option v-for="model in restock.models" :key="model.id" :value="model.id">
-       {{ model.label }}
-     </option>
-   </select>
- </div>
- <div v-if="restock.isLoading" class="loading">Loading equipment...</div>
- <div v-if="restock.error" class="error">{{ restock.error }}</div>
- <div class="swap-container" v-if="!restock.isLoading && !restock.error">
-   <!-- ================= DISTRICT CACHE SECTION ================= -->
-   <div class="location-section">
-     <h3>District Cache: {{ district }}</h3>
-     <p class="section-subtitle">
-       {{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit / {{ restock.slotCount }} slots
-     </p>
-     <!-- Slot Rectangles for Cache -->
-     <div class="slots-grid">
-       <div 
-         v-for="i in restock.slotCount" 
-         :key="'cache-slot-' + i" 
-         class="slot-rectangle"
-         :class="{ empty: !cacheSlottedDetectors[i-1] }"
-       >
-         <template v-if="cacheSlottedDetectors[i-1]">
-           {{ cacheSlottedDetectors[i-1].label }}
-         </template>
-         <template v-else>
-           Empty
-         </template>
-       </div>
-     </div>
-     <!-- Overflow Area for Cache -->
-     <div v-if="cacheOverflowDetectors.length > 0" class="overflow-area">
-       <h4>Overflow Detectors ({{ cacheOverflowDetectors.length }})</h4>
-       <div class="overflow-list">
-         <div v-for="det in cacheOverflowDetectors" :key="'cache-ov-' + det.id" class="overflow-item">
-           {{ det.label }}
-         </div>
-       </div>
-     </div>
-   </div>
-   <!-- ================= IN TRANSIT SECTION ================= -->
-   <div class="location-section">
-     <h3>In Transit</h3>
-     <p class="section-subtitle">Detectors returning to this district</p>
-     <div v-if="restock.transitDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
-       <div v-for="det in restock.transitDetectors" :key="'tr-' + det.id" class="overflow-item">
-         {{ det.label }} (in-transit)
-       </div>
-     </div>
-     <p v-else class="empty-text">No detectors currently in transit.</p>
-   </div>
- </div>
- <!-- ================= BURNLEY SELECTION SECTION ================= -->
- <div class="location-section" v-if="!restock.isLoading && !restock.error" style="margin-top: 20px;">
-   <h3>Available at Burnley</h3>
-   <p class="section-subtitle">Select a detector to add to the cache</p>
-   <div v-if="restock.burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
-     <div 
-       v-for="det in restock.burnleyDetectors" 
-       :key="'burnley-' + det.id" 
-       class="overflow-item"
-       :class="{ selected: selectedBurnleyId === det.id }"
-       @click="selectBurnleyDetector(det.id)"
-     >
-       {{ det.label }}
-     </div>
-   </div>
-   <p v-else class="empty-text">No available detectors at Burnley.</p>
- </div>
- <!-- ACTION BUTTON --> 
- <div class="action-bar">
-   <button
-     class="btn-primary"
-     @click="attemptAddToCache"
-     :disabled="isProcessing || restock.isLoading || !!restock.error || !selectedBurnleyId"
-   >
-     {{ isProcessing ? 'Adding...' : 'Add to Cache' }}
-   </button>
- </div>
- <!-- ================= CACHE FULL MODAL ================= -->
- <div v-if="showCacheFullModal" class="modal-overlay">
-   <div class="modal-content">
-     <h3>Cache Full</h3>
-     <p>The detector cache for district {{ district }} is full. Please return some detectors before restocking.</p>
-     <div class="modal-actions">
-       <button class="btn-confirm" @click="showCacheFullModal = false">OK</button>
-     </div>
-   </div>
- </div>
- <!-- ================= SUCCESS MODAL ================= -->
- <div v-if="showSuccessModal" class="modal-overlay">
-   <div class="modal-content">
-     <h3>Success</h3>
-     <p>Detector has been transferred to the district cache.</p>
-     <div class="modal-actions">
-       <button class="btn-confirm" @click="closeSuccessModal">OK</button>
-     </div>
-   </div>
- </div>
-</div>
+  <div class="swap-screen">
+    <h2>FRV - District Cache Restock</h2>
+    <h3>{{ district }}</h3>
+
+    <div class="model-selector">
+      <label>Detector Model:</label>
+      <select v-model="restock.selectedModelId" @change="handleModelChange">
+        <option v-for="model in restock.models" :key="model.id" :value="model.id">
+          {{ model.label }}
+        </option>
+      </select>
+    </div>
+
+    <div v-if="restock.isLoading" class="loading">Loading equipment...</div>
+    <div v-if="restock.error" class="error">{{ restock.error }}</div>
+
+    <div v-if="!restock.isLoading && !restock.error">
+      <!-- ================= DISTRICT CACHE SECTION ================= -->
+      <div class="location-section">
+        <h3>District Cache: {{ district }}</h3>
+        <p class="section-subtitle">
+          {{ restock.cacheDetectors.length }} cached / {{ restock.slotCount }} slots
+          ({{ restock.availableSlots }} available)
+        </p>
+        <!-- Slot Rectangles for Cache -->
+        <div class="slots-grid">
+          <div
+            v-for="i in restock.slotCount"
+            :key="'cache-slot-' + i"
+            class="slot-rectangle"
+            :class="{ empty: !cacheSlottedDetectors[i-1] }"
+          >
+            <template v-if="cacheSlottedDetectors[i-1]">
+              {{ cacheSlottedDetectors[i-1].label }}
+            </template>
+            <template v-else>
+              Empty
+            </template>
+          </div>
+        </div>
+        <!-- Overflow Area for Cache -->
+        <div v-if="cacheOverflowDetectors.length > 0" class="overflow-area">
+          <h4>Overflow Detectors ({{ cacheOverflowDetectors.length }})</h4>
+          <div class="overflow-list">
+            <div v-for="det in cacheOverflowDetectors" :key="'cache-ov-' + det.id" class="overflow-item">
+              {{ det.label }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= BURNLEY SELECTION SECTION ================= -->
+      <div class="location-section" style="margin-top: 20px;">
+        <h3>Available at Burnley</h3>
+        <p class="section-subtitle">Select detectors to add to the cache ({{ restock.selectedCount }} selected)</p>
+        <div v-if="restock.burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
+          <div
+            v-for="det in restock.burnleyDetectors"
+            :key="'burnley-' + det.id"
+            class="overflow-item"
+            :class="{ selected: restock.selectedBurnleyIds.includes(det.id) }"
+            @click="restock.toggleBurnleySelection(det.id)"
+          >
+            {{ det.label }}
+          </div>
+        </div>
+        <p v-else class="empty-text">No available detectors at Burnley.</p>
+      </div>
+
+      <!-- ERROR MESSAGE -->
+      <div v-if="showTooManyError" class="error" style="margin-top: 20px;">
+        You have selected {{ restock.selectedCount }} detectors but only {{ restock.availableSlots }} slot(s) are available in the district cache.
+      </div>
+
+      <!-- ACTION BUTTON -->
+      <div class="action-bar">
+        <button
+          class="btn-primary"
+          @click="attemptAddToCache"
+          :disabled="isProcessing || restock.isLoading || !!restock.error || restock.selectedCount === 0"
+        >
+          {{ isProcessing ? 'Adding...' : `Add to Cache (${restock.selectedCount})` }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= CACHE FULL MODAL ================= -->
+    <div v-if="showCacheFullModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Cache Full</h3>
+        <p>The detector cache for district {{ district }} is full. Please return some detectors before restocking.</p>
+        <div class="modal-actions">
+          <button class="btn-confirm" @click="showCacheFullModal = false">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= CONFIRMATION MODAL ================= -->
+    <div v-if="showConfirmModal" class="modal-overlay" @click.self="showConfirmModal = false">
+      <div class="modal-content">
+        <h3>Confirm Restock</h3>
+        <p>You have selected {{ restock.selectedCount }} detector(s) to transfer to the {{ district }} district cache.</p>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="showConfirmModal = false" :disabled="isProcessing">Cancel</button>
+          <button class="btn-confirm" @click="executeRestock" :disabled="isProcessing">
+            {{ isProcessing ? 'Transferring...' : 'Confirm' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SUCCESS MODAL ================= -->
+    <div v-if="showSuccessModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Success</h3>
+        <p>{{ restock.selectedCount }} detector(s) have been transferred to the district cache.</p>
+        <div class="modal-actions">
+          <button class="btn-confirm" @click="closeSuccessModal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -115,33 +131,49 @@ const props = defineProps({ district: String })
 const restock = useRestockStore()
 
 const isProcessing = ref(false)
-const selectedBurnleyId = ref(null)
 const showCacheFullModal = ref(false)
+const showConfirmModal = ref(false)
 const showSuccessModal = ref(false)
+const showTooManyError = ref(false)
 
 const cacheSlottedDetectors = computed(() => restock.cacheDetectors.slice(0, restock.slotCount))
 const cacheOverflowDetectors = computed(() => restock.cacheDetectors.slice(restock.slotCount))
 
-const selectBurnleyDetector = (id) => {
-  selectedBurnleyId.value = selectedBurnleyId.value === id ? null : id
+const handleModelChange = () => {
+  restock.clearSelection()
+  showTooManyError.value = false
+  restock.fetchCacheDetectors()
+  restock.fetchBurnleyDetectors()
 }
 
-const attemptAddToCache = async () => {
-  if (!selectedBurnleyId.value) return
+const attemptAddToCache = () => {
+  if (restock.selectedCount === 0) return
 
-  if (!restock.hasSpace) {
+  // Check if cache is completely full
+  if (restock.availableSlots <= 0) {
     showCacheFullModal.value = true
     return
   }
 
+  // Check if too many selected
+  if (!restock.hasSpace) {
+    showTooManyError.value = true
+    return
+  }
+
+  showTooManyError.value = false
+  showConfirmModal.value = true
+}
+
+const executeRestock = async () => {
   isProcessing.value = true
   try {
-    await restock.addToCache(selectedBurnleyId.value)
-    selectedBurnleyId.value = null
+    await restock.addToCache()
+    showConfirmModal.value = false
     showSuccessModal.value = true
   } catch (err) {
     console.error('Failed to add to cache:', err)
-    alert('Failed to add detector. Please try again.')
+    alert('Failed to add detectors. Please try again.')
   } finally {
     isProcessing.value = false
   }
@@ -149,7 +181,8 @@ const attemptAddToCache = async () => {
 
 const closeSuccessModal = () => {
   showSuccessModal.value = false
-  restock.fetchCacheAndTransit()
+  restock.clearSelection()
+  restock.fetchCacheDetectors()
   restock.fetchBurnleyDetectors()
 }
 
@@ -157,7 +190,7 @@ onMounted(async () => {
   await restock.fetchModels()
   await restock.resolveDistrictAndDI(props.district)
   await restock.fetchSlotCount()
-  await restock.fetchCacheAndTransit()
+  await restock.fetchCacheDetectors()
   await restock.fetchBurnleyDetectors()
 })
 </script>
@@ -166,7 +199,6 @@ onMounted(async () => {
 .swap-screen { padding: 20px; font-family: system-ui, -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; color: #333; }
 .model-selector { margin-bottom: 20px; }
 .model-selector select { padding: 8px 12px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; }
-.swap-container { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
 .location-section { flex: 1; min-width: 320px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
 .section-subtitle { color: #666; margin-top: -5px; margin-bottom: 15px; font-size: 0.95rem; }
 .empty-text { color: #adb5bd; font-style: italic; text-align: center; padding: 20px 0; }
@@ -178,8 +210,8 @@ onMounted(async () => {
   font-size: 0.9rem; font-weight: 600; background: #ffffff; color: #333;
   padding: 5px; box-sizing: border-box; word-break: break-word;
 }
-.slot-rectangle.empty { 
-  color: #adb5bd; font-style: italic; font-weight: 400; background: #f8f9fa; border-style: dashed; 
+.slot-rectangle.empty {
+  color: #adb5bd; font-style: italic; font-weight: 400; background: #f8f9fa; border-style: dashed;
 }
 
 .overflow-area { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ced4da; }
@@ -222,6 +254,7 @@ onMounted(async () => {
 }
 .btn-cancel { background: #e9ecef; color: #495057; }
 .btn-confirm { background: #42b883; color: white; }
+.btn-cancel:disabled, .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
