@@ -242,7 +242,9 @@ class LocationDetectorSlotSerializer(serializers.ModelSerializer):
 
 class LocationDetectorLogSerializer(serializers.ModelSerializer):
     new_location_label = serializers.CharField(source="new_location.label", read_only=True)
+    new_location_district = serializers.CharField(source="new_location.district", read_only=True)
     old_location_label = serializers.CharField(source="old_location.label", read_only=True, allow_null=True)
+    old_location_district = serializers.CharField(source="old_location.district", read_only=True, allow_null=True)
     detector_label = serializers.CharField(source="detector.label", read_only=True)
 
     class Meta:
@@ -251,8 +253,10 @@ class LocationDetectorLogSerializer(serializers.ModelSerializer):
             "id",
             "new_location",
             "new_location_label",
+            "new_location_district",
             "old_location",
             "old_location_label",
+            "old_location_district",
             "detector",
             "detector_label",
             "updated"
