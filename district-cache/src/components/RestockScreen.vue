@@ -20,31 +20,43 @@
       <div class="location-section">
         <h3>District Cache: {{ district }}</h3>
         <p class="section-subtitle">
-          {{ restock.cacheDetectors.length }} cached / {{ restock.slotCount }} slots
+          {{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit / {{ restock.slotCount }} slots
           ({{ restock.availableSlots }} available)
         </p>
+
         <!-- Slot Rectangles for Cache -->
         <div class="slots-grid">
           <div
             v-for="i in restock.slotCount"
             :key="'cache-slot-' + i"
             class="slot-rectangle"
-            :class="{ empty: !cacheSlottedDetectors[i-1] }"
+            :class="{
+              empty: !allDistrictDetectors[i-1],
+              transit: allDistrictDetectors[i-1]?.isTransit
+            }"
           >
-            <template v-if="cacheSlottedDetectors[i-1]">
-              {{ cacheSlottedDetectors[i-1].label }}
+            <template v-if="allDistrictDetectors[i-1]">
+              <span class="slot-label">{{ allDistrictDetectors[i-1].label }}</span>
+              <span v-if="allDistrictDetectors[i-1].isTransit" class="transit-badge">In Transit</span>
             </template>
             <template v-else>
               Empty
             </template>
           </div>
         </div>
-        <!-- Overflow Area for Cache -->
-        <div v-if="cacheOverflowDetectors.length > 0" class="overflow-area">
-          <h4>Overflow Detectors ({{ cacheOverflowDetectors.length }})</h4>
+
+        <!-- Overflow Area -->
+        <div v-if="overflowDetectors.length > 0" class="overflow-area">
+          <h4>Overflow Detectors ({{ overflowDetectors.length }})</h4>
           <div class="overflow-list">
-            <div v-for="det in cacheOverflowDetectors" :key="'cache-ov-' + det.id" class="overflow-item">
+            <div
+              v-for="det in overflowDetectors"
+              :key="'ov-' + det.id"
+              class="overflow-item"
+              :class="{ 'transit-item': det.isTransit }"
+            >
               {{ det.label }}
+              <span v-if="det.isTransit" class="transit-badge-small">In Transit</span>
             </div>
           </div>
         </div>
@@ -68,11 +80,6 @@
         <p v-else class="empty-text">No available detectors at Burnley.</p>
       </div>
 
-      <!-- ERROR MESSAGE -->
-      <div v-if="showTooManyError" class="error" style="margin-top: 20px;">
-        You have selected {{ restock.selectedCount }} detectors but only {{ restock.availableSlots }} slot(s) are available in the district cache.
-      </div>
-
       <!-- ACTION BUTTON -->
       <div class="action-bar">
         <button
@@ -85,13 +92,21 @@
       </div>
     </div>
 
-    <!-- ================= CACHE FULL MODAL ================= -->
-    <div v-if="showCacheFullModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Cache Full</h3>
-        <p>The detector cache for district {{ district }} is full. Please return some detectors before restocking.</p>
+    <!-- ================= WARNING MODAL (TOO MANY) ================= -->
+    <div v-if="showWarningModal" class="modal-overlay">
+      <div class="modal-content warning-modal">
+        <div class="warning-icon">⚠️</div>
+        <h3>Cache Capacity Exceeded</h3>
+        <p>
+          You have selected {{ restock.selectedCount }} detector(s), but adding them would bring the total
+          to {{ restock.totalDetectors + restock.selectedCount }} which exceeds the {{ restock.slotCount }} available slots.
+          <br><br>
+          Currently: {{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit = {{ restock.totalDetectors }} detectors.
+          <br>
+          Available slots remaining: {{ restock.availableSlots }}.
+        </p>
         <div class="modal-actions">
-          <button class="btn-confirm" @click="showCacheFullModal = false">OK</button>
+          <button class="btn-danger" @click="showWarningModal = false">OK</button>
         </div>
       </div>
     </div>
@@ -131,37 +146,35 @@ const props = defineProps({ district: String })
 const restock = useRestockStore()
 
 const isProcessing = ref(false)
-const showCacheFullModal = ref(false)
+const showWarningModal = ref(false)
 const showConfirmModal = ref(false)
 const showSuccessModal = ref(false)
-const showTooManyError = ref(false)
 
-const cacheSlottedDetectors = computed(() => restock.cacheDetectors.slice(0, restock.slotCount))
-const cacheOverflowDetectors = computed(() => restock.cacheDetectors.slice(restock.slotCount))
+// Combine cache + transit detectors, marking transit ones
+const allDistrictDetectors = computed(() => {
+  const cached = restock.cacheDetectors.map(d => ({ ...d, isTransit: false }))
+  const transit = restock.transitDetectors.map(d => ({ ...d, isTransit: true }))
+  return [...cached, ...transit]
+})
+
+const overflowDetectors = computed(() => allDistrictDetectors.value.slice(restock.slotCount))
+const slottedDetectors = computed(() => allDistrictDetectors.value.slice(0, restock.slotCount))
 
 const handleModelChange = () => {
   restock.clearSelection()
-  showTooManyError.value = false
-  restock.fetchCacheDetectors()
+  restock.fetchCacheAndTransit()
   restock.fetchBurnleyDetectors()
 }
 
 const attemptAddToCache = () => {
   if (restock.selectedCount === 0) return
 
-  // Check if cache is completely full
-  if (restock.availableSlots <= 0) {
-    showCacheFullModal.value = true
-    return
-  }
-
-  // Check if too many selected
+  // Check if adding selected detectors would exceed slot count
   if (!restock.hasSpace) {
-    showTooManyError.value = true
+    showWarningModal.value = true
     return
   }
 
-  showTooManyError.value = false
   showConfirmModal.value = true
 }
 
@@ -182,7 +195,7 @@ const executeRestock = async () => {
 const closeSuccessModal = () => {
   showSuccessModal.value = false
   restock.clearSelection()
-  restock.fetchCacheDetectors()
+  restock.fetchCacheAndTransit()
   restock.fetchBurnleyDetectors()
 }
 
@@ -190,7 +203,7 @@ onMounted(async () => {
   await restock.fetchModels()
   await restock.resolveDistrictAndDI(props.district)
   await restock.fetchSlotCount()
-  await restock.fetchCacheDetectors()
+  await restock.fetchCacheAndTransit()
   await restock.fetchBurnleyDetectors()
 })
 </script>
@@ -205,13 +218,21 @@ onMounted(async () => {
 
 .slots-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
 .slot-rectangle {
-  width: 110px; height: 70px; border: 2px solid #adb5bd; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center; text-align: center;
+  width: 110px; height: 80px; border: 2px solid #adb5bd; border-radius: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
   font-size: 0.9rem; font-weight: 600; background: #ffffff; color: #333;
   padding: 5px; box-sizing: border-box; word-break: break-word;
 }
 .slot-rectangle.empty {
   color: #adb5bd; font-style: italic; font-weight: 400; background: #f8f9fa; border-style: dashed;
+}
+.slot-rectangle.transit {
+  border-color: #f39c12; background: #fef9e7;
+}
+.slot-label { font-weight: 600; }
+.transit-badge {
+  font-size: 0.65rem; font-weight: 500; color: #e67e22; background: #fdebd0;
+  padding: 2px 6px; border-radius: 8px; margin-top: 3px;
 }
 
 .overflow-area { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ced4da; }
@@ -224,6 +245,10 @@ onMounted(async () => {
 }
 .overflow-item:hover { background: #ffe69c; transform: translateY(-1px); }
 .overflow-item.selected { background: #e8f8f2; color: #333; border-color: #42b883; border-width: 2px; }
+.overflow-item.transit-item { background: #fef9e7; border-color: #f39c12; }
+.transit-badge-small {
+  font-size: 0.65rem; color: #e67e22; font-weight: 600; margin-left: 4px;
+}
 
 .action-bar { margin-top: 30px; text-align: center; }
 .btn-primary {
@@ -242,11 +267,11 @@ onMounted(async () => {
   padding: 20px; animation: fadeIn 0.2s ease-out;
 }
 .modal-content {
-  background: white; padding: 24px; border-radius: 12px; width: 100%; max-width: 400px;
+  background: white; padding: 24px; border-radius: 12px; width: 100%; max-width: 420px;
   text-align: center; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); animation: slideUp 0.2s ease-out;
 }
 .modal-content h3 { margin: 0 0 12px 0; color: #333; font-size: 1.25rem; }
-.modal-content p { color: #666; margin-bottom: 20px; font-size: 1rem; line-height: 1.4; }
+.modal-content p { color: #666; margin-bottom: 20px; font-size: 1rem; line-height: 1.5; }
 .modal-actions { display: flex; gap: 12px; }
 .btn-cancel, .btn-confirm {
   flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 1rem;
@@ -255,6 +280,16 @@ onMounted(async () => {
 .btn-cancel { background: #e9ecef; color: #495057; }
 .btn-confirm { background: #42b883; color: white; }
 .btn-cancel:disabled, .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Warning modal styles */
+.warning-modal { border: 2px solid #e74c3c; }
+.warning-icon { font-size: 4rem; margin-bottom: 10px; }
+.warning-modal h3 { color: #e74c3c; }
+.btn-danger {
+  flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 1rem;
+  font-weight: 600; cursor: pointer; background: #e74c3c; color: white;
+}
+.btn-danger:hover { background: #c0392b; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

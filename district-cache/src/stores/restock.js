@@ -9,12 +9,14 @@ export const useRestockStore = defineStore('restock', () => {
   const diLocation = ref(null)
   const slotCount = ref(0)
   const cacheDetectors = ref([])
+  const transitDetectors = ref([])
   const burnleyDetectors = ref([])
   const selectedBurnleyIds = ref([])
   const isLoading = ref(false)
   const error = ref(null)
 
-  const availableSlots = computed(() => slotCount.value - cacheDetectors.value.length)
+  const totalDetectors = computed(() => cacheDetectors.value.length + transitDetectors.value.length)
+  const availableSlots = computed(() => slotCount.value - totalDetectors.value)
   const selectedCount = computed(() => selectedBurnleyIds.value.length)
   const hasSpace = computed(() => selectedCount.value <= availableSlots.value)
 
@@ -51,13 +53,17 @@ export const useRestockStore = defineStore('restock', () => {
     }
   }
 
-  const fetchCacheDetectors = async () => {
-    if (!diLocation.value || !selectedModelId.value) return
+  const fetchCacheAndTransit = async () => {
+    if (!diLocation.value || !selectedModelId.value || !district.value) return
     isLoading.value = true
     error.value = null
     try {
-      const cacheData = await apiFetch(`/detector-labels/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`)
+      const [cacheData, transitData] = await Promise.all([
+        apiFetch(`/detector-labels/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`),
+        apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
+      ])
       cacheDetectors.value = cacheData
+      transitDetectors.value = transitData
     } catch (err) {
       error.value = 'Failed to fetch detectors.'
       console.error(err)
@@ -102,9 +108,9 @@ export const useRestockStore = defineStore('restock', () => {
 
   return {
     models, selectedModelId, district, diLocation, slotCount, cacheDetectors,
-    burnleyDetectors, selectedBurnleyIds, isLoading, error,
-    availableSlots, selectedCount, hasSpace,
-    fetchModels, resolveDistrictAndDI, fetchSlotCount, fetchCacheDetectors,
+    transitDetectors, burnleyDetectors, selectedBurnleyIds, isLoading, error,
+    totalDetectors, availableSlots, selectedCount, hasSpace,
+    fetchModels, resolveDistrictAndDI, fetchSlotCount, fetchCacheAndTransit,
     fetchBurnleyDetectors, toggleBurnleySelection, clearSelection, addToCache
   }
 })
