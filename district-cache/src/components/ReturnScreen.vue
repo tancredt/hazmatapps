@@ -34,8 +34,12 @@
     </div>
 
     <!-- ACTION BUTTON -->
-    <div class="action-bar" v-if="ret.selectedIds.length > 0">
-      <button class="btn-primary" @click="showConfirmModal = true" :disabled="isProcessing">
+    <div class="action-bar">
+      <button
+        class="btn-primary"
+        @click="showConfirmModal = true"
+        :disabled="isProcessing || ret.isLoading || !!ret.error || ret.selectedIds.length === 0"
+      >
         {{ isProcessing ? 'Processing...' : `Return (${ret.selectedIds.length})` }}
       </button>
     </div>

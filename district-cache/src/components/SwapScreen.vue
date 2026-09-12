@@ -95,8 +95,13 @@
    </div>
  </div>
  <!-- ACTION BUTTON -->
- <div class="action-bar" v-if="selectedDetectorId && replacementDetectorId">
-   <button class="btn-primary" @click="showReasonDialog = true" :disabled="isProcessing">
+
+ <div class="action-bar">
+   <button
+     class="btn-primary"
+     @click="showReasonDialog = true"
+     :disabled="isProcessing || swap.isLoading || !!swap.error || !selectedDetectorId || !replacementDetectorId"
+   >
      {{ isProcessing ? 'Processing...' : 'Update' }}
    </button>
  </div>

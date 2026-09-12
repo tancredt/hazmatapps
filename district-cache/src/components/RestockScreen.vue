@@ -74,9 +74,13 @@
    </div>
    <p v-else class="empty-text">No available detectors at Burnley.</p>
  </div>
- <!-- ACTION BUTTON -->
- <div class="action-bar" v-if="selectedBurnleyId">
-   <button class="btn-primary" @click="attemptAddToCache" :disabled="isProcessing">
+ <!-- ACTION BUTTON --> 
+ <div class="action-bar">
+   <button
+     class="btn-primary"
+     @click="attemptAddToCache"
+     :disabled="isProcessing || restock.isLoading || !!restock.error || !selectedBurnleyId"
+   >
      {{ isProcessing ? 'Adding...' : 'Add to Cache' }}
    </button>
  </div>
