@@ -19,10 +19,16 @@
       <!-- ================= DISTRICT CACHE SUMMARY ================= -->
       <div class="cache-summary">
         <div class="summary-hero">
-          <span class="hero-number">{{ restock.availableSlots }}</span>
+          <span class="hero-number" :class="{ 'hero-negative': restock.availableSlots <= 0 }">
+            {{ restock.availableSlots }}
+          </span>
           <span class="hero-label">Slots Available</span>
         </div>
         <div class="summary-details">
+          <div class="summary-item">
+            <span class="summary-value">{{ restock.slotCount }}</span>
+            <span class="summary-label">Total detector slots</span>
+          </div>
           <div class="summary-item">
             <span class="summary-value">{{ restock.cacheDetectors.length }}</span>
             <span class="summary-label">Detectors in cache</span>
@@ -31,15 +37,11 @@
             <span class="summary-value">{{ restock.transitDetectors.length }}</span>
             <span class="summary-label">Detectors in transit</span>
           </div>
-          <div class="summary-item">
-            <span class="summary-value">{{ restock.slotCount }}</span>
-            <span class="summary-label">Total detector slots</span>
-          </div>
         </div>
       </div>
 
-      <!-- ================= BURNLEY SELECTION SECTION ================= -->
-      <div class="location-section" style="margin-top: 20px;">
+      <!-- ================= BURNLEY SELECTION SECTION (hidden if no space) ================= -->
+      <div v-if="restock.availableSlots > 0" class="location-section" style="margin-top: 20px;">
         <h3>Available at Burnley</h3>
         <p class="section-subtitle">Select detectors to add to the cache ({{ restock.selectedCount }} selected)</p>
         <div v-if="restock.burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
@@ -56,8 +58,13 @@
         <p v-else class="empty-text">No available detectors at Burnley.</p>
       </div>
 
-      <!-- ACTION BUTTON -->
-      <div class="action-bar">
+      <!-- NO SPACE MESSAGE -->
+      <div v-if="restock.availableSlots <= 0" class="no-space-message" style="margin-top: 20px;">
+        <p>No available slots in this district cache for the selected detector model.</p>
+      </div>
+
+      <!-- ACTION BUTTON (hidden if no space) -->
+      <div v-if="restock.availableSlots > 0" class="action-bar">
         <button
           class="btn-primary"
           @click="attemptAddToCache"
@@ -115,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRestockStore } from '../stores/restock'
 
 const props = defineProps({ district: String })
@@ -128,6 +135,7 @@ const showSuccessModal = ref(false)
 
 const handleModelChange = () => {
   restock.clearSelection()
+  restock.fetchSlotCount()
   restock.fetchCacheAndTransit()
   restock.fetchBurnleyDetectors()
 }
@@ -160,6 +168,7 @@ const executeRestock = async () => {
 const closeSuccessModal = () => {
   showSuccessModal.value = false
   restock.clearSelection()
+  restock.fetchSlotCount()
   restock.fetchCacheAndTransit()
   restock.fetchBurnleyDetectors()
 }
@@ -188,9 +197,7 @@ onMounted(async () => {
   padding: 24px;
   text-align: center;
 }
-.summary-hero {
-  margin-bottom: 20px;
-}
+.summary-hero { margin-bottom: 20px; }
 .hero-number {
   display: block;
   font-size: 4rem;
@@ -198,6 +205,7 @@ onMounted(async () => {
   color: #42b883;
   line-height: 1;
 }
+.hero-number.hero-negative { color: #e74c3c; }
 .hero-label {
   display: block;
   font-size: 1.1rem;
@@ -217,16 +225,8 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
 }
-.summary-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #333;
-}
-.summary-label {
-  font-size: 0.85rem;
-  color: #888;
-  margin-top: 2px;
-}
+.summary-value { font-size: 1.6rem; font-weight: 700; color: #333; }
+.summary-label { font-size: 0.85rem; color: #888; margin-top: 2px; }
 
 /* ===== BURNLEY SECTION ===== */
 .location-section { flex: 1; min-width: 320px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
@@ -238,6 +238,17 @@ onMounted(async () => {
 }
 .overflow-item:hover { background: #ffe69c; transform: translateY(-1px); }
 .overflow-item.selected { background: #e8f8f2; color: #333; border-color: #42b883; border-width: 2px; }
+
+/* ===== NO SPACE MESSAGE ===== */
+.no-space-message {
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  color: #e74c3c;
+  font-weight: 500;
+}
 
 /* ===== ACTION BAR ===== */
 .action-bar { margin-top: 30px; text-align: center; }
