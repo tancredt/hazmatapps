@@ -16,48 +16,24 @@
     <div v-if="restock.error" class="error">{{ restock.error }}</div>
 
     <div v-if="!restock.isLoading && !restock.error">
-      <!-- ================= DISTRICT CACHE SECTION ================= -->
-      <div class="location-section">
-        <h3>District Cache: {{ district }}</h3>
-        <p class="section-subtitle">
-          {{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit / {{ restock.slotCount }} slots
-          ({{ restock.availableSlots }} available)
-        </p>
-
-        <!-- Slot Rectangles for Cache -->
-        <div class="slots-grid">
-          <div
-            v-for="i in restock.slotCount"
-            :key="'cache-slot-' + i"
-            class="slot-rectangle"
-            :class="{
-              empty: !allDistrictDetectors[i-1],
-              transit: allDistrictDetectors[i-1]?.isTransit
-            }"
-          >
-            <template v-if="allDistrictDetectors[i-1]">
-              <span class="slot-label">{{ allDistrictDetectors[i-1].label }}</span>
-              <span v-if="allDistrictDetectors[i-1].isTransit" class="transit-badge">In Transit</span>
-            </template>
-            <template v-else>
-              Empty
-            </template>
-          </div>
+      <!-- ================= DISTRICT CACHE SUMMARY ================= -->
+      <div class="cache-summary">
+        <div class="summary-hero">
+          <span class="hero-number">{{ restock.availableSlots }}</span>
+          <span class="hero-label">Slots Available</span>
         </div>
-
-        <!-- Overflow Area -->
-        <div v-if="overflowDetectors.length > 0" class="overflow-area">
-          <h4>Overflow Detectors ({{ overflowDetectors.length }})</h4>
-          <div class="overflow-list">
-            <div
-              v-for="det in overflowDetectors"
-              :key="'ov-' + det.id"
-              class="overflow-item"
-              :class="{ 'transit-item': det.isTransit }"
-            >
-              {{ det.label }}
-              <span v-if="det.isTransit" class="transit-badge-small">In Transit</span>
-            </div>
+        <div class="summary-details">
+          <div class="summary-item">
+            <span class="summary-value">{{ restock.cacheDetectors.length }}</span>
+            <span class="summary-label">Detectors in cache</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-value">{{ restock.transitDetectors.length }}</span>
+            <span class="summary-label">Detectors in transit</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-value">{{ restock.slotCount }}</span>
+            <span class="summary-label">Total detector slots</span>
           </div>
         </div>
       </div>
@@ -150,16 +126,6 @@ const showWarningModal = ref(false)
 const showConfirmModal = ref(false)
 const showSuccessModal = ref(false)
 
-// Combine cache + transit detectors, marking transit ones
-const allDistrictDetectors = computed(() => {
-  const cached = restock.cacheDetectors.map(d => ({ ...d, isTransit: false }))
-  const transit = restock.transitDetectors.map(d => ({ ...d, isTransit: true }))
-  return [...cached, ...transit]
-})
-
-const overflowDetectors = computed(() => allDistrictDetectors.value.slice(restock.slotCount))
-const slottedDetectors = computed(() => allDistrictDetectors.value.slice(0, restock.slotCount))
-
 const handleModelChange = () => {
   restock.clearSelection()
   restock.fetchCacheAndTransit()
@@ -169,7 +135,6 @@ const handleModelChange = () => {
 const attemptAddToCache = () => {
   if (restock.selectedCount === 0) return
 
-  // Check if adding selected detectors would exceed slot count
   if (!restock.hasSpace) {
     showWarningModal.value = true
     return
@@ -212,31 +177,59 @@ onMounted(async () => {
 .swap-screen { padding: 20px; font-family: system-ui, -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; color: #333; }
 .model-selector { margin-bottom: 20px; }
 .model-selector select { padding: 8px 12px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; }
-.location-section { flex: 1; min-width: 320px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
 .section-subtitle { color: #666; margin-top: -5px; margin-bottom: 15px; font-size: 0.95rem; }
 .empty-text { color: #adb5bd; font-style: italic; text-align: center; padding: 20px 0; }
 
-.slots-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
-.slot-rectangle {
-  width: 110px; height: 80px; border: 2px solid #adb5bd; border-radius: 6px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-  font-size: 0.9rem; font-weight: 600; background: #ffffff; color: #333;
-  padding: 5px; box-sizing: border-box; word-break: break-word;
+/* ===== CACHE SUMMARY PANEL ===== */
+.cache-summary {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
 }
-.slot-rectangle.empty {
-  color: #adb5bd; font-style: italic; font-weight: 400; background: #f8f9fa; border-style: dashed;
+.summary-hero {
+  margin-bottom: 20px;
 }
-.slot-rectangle.transit {
-  border-color: #f39c12; background: #fef9e7;
+.hero-number {
+  display: block;
+  font-size: 4rem;
+  font-weight: 800;
+  color: #42b883;
+  line-height: 1;
 }
-.slot-label { font-weight: 600; }
-.transit-badge {
-  font-size: 0.65rem; font-weight: 500; color: #e67e22; background: #fdebd0;
-  padding: 2px 6px; border-radius: 8px; margin-top: 3px;
+.hero-label {
+  display: block;
+  font-size: 1.1rem;
+  color: #666;
+  margin-top: 6px;
+  font-weight: 500;
+}
+.summary-details {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  border-top: 1px solid #dee2e6;
+  padding-top: 16px;
+}
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.summary-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #333;
+}
+.summary-label {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 2px;
 }
 
-.overflow-area { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ced4da; }
-.overflow-area h4 { margin: 0 0 12px 0; color: #d35400; font-size: 1rem; font-weight: 600; }
+/* ===== BURNLEY SECTION ===== */
+.location-section { flex: 1; min-width: 320px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
 .overflow-list { display: flex; flex-wrap: wrap; gap: 10px; }
 .overflow-item {
   padding: 8px 14px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 20px;
@@ -245,11 +238,8 @@ onMounted(async () => {
 }
 .overflow-item:hover { background: #ffe69c; transform: translateY(-1px); }
 .overflow-item.selected { background: #e8f8f2; color: #333; border-color: #42b883; border-width: 2px; }
-.overflow-item.transit-item { background: #fef9e7; border-color: #f39c12; }
-.transit-badge-small {
-  font-size: 0.65rem; color: #e67e22; font-weight: 600; margin-left: 4px;
-}
 
+/* ===== ACTION BAR ===== */
 .action-bar { margin-top: 30px; text-align: center; }
 .btn-primary {
   padding: 12px 32px; background: #42b883; color: white; border: none; border-radius: 6px;
@@ -261,6 +251,7 @@ onMounted(async () => {
 .loading, .error { text-align: center; padding: 20px; font-size: 1.1rem; }
 .error { color: #e74c3c; background: #fdecea; border-radius: 6px; }
 
+/* ===== MODALS ===== */
 .modal-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6);
   display: flex; align-items: center; justify-content: center; z-index: 1000;
@@ -281,7 +272,7 @@ onMounted(async () => {
 .btn-confirm { background: #42b883; color: white; }
 .btn-cancel:disabled, .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Warning modal styles */
+/* Warning modal */
 .warning-modal { border: 2px solid #e74c3c; }
 .warning-icon { font-size: 4rem; margin-bottom: 10px; }
 .warning-modal h3 { color: #e74c3c; }
