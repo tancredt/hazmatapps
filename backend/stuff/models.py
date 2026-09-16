@@ -437,7 +437,7 @@ class CylinderModel(models.Model):
     cylinder_type = models.ForeignKey(CylinderType, on_delete=models.PROTECT)
 
     def __str__(self):
-        return f"{self.part-number} ({self.get_supplier_display()})"
+        return f"{self.part_number} ({self.get_supplier_display()})"
     
 class Cylinder(models.Model):
     cylinder_number = models.IntegerField(unique=True)
