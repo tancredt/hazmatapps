@@ -48,6 +48,7 @@ class Command(BaseCommand):
             "stuff.MaintenanceTask",
             "stuff.DetectorFault",
             "stuff.CylinderType",
+            "stuff.CylinderModel",
             "stuff.Cylinder",
             "stuff.CylinderFault",
             "stuff.LocationDetectorLog",
@@ -185,7 +186,6 @@ class Command(BaseCommand):
         if isinstance(field, models.BooleanField):
             return raw.lower() in ("1", "true", "t", "yes", "on")
         
-        # 🎯 FIX 1: Check DateTimeField BEFORE DateField!
         # DateTimeField is a subclass of DateField in Django, so checking DateField first 
         # will incorrectly catch all datetimes and try to parse them as dates.
         if isinstance(field, models.DateTimeField):
@@ -198,7 +198,6 @@ class Command(BaseCommand):
         return raw
 
     def parse_date(self, value):
-        # 🎯 FIX 2: Use Django's built-in parser (handles YYYY-MM-DD perfectly)
         parsed = django_parse_date(value)
         if parsed:
             return parsed
@@ -212,8 +211,6 @@ class Command(BaseCommand):
         raise ValueError(f"bad date: {value}")
 
     def parse_datetime(self, value):
-        # 🎯 FIX 3: Use Django's built-in parser. 
-        # It effortlessly handles ISO8601, spaces, microseconds, and timezone offsets like +00:00
         parsed = django_parse_datetime(value)
         if parsed:
             # If the parsed datetime is naive (no timezone), make it aware using Django's default timezone

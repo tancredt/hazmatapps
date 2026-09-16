@@ -494,7 +494,7 @@ def sensors_pdf(request):
 def cylinders_pdf(request):
     search = request.GET.get('search', '')
     status = request.GET.get('status', '')
-    cylinder_type = request.GET.get('cylinder_type', '')
+    cylinder_model = request.GET.get('cylinder_model', '')
     location = request.GET.get('location', '')
     expiry_date_lte = request.GET.get('expiry_date_lte', '')
     show_empty = request.GET.get('show_empty', 'false').lower() == 'true'
@@ -528,8 +528,8 @@ def cylinders_pdf(request):
         cylinders = cylinders.filter(query)
     if status:
         cylinders = cylinders.filter(status=status)
-    if cylinder_type:
-        cylinders = cylinders.filter(cylinder_model__cylinder_type=cylinder_type)
+    if cylinder_model:
+        cylinders = cylinders.filter(cylinder_model=cylinder_model)
     if location:
         cylinders = cylinders.filter(location=location)
     if expiry_date_lte:

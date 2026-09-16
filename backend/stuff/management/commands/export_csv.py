@@ -41,6 +41,7 @@ class Command(BaseCommand):
             "stuff.MaintenanceTask",
             "stuff.DetectorFault",
             "stuff.CylinderType",
+            "stuff.CylinderModel",
             "stuff.Cylinder",
             "stuff.CylinderFault",
             "stuff.LocationDetectorLog",

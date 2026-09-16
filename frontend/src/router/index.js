@@ -131,6 +131,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/cylindermodels/new',
+      name: 'AddCylinderModel',
+      component: () => import('@/components/CylinderModelForm.vue'),
+      meta: { requiresAuth: true }
+    },  
+    {
       path: '/sensortypes/new',
       name: 'AddSensorType',
       component: () => import('@/components/SensorTypeForm.vue'),

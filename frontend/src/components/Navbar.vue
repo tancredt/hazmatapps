@@ -34,6 +34,7 @@
           <router-link to="/locations/new" class="dropdown-item">Add New Location</router-link>
           <router-link to="/detectormodelconfigurations/new" class="dropdown-item">Add New Configuration</router-link>
           <router-link to="/cylindertypes/new" class="dropdown-item">Add New Cylinder Type</router-link>
+	  <router-link to="/cylindermodels/new" class="dropdown-item">Add New Cylinder Model</router-link>
           <router-link to="/sensortypes/new" class="dropdown-item">Add New Sensor Type</router-link>
         </div>
       </div>

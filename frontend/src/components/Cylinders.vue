@@ -3,155 +3,76 @@
     <div class="filters-section">
       <button @click="toggleFilters" :aria-expanded="showFilters" class="filter-toggle-btn" :class="{ 'has-active-filters': hasActiveFilters }">
         {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
-
       <div v-show="showFilters" class="search-and-filters-popover">
-        <input
-          type="text"
-          v-model="searchTerm"
-          placeholder="Search by label/serial..."
-          class="search-input"
-          @input="filterCylinders"
-        >
+        <input type="text" v-model="searchTerm" placeholder="Search by label/serial..." class="search-input" @input="filterCylinders">
         <select v-model="filterStatus" @change="filterCylinders" class="filter-select">
           <option value="">All Statuses</option>
-          <option v-for="choice in cylinderStatusChoices" :key="choice.value" :value="choice.value">
-            {{ choice.label }}
-          </option>
+          <option v-for="choice in cylinderStatusChoices" :key="choice.value" :value="choice.value">{{ choice.label }}</option>
         </select>
         <select v-model="filterDetector" @change="filterCylinders" class="filter-select">
           <option value="">All Detectors</option>
-          <option v-for="detector in detectors" :key="detector.id" :value="detector.id">
-            {{ getDetectorLabel(detector.id) }}
-          </option>
+          <option v-for="detector in detectors" :key="detector.id" :value="detector.id">{{ getDetectorLabel(detector.id) }}</option>
         </select>
         <select v-model="filterLocation" @change="filterCylinders" class="filter-select">
           <option value="">All Locations</option>
-          <option v-for="location in locations" :key="location.id" :value="location.id">
-            {{ getLocationLabel(location.id) }}
-          </option>
+          <option v-for="location in locations" :key="location.id" :value="location.id">{{ getLocationLabel(location.id) }}</option>
         </select>
-        <select v-model="filterCylinderType" @change="filterCylinders" class="filter-select">
-          <option value="">All Cylinder Types</option>
-          <option v-for="cylinderType in cylinderTypes" :key="cylinderType.id" :value="cylinderType.id">
-            {{ getCylinderTypeLabel(cylinderType.id) }}
-          </option>
+        <!-- Changed to Cylinder Model -->
+        <select v-model="filterCylinderModel" @change="filterCylinders" class="filter-select">
+          <option value="">All Models</option>
+          <option v-for="model in cylinderModels" :key="model.id" :value="model.id">{{ getCylinderModelLabel(model.id) }}</option>
         </select>
         <div class="date-filter-container">
           <label for="expiresBefore" class="date-label">Expires Before:</label>
-          <input
-            id="expiresBefore"
-            type="date"
-            v-model="filterExpiresBefore"
-            @change="filterCylinders"
-            class="date-input"
-          />
+          <input id="expiresBefore" type="date" v-model="filterExpiresBefore" @change="filterCylinders" class="date-input" />
         </div>
         <div class="checkbox-container">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              v-model="showEmptyCylinders"
-              @change="filterCylinders"
-            />
-            Show Empty Cylinders
-          </label>
+          <label class="checkbox-label"><input type="checkbox" v-model="showEmptyCylinders" @change="filterCylinders" /> Show Empty Cylinders</label>
         </div>
-        <div class="reset-btn-wrapper">
-          <button @click="resetFilters" class="reset-btn">Reset Filters</button>
-        </div>
+        <div class="reset-btn-wrapper"><button @click="resetFilters" class="reset-btn">Reset Filters</button></div>
       </div>
     </div>
-
+    
     <div class="page-container">
       <div class="header-actions">
         <h1>Cylinders Management</h1>
         <div class="action-buttons">
           <router-link to="/cylinders/new" class="btn btn-primary">Add New Cylinder</router-link>
           <router-link to="/cylinders/add-multiple" class="btn btn-primary">Add Multiple Cylinders</router-link>
-          <button
-            @click="openUpdateMultipleCylinders"
-            :disabled="selectedCylinders.length === 0"
-            class="btn btn-primary"
-          >
-            Update Multiple Cylinders
-          </button>
-          <button
-            @click="downloadPDF"
-            class="btn btn-primary"
-            title="Download as PDF"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-              <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-            </svg>
+          <button @click="openUpdateMultipleCylinders" :disabled="selectedCylinders.length === 0" class="btn btn-primary">Update Multiple Cylinders</button>
+          <button @click="downloadPDF" class="btn btn-primary" title="Download as PDF">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
           </button>
         </div>
       </div>
-
+      
       <div class="table-container">
         <table class="cylinders-table">
           <thead>
             <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  @change="toggleSelectAll"
-                  :checked="selectedCylinders.length === filteredCylinders.length && filteredCylinders.length > 0"
-                />
-              </th>
-              <th @click="sortBy('label')" class="sortable">
-                Label <span v-if="sortKey === 'label'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('serial')" class="sortable">
-                Serial <span v-if="sortKey === 'serial'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('cylinder_type')" class="sortable">
-                Cylinder Type <span v-if="sortKey === 'cylinder_type'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('supplier')" class="sortable">
-                Supplier <span v-if="sortKey === 'supplier'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('detector')" class="sortable">
-                Detector <span v-if="sortKey === 'detector'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('location')" class="sortable">
-                Location <span v-if="sortKey === 'location'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('status')" class="sortable">
-                Status <span v-if="sortKey === 'status'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('order_date')" class="sortable">
-                Order Date <span v-if="sortKey === 'order_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('receive_date')" class="sortable">
-                Receive Date <span v-if="sortKey === 'receive_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="sortBy('expiry_date')" class="sortable">
-                Expiry Date <span v-if="sortKey === 'expiry_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-              </th>
+              <th><input type="checkbox" @change="toggleSelectAll" :checked="selectedCylinders.length === filteredCylinders.length && filteredCylinders.length > 0" /></th>
+              <th @click="sortBy('label')" class="sortable">Label <span v-if="sortKey === 'label'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <th @click="sortBy('serial')" class="sortable">Serial <span v-if="sortKey === 'serial'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <!-- Changed to Cylinder Model -->
+              <th @click="sortBy('cylinder_model')" class="sortable">Cylinder Model <span v-if="sortKey === 'cylinder_model'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <th @click="sortBy('supplier')" class="sortable">Supplier <span v-if="sortKey === 'supplier'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <th @click="sortBy('detector')" class="sortable">Detector <span v-if="sortKey === 'detector'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <th @click="sortBy('location')" class="sortable">Location <span v-if="sortKey === 'location'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <th @click="sortBy('status')" class="sortable">Status <span v-if="sortKey === 'status'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <th @click="sortBy('order_date')" class="sortable">Order Date <span v-if="sortKey === 'order_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <th @click="sortBy('receive_date')" class="sortable">Receive Date <span v-if="sortKey === 'receive_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
+              <th @click="sortBy('expiry_date')" class="sortable">Expiry Date <span v-if="sortKey === 'expiry_date'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="cylinder in filteredCylinders" :key="cylinder.id">
-              <td>
-                <input
-                  type="checkbox"
-                  :value="cylinder.id"
-                  v-model="selectedCylinders"
-                />
-              </td>
-              <td>
-                <router-link :to="`/cylinders/${cylinder.id}`" class="cylinder-link">
-                  {{ cylinder.label }}
-                </router-link>
-              </td>
+              <td><input type="checkbox" :value="cylinder.id" v-model="selectedCylinders" /></td>
+              <td><router-link :to="`/cylinders/${cylinder.id}`" class="cylinder-link">{{ cylinder.label }}</router-link></td>
               <td>{{ cylinder.serial || 'N/A' }}</td>
-              <td>{{ getCylinderTypeLabel(cylinder.cylinder_type) || 'N/A' }}</td>
-              <td>{{ getCylinderTypeSupplier(cylinder.cylinder_type) || 'N/A' }}</td>
+              <td>{{ getCylinderModelLabel(cylinder.cylinder_model) || 'N/A' }}</td>
+              <td>{{ getCylinderModelSupplier(cylinder.cylinder_model) || 'N/A' }}</td>
               <td>{{ getDetectorLabel(cylinder.detector) || 'N/A' }}</td>
               <td>{{ getLocationLabel(cylinder.location) || 'N/A' }}</td>
               <td>{{ getStatusDisplay(cylinder.status) }}</td>
@@ -161,31 +82,15 @@
             </tr>
           </tbody>
         </table>
-
         <div v-if="loading" class="loading">Loading cylinders...</div>
         <div v-else-if="totalFilteredCylinders === 0" class="no-data">No cylinders found</div>
-
-        <!-- Pagination Controls -->
+        
         <div v-if="!loading && totalFilteredCylinders > 0" class="pagination-container">
-          <div class="pagination-info">
-            Showing {{ ((currentPage - 1) * cylindersPerPage) + 1 }} to
-            {{ Math.min(currentPage * cylindersPerPage, totalFilteredCylinders) }} of
-            {{ totalFilteredCylinders }} cylinders
-          </div>
+          <div class="pagination-info">Showing {{ ((currentPage - 1) * cylindersPerPage) + 1 }} to {{ Math.min(currentPage * cylindersPerPage, totalFilteredCylinders) }} of {{ totalFilteredCylinders }} cylinders</div>
           <div class="pagination-controls">
-            <button @click="prevPage" :disabled="currentPage === 1" class="btn btn-pagination">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-
+            <button @click="prevPage" :disabled="currentPage === 1" class="btn btn-pagination"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
             <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-
-            <button @click="nextPage" :disabled="currentPage === totalPages" class="btn btn-pagination">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+            <button @click="nextPage" :disabled="currentPage === totalPages" class="btn btn-pagination"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
           </div>
         </div>
       </div>
@@ -199,46 +104,34 @@ import { useRouter } from 'vue-router';
 import { get } from '@/utils/api';
 
 const router = useRouter();
-
-// State for cylinders data
 const cylinders = ref([]);
 const loading = ref(true);
 
-// State for related data
-const cylinderTypes = ref([]);
+const cylinderModels = ref([]); // Changed
 const locations = ref([]);
 const detectors = ref([]);
 const cylinderStatusChoices = ref([]);
 
-// State for sorting and filtering
 const sortKey = ref('label');
 const sortDirection = ref('asc');
 const searchTerm = ref('');
 const filterStatus = ref('');
 const filterLocation = ref('');
-const filterCylinderType = ref('');
+const filterCylinderModel = ref(''); // Changed
 const filterDetector = ref('');
 const filterExpiresBefore = ref('');
 const showEmptyCylinders = ref(false);
-
-// State for filter panel visibility
 const showFilters = ref(false);
 
-// State for pagination
 const currentPage = ref(1);
 const cylindersPerPage = ref(50);
-
-// State for selected cylinders
 const selectedCylinders = ref([]);
 
-// State for filtered results and totals
 const filteredCylindersResult = ref([]);
 const totalFilteredCylindersResult = ref(0);
 const totalPagesResult = ref(0);
 
-// Initialize state from localStorage
 onMounted(async () => {
-  // Load saved state from localStorage
   const savedState = localStorage.getItem('cylindersFilterState');
   if (savedState) {
     const state = JSON.parse(savedState);
@@ -248,424 +141,180 @@ onMounted(async () => {
     filterStatus.value = state.filterStatus || '';
     filterLocation.value = state.filterLocation || '';
     filterDetector.value = state.filterDetector || '';
-    filterCylinderType.value = state.filterCylinderType || '';
+    filterCylinderModel.value = state.filterCylinderModel || ''; // Changed
     filterExpiresBefore.value = state.filterExpiresBefore || '';
     showEmptyCylinders.value = state.showEmptyCylinders || false;
   }
 
-  // Load cylinder types, detectors, locations, and statuses first
-  await Promise.all([
-    fetchCylinderTypes(),
-    fetchDetectors(),
-    fetchLocations(),
-    fetchCylinderStatuses()
-  ]);
-
-  // Then load cylinders
+  await Promise.all([fetchCylinderModels(), fetchDetectors(), fetchLocations(), fetchCylinderStatuses()]);
   await fetchCylinders();
 });
 
-// Function to save state to localStorage
 const saveStateToLocalStorage = () => {
   const state = {
-    sortKey: sortKey.value,
-    sortDirection: sortDirection.value,
-    searchTerm: searchTerm.value,
-    filterStatus: filterStatus.value,
-    filterLocation: filterLocation.value,
-    filterDetector: filterDetector.value,
-    filterCylinderType: filterCylinderType.value,
-    filterExpiresBefore: filterExpiresBefore.value,
-    showEmptyCylinders: showEmptyCylinders.value
+    sortKey: sortKey.value, sortDirection: sortDirection.value, searchTerm: searchTerm.value,
+    filterStatus: filterStatus.value, filterLocation: filterLocation.value, filterDetector: filterDetector.value,
+    filterCylinderModel: filterCylinderModel.value, filterExpiresBefore: filterExpiresBefore.value, showEmptyCylinders: showEmptyCylinders.value
   };
   localStorage.setItem('cylindersFilterState', JSON.stringify(state));
 };
 
-// Toggle select all cylinders
 const toggleSelectAll = () => {
-  if (selectedCylinders.value.length === filteredCylinders.value.length) {
-    // If all are selected, deselect all
-    selectedCylinders.value = [];
-  } else {
-    // Otherwise, select all visible cylinders
-    selectedCylinders.value = filteredCylinders.value.map(cylinder => cylinder.id);
-  }
+  if (selectedCylinders.value.length === filteredCylinders.value.length) selectedCylinders.value = [];
+  else selectedCylinders.value = filteredCylinders.value.map(c => c.id);
 };
 
-// Open update multiple cylinders form
 const openUpdateMultipleCylinders = () => {
-  // Navigate to the update multiple cylinders page with selected cylinder IDs
-  router.push({
-    name: 'UpdateMultipleCylinders',
-    query: { ids: selectedCylinders.value.join(',') }
-  });
+  router.push({ name: 'UpdateMultipleCylinders', query: { ids: selectedCylinders.value.join(',') } });
 };
 
-// Watch for changes to filter/sort parameters and save to localStorage
-watch([sortKey, sortDirection, searchTerm, filterStatus, filterLocation, filterDetector, filterCylinderType, filterExpiresBefore, showEmptyCylinders], () => {
-  // Reset to first page when filters/sorting changes
+watch([sortKey, sortDirection, searchTerm, filterStatus, filterLocation, filterDetector, filterCylinderModel, filterExpiresBefore, showEmptyCylinders], () => {
   currentPage.value = 1;
   saveStateToLocalStorage();
 }, { deep: true });
 
-// Fetch cylinder types from the API
-const fetchCylinderTypes = async () => {
+const fetchCylinderModels = async () => {
   try {
-    const result = await get('/api/inventory/cylindertypes/');
-    if (!result.ok) {
-      throw new Error(`HTTP error! status: ${result.status}`);
-    }
-    cylinderTypes.value = result.data;
-  } catch (error) {
-    console.error('Error fetching cylinder types:', error);
-  }
+    const result = await get('/api/inventory/cylindermodels/');
+    if (result.ok) cylinderModels.value = result.data;
+  } catch (error) { console.error('Error fetching cylinder models:', error); }
 };
 
-// Fetch detectors from the API
 const fetchDetectors = async () => {
   try {
     const result = await get('/api/inventory/detectors/');
-    if (!result.ok) {
-      throw new Error(`HTTP error! status: ${result.status}`);
-    }
-    detectors.value = result.data;
-  } catch (error) {
-    console.error('Error fetching detectors:', error);
-  }
+    if (result.ok) detectors.value = result.data;
+  } catch (error) { console.error('Error fetching detectors:', error); }
 };
 
-// Fetch locations from the API
 const fetchLocations = async () => {
   try {
     const result = await get('/api/inventory/locations/');
-    if (!result.ok) {
-      throw new Error(`HTTP error! status: ${result.status}`);
-    }
-    locations.value = result.data;
-  } catch (error) {
-    console.error('Error fetching locations:', error);
-  }
+    if (result.ok) locations.value = result.data;
+  } catch (error) { console.error('Error fetching locations:', error); }
 };
 
-// Fetch cylinder statuses from the API
 const fetchCylinderStatuses = async () => {
   try {
     const result = await get('/api/inventory/cylinder-statuses/');
-    if (!result.ok) {
-      throw new Error(`HTTP error! status: ${result.status}`);
-    }
-    cylinderStatusChoices.value = result.data;
-  } catch (error) {
-    console.error('Error fetching cylinder statuses:', error);
-  }
+    if (result.ok) cylinderStatusChoices.value = result.data;
+  } catch (error) { console.error('Error fetching cylinder statuses:', error); }
 };
 
-// Fetch cylinders from the API
 const fetchCylinders = async () => {
   try {
     loading.value = true;
-
-    // Build query parameters based on filters
     const params = new URLSearchParams();
+    if (searchTerm.value) params.append('search', searchTerm.value);
+    if (filterStatus.value) params.append('status', filterStatus.value);
+    if (filterLocation.value) params.append('location', filterLocation.value);
+    if (filterDetector.value) params.append('detector', filterDetector.value);
+    if (filterCylinderModel.value) params.append('cylinder_model', filterCylinderModel.value); // Changed
+    if (filterExpiresBefore.value) params.append('expiry_date_lte', filterExpiresBefore.value);
+    if (!showEmptyCylinders.value) params.append('exclude_status', 'MT');
 
-    // Add search filter
-    if (searchTerm.value) {
-      params.append('search', searchTerm.value);
-    }
-
-    // Add status filter
-    if (filterStatus.value) {
-      params.append('status', filterStatus.value);
-    }
-
-    // Add location filter
-    if (filterLocation.value) {
-      params.append('location', filterLocation.value);
-    }
-
-    // Add detector filter
-    if (filterDetector.value) {
-      params.append('detector', filterDetector.value);
-    }
-
-    // Add cylinder type filter
-    if (filterCylinderType.value) {
-      params.append('cylinder_type', filterCylinderType.value);
-    }
-
-    // Add expires before filter to the API call
-    if (filterExpiresBefore.value) {
-      params.append('expiry_date_lte', filterExpiresBefore.value);
-    }
-
-    // Add exclude decommissioned/empty filter (default behavior when checkbox is not selected)
-    if (!showEmptyCylinders.value) {
-      params.append('exclude_status', 'MT');
-    }
-
-    // Build the URL with parameters
     let url = '/api/inventory/cylinders/';
-    if (params.toString()) {
-      url += '?' + params.toString();
-    }
+    if (params.toString()) url += '?' + params.toString();
 
-    // Fetch cylinders from the Django REST API
     const result = await get(url);
-
-    if (!result.ok) {
-      throw new Error(`HTTP error! status: ${result.status}`);
-    }
-
+    if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`);
     cylinders.value = result.data;
-
-    // Apply sorting and pagination after fetching
     performSortingAndPagination();
   } catch (error) {
     console.error('Error fetching cylinders:', error);
-    // In case of error, we could show a user-friendly message
   } finally {
     loading.value = false;
   }
 };
 
-// Get status label from choices
 const getStatusDisplay = (statusValue) => {
   if (!statusValue) return 'N/A';
   const choice = cylinderStatusChoices.value.find(c => c.value === statusValue);
   return choice ? choice.label : statusValue;
 };
 
-// Helper functions to get related object labels using local state
-const getLocationLabel = (locationId) => {
-  if (!locationId) return 'N/A';
-  const location = locations.value.find(loc => loc.id === locationId);
-  return location ? location.label : 'Unknown Location';
-}
+const getLocationLabel = (id) => locations.value.find(l => l.id === id)?.label || 'Unknown';
+const getDetectorLabel = (id) => detectors.value.find(d => d.id === id)?.label || 'Unknown';
 
-const getDetectorLabel = (detectorId) => {
-  if (!detectorId) return 'N/A';
-  const detector = detectors.value.find(d => d.id === detectorId);
-  return detector ? detector.label : 'Unknown Detector';
+const getCylinderModelLabel = (modelId) => {
+  if (!modelId) return 'N/A';
+  const model = cylinderModels.value.find(m => m.id === modelId);
+  return model ? model.part_number : 'Unknown Model';
 };
 
-const getCylinderTypeLabel = (cylinderTypeId) => {
-  if (!cylinderTypeId) return 'N/A';
-  const cylinderType = cylinderTypes.value.find(ct => ct.id === cylinderTypeId);
-  if (!cylinderType) return 'Unknown Cylinder Type';
-
-  return cylinderType.part_number;
+const getCylinderModelSupplier = (modelId) => {
+  if (!modelId) return 'N/A';
+  const model = cylinderModels.value.find(m => m.id === modelId);
+  if (!model) return 'Unknown Model';
+  const supplierMap = { 'AM': 'AirMet', 'AE': 'AES', 'MS': 'MSA', 'DR': 'Draeger' };
+  return supplierMap[model.supplier] || model.supplier;
 };
 
-// Helper function to get supplier from cylinder type
-const getCylinderTypeSupplier = (cylinderTypeId) => {
-  if (!cylinderTypeId) return 'N/A';
-  const cylinderType = cylinderTypes.value.find(ct => ct.id === cylinderTypeId);
-  if (!cylinderType) return 'Unknown Cylinder Type';
-
-  // Map supplier codes to their display names
-  const supplierMap = {
-    'AM': 'AirMet',
-    'AE': 'AES',
-    'MS': 'MSA',
-    'DR': 'Draeger'
-  };
-
-  return supplierMap[cylinderType.supplier] || cylinderType.supplier;
-};
-
-// Function to perform sorting and pagination
 const performSortingAndPagination = () => {
   let result = [...cylinders.value];
-
-  // Apply sorting
   if (sortKey.value) {
     result.sort((a, b) => {
       let valA = a[sortKey.value];
       let valB = b[sortKey.value];
-
-      // Handle nested properties
-      if (sortKey.value === 'location') {
-        valA = getLocationLabel(a.location) || '';
-        valB = getLocationLabel(b.location) || '';
-      } else if (sortKey.value === 'cylinder_type') {
-        valA = getCylinderTypeLabel(a.cylinder_type) || '';
-        valB = getCylinderTypeLabel(b.cylinder_type) || '';
-      } else if (sortKey.value === 'supplier') {
-        valA = getCylinderTypeSupplier(a.cylinder_type) || '';
-        valB = getCylinderTypeSupplier(b.cylinder_type) || '';
-      } else if (sortKey.value === 'receive_date' || sortKey.value === 'expiry_date' || sortKey.value === 'order_date') {
-        valA = valA ? new Date(valA) : new Date(0);
-        valB = valB ? new Date(valB) : new Date(0);
-      } else {
-        valA = valA || '';
-        valB = valB || '';
-      }
-
-      if (sortDirection.value === 'asc') {
-        return valA > valB ? 1 : -1;
-      } else {
-        return valA < valB ? 1 : -1;
-      }
+      if (sortKey.value === 'location') { valA = getLocationLabel(a.location) || ''; valB = getLocationLabel(b.location) || ''; }
+      else if (sortKey.value === 'cylinder_model') { valA = getCylinderModelLabel(a.cylinder_model) || ''; valB = getCylinderModelLabel(b.cylinder_model) || ''; } // Changed
+      else if (sortKey.value === 'supplier') { valA = getCylinderModelSupplier(a.cylinder_model) || ''; valB = getCylinderModelSupplier(b.cylinder_model) || ''; } // Changed
+      else if (['receive_date', 'expiry_date', 'order_date'].includes(sortKey.value)) { valA = valA ? new Date(valA) : new Date(0); valB = valB ? new Date(valB) : new Date(0); }
+      else { valA = valA || ''; valB = valB || ''; }
+      return sortDirection.value === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
     });
   }
-
-  // Store the total count
   totalFilteredCylindersResult.value = result.length;
-
-  // Calculate total pages
   totalPagesResult.value = Math.ceil(result.length / cylindersPerPage.value);
-
-  // Apply pagination
   const startIndex = (currentPage.value - 1) * cylindersPerPage.value;
-  const endIndex = startIndex + cylindersPerPage.value;
-  filteredCylindersResult.value = result.slice(startIndex, endIndex);
+  filteredCylindersResult.value = result.slice(startIndex, startIndex + cylindersPerPage.value);
 };
 
-// Watch for changes to filter parameters and re-fetch from API
-watch(
-  [searchTerm, filterStatus, filterLocation, filterDetector, filterCylinderType, filterExpiresBefore, showEmptyCylinders],
-  () => {
-    // Reset to first page when filters change
-    currentPage.value = 1;
-    fetchCylinders();
-  },
-  { deep: true }
-);
-
-// Watch for changes to sort/pagination parameters and re-sort locally
-watch(
-  [sortKey, sortDirection, currentPage],
-  () => {
-    performSortingAndPagination();
-  },
-  { deep: true }
-);
-
-// Computed property to get filtered and sorted cylinders
-const filteredCylinders = computed(() => {
-  return filteredCylindersResult.value;
-});
-
-// Computed property to get total number of pages
-const totalPages = computed(() => {
-  return totalPagesResult.value;
-});
-
-// Computed property to get the total number of filtered cylinders (before pagination)
-const totalFilteredCylinders = computed(() => {
-  return totalFilteredCylindersResult.value;
-});
-
-// Computed property to check if any filters are active
-const hasActiveFilters = computed(() => {
-  return searchTerm.value !== '' ||
-    filterStatus.value !== '' ||
-    filterLocation.value !== '' ||
-    filterDetector.value !== '' ||
-    filterCylinderType.value !== '' ||
-    filterExpiresBefore.value !== '' ||
-    showEmptyCylinders.value === true;
-});
-
-// Function to sort the table
-const sortBy = (key) => {
-  if (sortKey.value === key) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortKey.value = key;
-    sortDirection.value = 'asc';
-  }
-};
-
-// Function to filter cylinders (called on input)
-const filterCylinders = () => {
-  // Reset to first page when filtering
+watch([searchTerm, filterStatus, filterLocation, filterDetector, filterCylinderModel, filterExpiresBefore, showEmptyCylinders], () => {
   currentPage.value = 1;
-  // Filtering will be handled by the watcher
+  fetchCylinders();
+}, { deep: true });
+
+watch([sortKey, sortDirection, currentPage], () => { performSortingAndPagination(); }, { deep: true });
+
+const filteredCylinders = computed(() => filteredCylindersResult.value);
+const totalPages = computed(() => totalPagesResult.value);
+const totalFilteredCylinders = computed(() => totalFilteredCylindersResult.value);
+const hasActiveFilters = computed(() => searchTerm.value !== '' || filterStatus.value !== '' || filterLocation.value !== '' || filterDetector.value !== '' || filterCylinderModel.value !== '' || filterExpiresBefore.value !== '' || showEmptyCylinders.value === true);
+
+const sortBy = (key) => {
+  if (sortKey.value === key) sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  else { sortKey.value = key; sortDirection.value = 'asc'; }
 };
 
-// Function to toggle the filter panel
-const toggleFilters = () => {
-  showFilters.value = !showFilters.value;
-};
+const filterCylinders = () => { currentPage.value = 1; };
+const toggleFilters = () => { showFilters.value = !showFilters.value; };
 
-// Function to reset all filters
 const resetFilters = () => {
-  searchTerm.value = '';
-  filterStatus.value = '';
-  filterLocation.value = '';
-  filterDetector.value = '';
-  filterCylinderType.value = '';
-  filterExpiresBefore.value = '';
-  showEmptyCylinders.value = false;
-  sortKey.value = 'label';
-  sortDirection.value = 'asc';
-  currentPage.value = 1; // Reset to first page when filters are reset
-
-  // Clear the saved state in localStorage
+  searchTerm.value = ''; filterStatus.value = ''; filterLocation.value = ''; filterDetector.value = '';
+  filterCylinderModel.value = ''; filterExpiresBefore.value = ''; showEmptyCylinders.value = false;
+  sortKey.value = 'label'; sortDirection.value = 'asc'; currentPage.value = 1;
   localStorage.removeItem('cylindersFilterState');
-
-  // Filtering will be handled by the watcher
 };
 
-// Pagination functions
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-};
+const goToPage = (page) => { if (page >= 1 && page <= totalPages.value) currentPage.value = page; };
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
-};
-
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
-};
-
-// Function to download the table as PDF from backend
 const downloadPDF = () => {
-  // Build URL with current filters
   const params = new URLSearchParams();
-
-  if (searchTerm.value) {
-    params.append('search', searchTerm.value);
-  }
-  if (filterStatus.value) {
-    params.append('status', filterStatus.value);
-  }
-  if (filterCylinderType.value) {
-    params.append('cylinder_type', filterCylinderType.value);
-  }
-  if (filterLocation.value) {
-    params.append('location', filterLocation.value);
-  }
-  if (filterExpiresBefore.value) {
-    params.append('expiry_date_lte', filterExpiresBefore.value);
-  }
-  if (showEmptyCylinders.value) {
-    params.append('show_empty', 'true');
-  }
-  
-  // Add sort parameters
-  if (sortKey.value) {
-    params.append('sort_key', sortKey.value);
-  }
-  if (sortDirection.value) {
-    params.append('sort_direction', sortDirection.value);
-  }
-  
-  // Add cache-busting timestamp
+  if (searchTerm.value) params.append('search', searchTerm.value);
+  if (filterStatus.value) params.append('status', filterStatus.value);
+  if (filterCylinderModel.value) params.append('cylinder_model', filterCylinderModel.value); // Changed
+  if (filterLocation.value) params.append('location', filterLocation.value);
+  if (filterExpiresBefore.value) params.append('expiry_date_lte', filterExpiresBefore.value);
+  if (showEmptyCylinders.value) params.append('show_empty', 'true');
+  if (sortKey.value) params.append('sort_key', sortKey.value);
+  if (sortDirection.value) params.append('sort_direction', sortDirection.value);
   params.append('_t', Date.now().toString());
 
   const queryString = params.toString();
   const url = `/api/inventory/pdf/cylinders/${queryString ? `?${queryString}` : ''}`;
-
-  // Open in new tab or download directly
   window.open(url, '_blank');
 };
 </script>

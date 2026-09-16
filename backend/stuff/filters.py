@@ -204,6 +204,7 @@ class CylinderFilter(filters.FilterSet):
             'serial',
             'location',
             'status',
+            'cylinder_model',
             'cylinder_model__part_number',
             'expiry_date_lte',
             'expiry_date_gte',
