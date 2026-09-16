@@ -93,9 +93,10 @@ class MaintenanceTaskAdmin(admin.ModelAdmin):
 
 @admin.register(CylinderType)
 class CylinderTypeAdmin(admin.ModelAdmin):
-    list_display = ("id", "part_number", "supplier", "volume", "balance_gas", "active")
-    list_filter = ("active", "supplier", "volume")
-    search_fields = ("part_number",)
+    # Removed part_number, supplier, and volume as they are now on CylinderModel
+    list_display = ("id", "balance_gas", "cylinder_1_gas", "cylinder_1_conc", "cylinder_1_units", "active")
+    list_filter = ("active", "balance_gas", "cylinder_1_gas")
+    # Removed search_fields for part_number
 
 @admin.register(CylinderModel)
 class CylinderModelAdmin(admin.ModelAdmin):
@@ -106,10 +107,11 @@ class CylinderModelAdmin(admin.ModelAdmin):
 
 @admin.register(Cylinder)
 class CylinderAdmin(admin.ModelAdmin):
-    list_display = ("label", "serial", "cylinder_type", "location", "detector", "status", "expiry_date")
-    list_filter = ("status", "cylinder_type", "location")
+    # Changed cylinder_type to cylinder_model
+    list_display = ("label", "serial", "cylinder_model", "location", "detector", "status", "expiry_date")
+    list_filter = ("status", "cylinder_model", "location")
     search_fields = ("cylinder_number", "serial", "location__label", "detector__label")
-    raw_id_fields = ("cylinder_type", "location", "detector")
+    raw_id_fields = ("cylinder_model", "location", "detector") # Changed cylinder_type to cylinder_model
 
 
 @admin.register(CylinderFault)

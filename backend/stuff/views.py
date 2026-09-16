@@ -516,7 +516,7 @@ def cylinders_pdf(request):
     if sort_direction.lower() == 'desc':
         sort_field = f'-{sort_field}'
 
-    cylinders = Cylinder.objects.select_related('cylinder_type', 'location', 'detector').order_by(sort_field)
+    cylinders = Cylinder.objects.select_related('cylinder_model', 'location', 'detector').order_by(sort_field)
 
     if search:
         query = models.Q(serial__icontains=search)
