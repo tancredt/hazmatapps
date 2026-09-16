@@ -13,6 +13,7 @@ from .models import (
     Maintenance,
     MaintenanceTask,
     CylinderType,
+    CylinderModel,
     Cylinder,
     CylinderFault,
     SensorType,
@@ -165,7 +166,6 @@ class MaintenanceTaskFilter(filters.FilterSet):
         model = MaintenanceTask
         fields = ['maintenance', 'task_type']
 
-
 class CylinderTypeFilter(filters.FilterSet):
     active = filters.BooleanFilter()
 
@@ -173,6 +173,15 @@ class CylinderTypeFilter(filters.FilterSet):
         model = CylinderType
         fields = ['active']
 
+class CylinderModelFilter(filters.FilterSet):
+    part_number = filters.CharFilter(lookup_expr='icontains')
+    supplier = filters.CharFilter(lookup_expr='iexact')
+    volume = filters.CharFilter(lookup_expr='iexact')
+    cylinder_type = filters.NumberFilter()
+
+    class Meta:
+        model = CylinderModel
+        fields = ['part_number', 'supplier', 'volume', 'cylinder_type']
 
 class CylinderFilter(filters.FilterSet):
     cylinder_number = filters.NumberFilter()
@@ -180,7 +189,7 @@ class CylinderFilter(filters.FilterSet):
     location__label = filters.CharFilter(lookup_expr='iexact')
     location = filters.NumberFilter()
     status = filters.CharFilter(lookup_expr='iexact')
-    cylinder_type__part_number = filters.CharFilter(lookup_expr='icontains')
+    cylinder_model__part_number = filters.CharFilter(lookup_expr='icontains')
     expiry_date_lte = filters.DateFilter(field_name='expiry_date', lookup_expr='lte')
     expiry_date_gte = filters.DateFilter(field_name='expiry_date', lookup_expr='gte')
     exclude_status = filters.CharFilter(field_name='status', lookup_expr='iexact', exclude=True)
@@ -195,39 +204,11 @@ class CylinderFilter(filters.FilterSet):
             'serial',
             'location',
             'status',
-            'cylinder_type__part_number',
+            'cylinder_model__part_number',
             'expiry_date_lte',
             'expiry_date_gte',
             'exclude_status',
         ]
-
-    def filter_label(self, queryset, name, value):
-        value = value.strip().upper()
-        if not value:
-            return queryset
-        if value.startswith('CYL'):
-            value = value[3:]
-        if not value.isdigit():
-            return queryset.none()
-        cylinder_number = int(value)
-        if cylinder_number <= 0:
-            return queryset.none()
-        return queryset.filter(cylinder_number=cylinder_number)
-
-    def filter_search(self, queryset, name, value):
-        value = value.strip()
-        if not value:
-            return queryset
-        predicate = Q(serial__icontains=value)
-        numeric_value = value.upper()
-        if numeric_value.startswith('CYL'):
-            numeric_value = numeric_value[3:]
-        if numeric_value.isdigit():
-            cylinder_number = int(numeric_value)
-            if cylinder_number > 0:
-                predicate |= Q(cylinder_number=cylinder_number)
-        return queryset.filter(predicate)
-
 
 class SensorTypeFilter(filters.FilterSet):
     active = filters.BooleanFilter()

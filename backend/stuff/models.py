@@ -387,11 +387,6 @@ class MaintenanceTask(models.Model):
 
 
 class CylinderType(models.Model):
-    part_number = models.CharField(max_length=16, unique=True)
-    supplier = models.CharField(max_length=2, choices=Supplier.choices, default=Supplier.AES)
-    volume = models.CharField(max_length=4, choices=CylinderVolume.choices, default=CylinderVolume.L34)
-    percent_error = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    expiry_months = models.PositiveIntegerField(null=True)
     balance_gas = models.CharField(max_length=2, choices=CylinderGas.choices, default=CylinderGas.CO)
     active = models.BooleanField(default=True)
     cylinder_1_gas = models.CharField(max_length=2, choices=CylinderGas.choices, default=CylinderGas.CO)
@@ -409,12 +404,11 @@ class CylinderType(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["part_number"]),
             models.Index(fields=["cylinder_1_gas"]),
         ]
 
     def __str__(self):
-        retstring = f"{self.part_number} - {self.get_cylinder_1_gas_display()}({self.cylinder_1_conc} {self.get_cylinder_1_units_display()})"
+        retstring = f"{self.get_cylinder_1_gas_display()}({self.cylinder_1_conc} {self.get_cylinder_1_units_display()})"
         if self.cylinder_2_gas != "":
             retstring += f"/{self.get_cylinder_2_gas_display()}({self.cylinder_2_conc} {self.get_cylinder_2_units_display()})"
             if self.cylinder_3_gas != "":
@@ -424,11 +418,23 @@ class CylinderType(models.Model):
         return retstring
 
 
+class CylinderModel(models.Model):
+    part_number = models.CharField(max_length=16, unique=True)
+    supplier = models.CharField(max_length=2, choices=Supplier.choices, default=Supplier.AES)
+    volume = models.CharField(max_length=4, choices=CylinderVolume.choices, default=CylinderVolume.L34)
+    percent_error = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    expiry_months = models.PositiveIntegerField(null=True)
+    cylinder_type = models.ForeignKey(CylinderType, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return f"{self.part-number} ({self.get_supplier_display()})"
+    
 class Cylinder(models.Model):
     cylinder_number = models.IntegerField(unique=True)
     serial = models.CharField(max_length=16, null=True, blank=True)
-    cylinder_type = models.ForeignKey(CylinderType, on_delete=models.PROTECT)
+    cylinder_model = models.ForeignKey(CylinderModel, on_delete=models.PROTECT)
     location = models.ForeignKey(Location, on_delete=models.PROTECT)
+    #optional association with calibration station
     detector = models.ForeignKey(Detector, on_delete=models.PROTECT, null=True)
     status = models.CharField(
         max_length=2,
@@ -442,14 +448,14 @@ class Cylinder(models.Model):
     empty_date = models.DateField(null=True, blank=True)
 
     class Meta:
-        ordering = ["cylinder_type", "receive_date"]
+        ordering = ["cylinder_model", "receive_date"]
 
     @property
     def label(self):
         return f"CYL{self.cylinder_number:05d}"
 
     def __str__(self):
-        return f"{self.label} - {self.cylinder_type.part_number} ({self.get_status_display()})"
+        return f"{self.label} - {self.cylinder_model.part_number} ({self.get_status_display()})"
 
 
 class CylinderFault(models.Model):

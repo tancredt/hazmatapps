@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 from .views import (
-    CylinderFaultViewSet, CylinderGasView, CylinderStatusView, CylinderTypeViewSet,
+    CylinderFaultViewSet, CylinderGasView, CylinderStatusView, CylinderTypeViewSet, CylinderModelViewSet, 
     CylinderUnitView, CylinderViewSet, CylinderVolumeView, DetectorFaultTypeView,
     DetectorFaultViewSet, DetectorModelConfigurationViewSet, DetectorModelViewSet,
     DetectorStatusView, DetectorTypeView, DetectorViewSet, DistrictView,
@@ -29,6 +29,7 @@ router.register(r"maintenances", MaintenanceViewSet)
 router.register(r"maintenancetasks", MaintenanceTaskViewSet)
 router.register(r"detectorfaults", DetectorFaultViewSet)
 router.register(r"cylindertypes", CylinderTypeViewSet)
+router.register(r"cylindermodels", CylinderModelViewSet)
 router.register(r"cylinders", CylinderViewSet)
 router.register(r"cylinderfaults", CylinderFaultViewSet)
 router.register(r"locationdetectorslots", LocationDetectorSlotViewSet)

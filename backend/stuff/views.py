@@ -25,6 +25,7 @@ from .models import (
     DetectorFault,
     Cylinder,
     CylinderType,
+    CylinderModel,
     CylinderFault,
     CylinderGas,
     LocationDetectorSlot,
@@ -56,6 +57,7 @@ from .serializers import (
     DetectorFaultSerializer,
     CylinderSerializer,
     CylinderTypeSerializer,
+    CylinderModelSerializer,
     CylinderFaultSerializer,
     LocationDetectorSlotSerializer,
     LocationDetectorLogSerializer,
@@ -92,6 +94,7 @@ from .filters import (
     MaintenanceTaskFilter,
     CylinderFilter,
     CylinderTypeFilter,
+    CylinderModelFilter,
     CylinderFaultFilter,
     LocationDetectorSlotFilter,
     LocationDetectorLogFilter,
@@ -283,6 +286,11 @@ class CylinderTypeViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = CylinderTypeFilter
 
+class CylinderModelViewSet(viewsets.ModelViewSet):
+    serializer_class = CylinderModelSerializer
+    queryset = CylinderModel.objects.all()
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = CylinderModelFilter
 
 class CylinderViewSet(viewsets.ModelViewSet):
     serializer_class = CylinderSerializer
@@ -495,8 +503,8 @@ def cylinders_pdf(request):
     sort_field_map = {
         'label': 'cylinder_number',
         'serial': 'serial',
-        'cylinder_type': 'cylinder_type__part_number',
-        'supplier': 'cylinder_type__supplier',
+        'cylinder_type': 'cylinder_model__part_number',
+        'supplier': 'cylinder_model__supplier',
         'detector': 'detector__label',
         'location': 'location__label',
         'status': 'status',
@@ -521,7 +529,7 @@ def cylinders_pdf(request):
     if status:
         cylinders = cylinders.filter(status=status)
     if cylinder_type:
-        cylinders = cylinders.filter(cylinder_type=cylinder_type)
+        cylinders = cylinders.filter(cylinder_model__cylinder_type=cylinder_type)
     if location:
         cylinders = cylinders.filter(location=location)
     if expiry_date_lte:

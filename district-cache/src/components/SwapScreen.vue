@@ -222,7 +222,6 @@ const submitReason = async () => {
         message = "Leave the cache detector at the station and return the faulty detector to Burnley"
       }
       removedLocId = swap.trLocation.id
-      // 🎯 FIX 1: Changed from 'OF' to 'TR' (In Transit)
       removedStatus = 'TR' 
     }
 

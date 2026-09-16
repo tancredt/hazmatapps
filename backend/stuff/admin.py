@@ -10,6 +10,7 @@ from .models import (
     Maintenance,
     MaintenanceTask,
     CylinderType,
+    CylinderModel,
     Cylinder,
     CylinderFault,
     SensorType,
@@ -96,6 +97,12 @@ class CylinderTypeAdmin(admin.ModelAdmin):
     list_filter = ("active", "supplier", "volume")
     search_fields = ("part_number",)
 
+@admin.register(CylinderModel)
+class CylinderModelAdmin(admin.ModelAdmin):
+    list_display = ("id", "part_number", "supplier", "volume", "cylinder_type", "percent_error", "expiry_months")
+    list_filter = ("supplier", "volume", "cylinder_type")
+    search_fields = ("part_number",)
+    raw_id_fields = ("cylinder_type",)
 
 @admin.register(Cylinder)
 class CylinderAdmin(admin.ModelAdmin):

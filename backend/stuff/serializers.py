@@ -11,6 +11,7 @@ from .models import (
     MaintenanceTask,
     DetectorFault,
     CylinderType,
+    CylinderModel,
     Cylinder,
     CylinderFault,
     LocationType,
@@ -278,12 +279,15 @@ class DetectorFaultSerializer(serializers.ModelSerializer):
         model = DetectorFault
         fields = "__all__"
 
-
 class CylinderTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CylinderType
         fields = "__all__"
 
+class CylinderModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CylinderModel
+        fields = "__all__"
 
 class CylinderSerializer(serializers.ModelSerializer):
     order_date = serializers.DateField(allow_null=True, required=False)
@@ -291,7 +295,7 @@ class CylinderSerializer(serializers.ModelSerializer):
     expiry_date = serializers.DateField(allow_null=True, required=False)
     operational_date = serializers.DateField(allow_null=True, required=False)
     empty_date = serializers.DateField(allow_null=True, required=False)
-
+    
     class Meta:
         model = Cylinder
         exclude = ['cylinder_number']
@@ -308,7 +312,6 @@ class CylinderSerializer(serializers.ModelSerializer):
             next_number = (last_cylinder['cylinder_number__max'] or 0) + 1
             validated_data['cylinder_number'] = next_number
             return super().create(validated_data)
-
 
 class SensorTypeSerializer(serializers.ModelSerializer):
     class Meta:
