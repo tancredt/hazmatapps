@@ -385,21 +385,28 @@ class MaintenanceTask(models.Model):
 
 ###############---cylinders----------------##################
 
+# backend/stuff/models.py
 
 class CylinderType(models.Model):
     balance_gas = models.CharField(max_length=2, choices=CylinderGas.choices, default=CylinderGas.CO)
     active = models.BooleanField(default=True)
-    cylinder_1_gas = models.CharField(max_length=2, choices=CylinderGas.choices, default=CylinderGas.CO)
-    cylinder_1_conc = models.DecimalField(max_digits=8, decimal_places=2)
-    cylinder_1_units = models.CharField(max_length=2, choices=CylinderUnit.choices, default=CylinderUnit.PPM)
+    
+    # --- Gas 1 (Now Optional) ---
+    cylinder_1_gas = models.CharField(max_length=2, choices=CylinderGas.choices, blank=True)
+    cylinder_1_conc = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    cylinder_1_units = models.CharField(max_length=2, choices=CylinderUnit.choices, blank=True)
+    
+    # --- Gas 2, 3, 4 (Already Optional) ---
     cylinder_2_gas = models.CharField(max_length=2, choices=CylinderGas.choices, blank=True)
-    cylinder_2_conc = models.DecimalField(max_digits=8, decimal_places=2, null=True)
+    cylinder_2_conc = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     cylinder_2_units = models.CharField(max_length=2, choices=CylinderUnit.choices, blank=True)
+    
     cylinder_3_gas = models.CharField(max_length=2, choices=CylinderGas.choices, blank=True)
-    cylinder_3_conc = models.DecimalField(max_digits=8, decimal_places=2, null=True)
+    cylinder_3_conc = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     cylinder_3_units = models.CharField(max_length=2, choices=CylinderUnit.choices, blank=True)
+    
     cylinder_4_gas = models.CharField(max_length=2, choices=CylinderGas.choices, blank=True)
-    cylinder_4_conc = models.DecimalField(max_digits=8, decimal_places=2, null=True)
+    cylinder_4_conc = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     cylinder_4_units = models.CharField(max_length=2, choices=CylinderUnit.choices, blank=True)
 
     class Meta:
@@ -408,15 +415,18 @@ class CylinderType(models.Model):
         ]
 
     def __str__(self):
-        retstring = f"{self.get_cylinder_1_gas_display()}({self.cylinder_1_conc} {self.get_cylinder_1_units_display()})"
-        if self.cylinder_2_gas != "":
-            retstring += f"/{self.get_cylinder_2_gas_display()}({self.cylinder_2_conc} {self.get_cylinder_2_units_display()})"
-            if self.cylinder_3_gas != "":
-                retstring += f"/{self.get_cylinder_3_gas_display()}({self.cylinder_3_conc} {self.get_cylinder_3_units_display()})"
-                if self.cylinder_4_gas != "":
-                    retstring += f"/{self.get_cylinder_4_gas_display()}({self.cylinder_4_conc} {self.get_cylinder_4_units_display()})"
-        return retstring
-
+        # Updated __str__ to handle optional Gas 1 gracefully
+        parts = []
+        if self.cylinder_1_gas:
+            parts.append(f"{self.get_cylinder_1_gas_display()}({self.cylinder_1_conc} {self.get_cylinder_1_units_display()})")
+        if self.cylinder_2_gas:
+            parts.append(f"{self.get_cylinder_2_gas_display()}({self.cylinder_2_conc} {self.get_cylinder_2_units_display()})")
+        if self.cylinder_3_gas:
+            parts.append(f"{self.get_cylinder_3_gas_display()}({self.cylinder_3_conc} {self.get_cylinder_3_units_display()})")
+        if self.cylinder_4_gas:
+            parts.append(f"{self.get_cylinder_4_gas_display()}({self.cylinder_4_conc} {self.get_cylinder_4_units_display()})")
+            
+        return "/".join(parts) if parts else f"Balance: {self.get_balance_gas_display()}"
 
 class CylinderModel(models.Model):
     part_number = models.CharField(max_length=16, unique=True)
