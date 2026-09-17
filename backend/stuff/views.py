@@ -26,6 +26,8 @@ from .models import (
     Cylinder,
     CylinderType,
     CylinderModel,
+    LocationCylinderSlot,
+    LocationCylinderLog,
     CylinderFault,
     CylinderGas,
     LocationDetectorSlot,
@@ -58,6 +60,8 @@ from .serializers import (
     CylinderSerializer,
     CylinderTypeSerializer,
     CylinderModelSerializer,
+    LocationCylinderSlotSerializer,
+    LocationCylinderLogSerializer,
     CylinderFaultSerializer,
     LocationDetectorSlotSerializer,
     LocationDetectorLogSerializer,
@@ -95,6 +99,8 @@ from .filters import (
     CylinderFilter,
     CylinderTypeFilter,
     CylinderModelFilter,
+    LocationCylinderSlotFilter,
+    LocationCylinderLogFilter,
     CylinderFaultFilter,
     LocationDetectorSlotFilter,
     LocationDetectorLogFilter,
@@ -298,7 +304,18 @@ class CylinderViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = CylinderFilter
 
+class LocationCylinderSlotViewSet(viewsets.ModelViewSet):
+    serializer_class = LocationCylinderSlotSerializer
+    queryset = LocationCylinderSlot.objects.all()
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = LocationCylinderSlotFilter
 
+class LocationCylinderLogViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = LocationCylinderLogSerializer
+    queryset = LocationCylinderLog.objects.all()
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = LocationCylinderLogFilter
+    
 class SensorTypeViewSet(viewsets.ModelViewSet):
     serializer_class = SensorTypeSerializer
     queryset = SensorType.objects.all()

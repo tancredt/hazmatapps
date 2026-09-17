@@ -15,6 +15,8 @@ from .models import (
     CylinderType,
     CylinderModel,
     Cylinder,
+    LocationCylinderSlot,
+    LocationCylinderLog,
     CylinderFault,
     SensorType,
     Sensor,
@@ -211,6 +213,43 @@ class CylinderFilter(filters.FilterSet):
             'exclude_status',
         ]
 
+class LocationCylinderSlotFilter(filters.FilterSet):
+    location = filters.NumberFilter()
+    location__label = filters.CharFilter(lookup_expr='iexact')
+    location__location_type = filters.CharFilter(lookup_expr='iexact')
+    cylinder_type = filters.NumberFilter()
+
+    class Meta:
+        model = LocationCylinderSlot
+        fields = ['location', 'location__label', 'location__location_type', 'cylinder_type']
+
+class LocationCylinderLogFilter(filters.FilterSet):
+    cylinder = filters.NumberFilter()
+    cylinder_label = filters.CharFilter(lookup_expr='iexact')
+    new_location = filters.NumberFilter()
+    new_location__label = filters.CharFilter(lookup_expr='iexact')
+    new_location__district = filters.CharFilter(lookup_expr='iexact')
+    old_location = filters.NumberFilter()
+    old_location__label = filters.CharFilter(lookup_expr='iexact')
+    old_location__district = filters.CharFilter(lookup_expr='iexact')
+    updated_gte = filters.DateTimeFilter(field_name='updated', lookup_expr='gte')
+    updated_lte = filters.DateTimeFilter(field_name='updated', lookup_expr='lte')
+    district = filters.CharFilter(method='filter_district')
+
+    def filter_district(self, queryset, name, value):
+        from django.db.models import Q
+        return queryset.filter(
+            Q(new_location__district=value) | Q(old_location__district=value)
+        ).distinct()
+
+    class Meta:
+        model = LocationCylinderLog
+        fields = [
+            'cylinder', 'cylinder_label', 'new_location', 'new_location__label',
+            'new_location__district', 'old_location', 'old_location__label',
+            'old_location__district', 'updated_gte', 'updated_lte', 'district'
+        ]
+        
 class SensorTypeFilter(filters.FilterSet):
     active = filters.BooleanFilter()
     part_number = filters.CharFilter(lookup_expr='icontains')

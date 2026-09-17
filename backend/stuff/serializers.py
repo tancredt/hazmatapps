@@ -13,6 +13,8 @@ from .models import (
     CylinderType,
     CylinderModel,
     Cylinder,
+    LocationCylinderSlot,
+    LocationCylinderLog,
     CylinderFault,
     LocationType,
     Manufacturer,
@@ -313,6 +315,27 @@ class CylinderSerializer(serializers.ModelSerializer):
             validated_data['cylinder_number'] = next_number
             return super().create(validated_data)
 
+class LocationCylinderSlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationCylinderSlot
+        fields = "__all__"
+
+class LocationCylinderLogSerializer(serializers.ModelSerializer):
+    new_location_label = serializers.CharField(source="new_location.label", read_only=True)
+    new_location_district = serializers.CharField(source="new_location.district", read_only=True)
+    old_location_label = serializers.CharField(source="old_location.label", read_only=True, allow_null=True)
+    old_location_district = serializers.CharField(source="old_location.district", read_only=True, allow_null=True)
+    cylinder_label = serializers.CharField(source="cylinder.label", read_only=True)
+
+    class Meta:
+        model = LocationCylinderLog
+        fields = [
+            "id", "new_location", "new_location_label", "new_location_district",
+            "old_location", "old_location_label", "old_location_district",
+            "cylinder", "cylinder_label", "updated"
+        ]
+        read_only_fields = fields
+        
 class SensorTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SensorType

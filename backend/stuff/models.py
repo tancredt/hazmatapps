@@ -195,9 +195,7 @@ class District(models.TextChoices):
     EASTERN1 = "E1", "E1"
     ALL = "AL", "AL"
 
-
 ###############-----Main Models----------#######################
-
 
 class Location(models.Model):
     label = models.CharField(max_length=24, unique=True)
@@ -439,12 +437,36 @@ class CylinderModel(models.Model):
     def __str__(self):
         return f"{self.part_number} ({self.get_supplier_display()})"
     
+@pgtrigger.register(
+    pgtrigger.Trigger( # Note: Ensure this matches your existing pgtrigger.Trigger syntax
+        name="log_cylinder_location_change",
+        when=pgtrigger.Before,
+        operation=pgtrigger.Update | pgtrigger.Insert,
+        func="""
+        IF (TG_OP = 'UPDATE' AND OLD.location_id IS DISTINCT FROM NEW.location_id)
+        OR TG_OP = 'INSERT' THEN
+            INSERT INTO stuff_locationcylinderlog (
+                new_location_id,
+                old_location_id,
+                cylinder_id,
+                updated
+            )
+            VALUES (
+                NEW.location_id,
+                CASE WHEN TG_OP = 'UPDATE' THEN OLD.location_id ELSE NULL END,
+                NEW.id,
+                NOW()
+            );
+        END IF;
+        RETURN NEW;
+        """
+    )
+)
 class Cylinder(models.Model):
     cylinder_number = models.IntegerField(unique=True)
     serial = models.CharField(max_length=16, null=True, blank=True)
     cylinder_model = models.ForeignKey(CylinderModel, on_delete=models.PROTECT)
     location = models.ForeignKey(Location, on_delete=models.PROTECT)
-    #optional association with calibration station
     detector = models.ForeignKey(Detector, on_delete=models.PROTECT, null=True)
     status = models.CharField(
         max_length=2,
@@ -467,6 +489,27 @@ class Cylinder(models.Model):
     def __str__(self):
         return f"{self.label} - {self.cylinder_model.part_number} ({self.get_status_display()})"
 
+class LocationCylinderSlot(models.Model):
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="cylinder_type_slots")
+    cylinder_type = models.ForeignKey(CylinderType, on_delete=models.CASCADE, related_name="location_slots")
+
+    def __str__(self):
+        return f"{self.location.label} - Cylinder Type {self.cylinder_type.id}"
+
+class LocationCylinderLog(models.Model):
+    new_location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="cylinder_new_location_logs")
+    old_location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="cylinder_old_location_logs", null=True, blank=True)
+    cylinder = models.ForeignKey(Cylinder, on_delete=models.CASCADE, related_name="location_logs")
+    updated = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-updated"]
+        verbose_name = "Location Cylinder Log"
+        verbose_name_plural = "Location Cylinder Logs"
+
+    def __str__(self):
+        old_label = self.old_location.label if self.old_location else "N/A"
+        return f"{self.cylinder.label} {old_label} -> {self.new_location.label} @ {self.updated}"
 
 class CylinderFault(models.Model):
     cylinder = models.ForeignKey(Cylinder, on_delete=models.CASCADE)

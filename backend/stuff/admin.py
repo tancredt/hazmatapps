@@ -12,6 +12,8 @@ from .models import (
     CylinderType,
     CylinderModel,
     Cylinder,
+    LocationCylinderSlot,
+    LocationCylinderLog,
     CylinderFault,
     SensorType,
     Sensor,
@@ -90,13 +92,11 @@ class MaintenanceTaskAdmin(admin.ModelAdmin):
     search_fields = ("maintenance__detector__label", "maintenance__detector__serial")
     raw_id_fields = ("maintenance",)
 
-
 @admin.register(CylinderType)
 class CylinderTypeAdmin(admin.ModelAdmin):
-    # Removed part_number, supplier, and volume as they are now on CylinderModel
     list_display = ("id", "balance_gas", "cylinder_1_gas", "cylinder_1_conc", "cylinder_1_units", "active")
     list_filter = ("active", "balance_gas", "cylinder_1_gas")
-    # Removed search_fields for part_number
+    search_fields = ("id", "balance_gas", "cylinder_1_gas") 
 
 @admin.register(CylinderModel)
 class CylinderModelAdmin(admin.ModelAdmin):
@@ -112,6 +112,21 @@ class CylinderAdmin(admin.ModelAdmin):
     list_filter = ("status", "cylinder_model", "location")
     search_fields = ("cylinder_number", "serial", "location__label", "detector__label")
     raw_id_fields = ("cylinder_model", "location", "detector") # Changed cylinder_type to cylinder_model
+
+@admin.register(LocationCylinderSlot)
+class LocationCylinderSlotAdmin(admin.ModelAdmin):
+    list_display = ("id", "location", "cylinder_type")
+    search_fields = ("location__label", "cylinder_type__id")
+    autocomplete_fields = ("location", "cylinder_type")
+
+@admin.register(LocationCylinderLog)
+class LocationCylinderLogAdmin(admin.ModelAdmin):
+    list_display = ("id", "cylinder", "old_location", "new_location", "updated")
+    list_filter = ("new_location", "old_location", "updated")
+    search_fields = ("cylinder__cylinder_number", "new_location__label", "old_location__label")
+    raw_id_fields = ("cylinder", "new_location", "old_location")
+    readonly_fields = ("cylinder", "new_location", "old_location", "updated")
+    ordering = ("-updated",)
 
 
 @admin.register(CylinderFault)

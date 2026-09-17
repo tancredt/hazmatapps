@@ -100,6 +100,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/location-cylinder-slots',
+      name: 'LocationCylinderSlots',
+      component: () => import('@/components/LocationCylinderSlots.vue'),
+      meta: { requiresAuth: true, title: 'Location Cylinder Slots - FRV Hazmat Equipment Inventory' }
+    },
+    {
       path: '/sensors',
       name: 'Sensors',
       component: () => import('@/components/Sensors.vue'),

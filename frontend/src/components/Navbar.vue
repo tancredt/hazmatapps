@@ -22,7 +22,8 @@
       <div class="dropdown">
         <button class="dropdown-button nav-link">Locations</button>
         <div class="dropdown-content">
-          <router-link to="/location-slots" class="dropdown-item">Location Slots</router-link>
+          <router-link to="/location-slots" class="dropdown-item">Location Detector Slots</router-link>
+          <router-link to="/location-cylinder-slots" class="dropdown-item">Location Cylinder Slots</router-link>
         </div>
       </div>
       
