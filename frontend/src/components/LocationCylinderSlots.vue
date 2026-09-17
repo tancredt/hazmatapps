@@ -101,21 +101,68 @@ const filterDistrict = ref('');
 const filterLocationType = ref('');
 const filterCylinderType = ref('');
 
-const getCylinderTypeLabel = (typeId) => {
-  if (!typeId) return 'N/A';
-  const type = cylinderTypes.value.find(t => t.id === typeId);
-  if (!type) return 'Unknown Type';
-  const parts = [];
-  if (type.cylinder_1_gas) parts.push(`${type.cylinder_1_gas}(${type.cylinder_1_conc}${type.cylinder_1_units})`);
-  if (type.cylinder_2_gas) parts.push(`${type.cylinder_2_gas}(${type.cylinder_2_conc}${type.cylinder_2_units})`);
-  if (type.cylinder_3_gas) parts.push(`${type.cylinder_3_gas}(${type.cylinder_3_conc}${type.cylinder_3_units})`);
-  if (type.cylinder_4_gas) parts.push(`${type.cylinder_4_gas}(${type.cylinder_4_conc}${type.cylinder_4_units})`);
-  return parts.length > 0 ? parts.join('/') : `Balance: ${type.balance_gas}`;
+// --- Helper Mapping Functions ---
+const getGasDisplay = (gasCode) => {
+  if (!gasCode) return '';
+  const gases = {
+    'CO': 'CO', 'HS': 'H2S', 'CH': 'CH4', 'O2': 'O2',
+    'IB': 'Iso', 'HC': 'HCN', 'N2': 'N2', 'CL': 'Cl2',
+    'PH': 'PH3', 'SO': 'SO2', 'NO': 'NO2', 'C2': 'CO2',
+    'NH': 'NH3', 'ET': 'ETO'
+  };
+  return gases[gasCode] || gasCode;
+};
+
+const getUnitDisplay = (unitCode) => {
+  if (!unitCode) return '';
+  const units = {
+    'PM': 'ppm', 'PV': '%v/v', 'PL': '%LEL', 'ML': 'mg/L'
+  };
+  return units[unitCode] || unitCode;
 };
 
 const getDistrictLabel = (districtCode) => {
   const d = districts.value.find(dist => dist.value === districtCode);
   return d ? d.label : districtCode;
+};
+
+// --- Cylinder Type Label Calculation ---
+const getCylinderTypeLabel = (typeId) => {
+  if (!typeId) return 'N/A';
+  const type = cylinderTypes.value.find(t => t.id === typeId);
+  if (!type) return 'Unknown Type';
+
+  const gasEntries = [];
+
+  // Helper to format a single gas entry
+  const buildEntry = (gas, conc, units) => {
+    if (!gas) return null;
+    const gasStr = getGasDisplay(gas);
+    const unitStr = getUnitDisplay(units);
+    
+    // Format: "Gas Conc Unit" (e.g., "CO 10 ppm")
+    // Note: If you prefer commas between the attributes (e.g. "CO, 10, ppm"), 
+    // change the template string to: `${gasStr}, ${conc ?? ''}, ${unitStr}`
+    return `${gasStr} ${conc ?? ''} ${unitStr}`.trim();
+  };
+
+  const entry1 = buildEntry(type.cylinder_1_gas, type.cylinder_1_conc, type.cylinder_1_units);
+  const entry2 = buildEntry(type.cylinder_2_gas, type.cylinder_2_conc, type.cylinder_2_units);
+  const entry3 = buildEntry(type.cylinder_3_gas, type.cylinder_3_conc, type.cylinder_3_units);
+  const entry4 = buildEntry(type.cylinder_4_gas, type.cylinder_4_conc, type.cylinder_4_units);
+
+  if (entry1) gasEntries.push(entry1);
+  if (entry2) gasEntries.push(entry2);
+  if (entry3) gasEntries.push(entry3);
+  if (entry4) gasEntries.push(entry4);
+
+  // Join all configured gases with a semicolon
+  if (gasEntries.length > 0) {
+    return gasEntries.join('; '); 
+  }
+
+  // Fallback if no specific gases are configured, just show the balance gas
+  return `Balance: ${getGasDisplay(type.balance_gas)}`;
 };
 
 const formatDate = (dateStr) => (dateStr ? dateStr.split('T')[0] : 'N/A');
@@ -192,6 +239,7 @@ const locationGroups = computed(() => {
       groups.push({ typeId, slotCount, filledBoxes, emptyCount, overflow, unslotted });
     }
 
+    // Sort groups: Slotted types first, then alphabetically by the newly calculated label
     groups.sort((a, b) => {
       const aHasSlots = a.slotCount > 0 ? 0 : 1;
       const bHasSlots = b.slotCount > 0 ? 0 : 1;

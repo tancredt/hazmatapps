@@ -511,16 +511,19 @@ def sensors_pdf(request):
 def cylinders_pdf(request):
     search = request.GET.get('search', '')
     status = request.GET.get('status', '')
-    cylinder_model = request.GET.get('cylinder_model', '')
+    # Updated parameter name to match the frontend's new nested filter
+    cylinder_type = request.GET.get('cylinder_model__cylinder_type', '') 
     location = request.GET.get('location', '')
     expiry_date_lte = request.GET.get('expiry_date_lte', '')
     show_empty = request.GET.get('show_empty', 'false').lower() == 'true'
     sort_key = request.GET.get('sort_key', 'label')
     sort_direction = request.GET.get('sort_direction', 'asc')
+    
     sort_field_map = {
         'label': 'cylinder_number',
         'serial': 'serial',
-        'cylinder_type': 'cylinder_model__part_number',
+        'cylinder_model': 'cylinder_model__part_number', # Added for the new Model column
+        'cylinder_type': 'cylinder_model__cylinder_type', # Added for sorting by Type
         'supplier': 'cylinder_model__supplier',
         'detector': 'detector__label',
         'location': 'location__label',
@@ -532,7 +535,8 @@ def cylinders_pdf(request):
     sort_field = sort_field_map.get(sort_key, 'cylinder_number')
     if sort_direction.lower() == 'desc':
         sort_field = f'-{sort_field}'
-
+        
+    # Updated select_related to use cylinder_model instead of the old cylinder_type
     cylinders = Cylinder.objects.select_related('cylinder_model', 'location', 'detector').order_by(sort_field)
 
     if search:
@@ -543,14 +547,19 @@ def cylinders_pdf(request):
         if cleaned_search.isdigit():
             query |= models.Q(cylinder_number=int(cleaned_search))
         cylinders = cylinders.filter(query)
+
     if status:
         cylinders = cylinders.filter(status=status)
-    if cylinder_model:
-        cylinders = cylinders.filter(cylinder_model=cylinder_model)
+
+    if cylinder_type:
+        cylinders = cylinders.filter(cylinder_model__cylinder_type=cylinder_type)
+
     if location:
         cylinders = cylinders.filter(location=location)
+
     if expiry_date_lte:
         cylinders = cylinders.filter(expiry_date__lte=expiry_date_lte)
+
     if not show_empty:
         cylinders = cylinders.exclude(status='MT')
 
@@ -568,9 +577,10 @@ def cylinders_pdf(request):
         },
         **get_date_context()
     }
-
+    
     html_string = render_to_string('inventory/pdf/cylinders.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+    
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="cylinders.pdf"'
     return response
