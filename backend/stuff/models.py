@@ -468,7 +468,7 @@ class Cylinder(models.Model):
     serial = models.CharField(max_length=16, null=True, blank=True)
     cylinder_model = models.ForeignKey(CylinderModel, on_delete=models.PROTECT)
     location = models.ForeignKey(Location, on_delete=models.PROTECT)
-    detector = models.ForeignKey(Detector, on_delete=models.PROTECT, null=True)
+    detector = models.ForeignKey(Detector, on_delete=models.PROTECT, blank=True, null=True)
     status = models.CharField(
         max_length=2,
         choices=CylinderStatus.choices,
