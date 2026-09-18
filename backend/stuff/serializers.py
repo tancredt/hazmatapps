@@ -372,7 +372,7 @@ class ChangeCylinderLocationSerializer(serializers.Serializer):
 
 
 class CylinderFaultSerializer(serializers.ModelSerializer):
-    report_dt = serializers.DateTimeField(read_only=True)
+    report_dt = serializers.DateTimeField(required=True)
     resolve_dt = serializers.DateField(allow_null=True, required=False)
 
     class Meta:

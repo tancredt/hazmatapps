@@ -515,13 +515,13 @@ class LocationCylinderLog(models.Model):
 class CylinderFault(models.Model):
     cylinder = models.ForeignKey(Cylinder, on_delete=models.CASCADE)
     report_dt = models.DateTimeField(auto_now_add=True)
-    reported_by = models.CharField(max_length=32)
+    reported_by = models.CharField(max_length=32, null=True, blank=True)
     report_location = models.ForeignKey(Location, on_delete=models.CASCADE)
     status = models.CharField(max_length=2, choices=CylinderFaultStatus.choices, default="OP")
     fault_type = models.CharField(max_length=2, choices=CylinderFaultType.choices, default=CylinderFaultType.MT)
     submit_notes = models.TextField(null=True, blank=True)
-    resolved_by = models.CharField(max_length=16, blank=True)
-    resolve_dt = models.DateTimeField(null=True)
+    resolved_by = models.CharField(max_length=16, blank=True, null=True)
+    resolve_dt = models.DateTimeField(null=True, blank=True)
     resolve_notes = models.TextField(null=True, blank=True)
 
     class Meta:

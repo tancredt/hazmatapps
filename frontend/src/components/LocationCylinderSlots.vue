@@ -61,7 +61,7 @@
                     <span class="overflow-title">Overflow:</span>
                     <div v-for="cyl in group.overflow" :key="cyl.id" class="cylinder-item-container">
                       <router-link :to="`/cylinders/${cyl.id}`" class="overflow-item">{{ cyl.label }}</router-link>
-                      <span class="item-date">{{ formatDate(cyl.receive_date) }}</span>
+                      <span class="item-date">{{ formatDate(cyl.operational_date) }}</span>
                     </div>
                   </div>
                   
@@ -69,7 +69,7 @@
                     <span class="unslotted-title">No Slots Configured (Unslotted):</span>
                     <div v-for="cyl in group.unslotted" :key="cyl.id" class="cylinder-item-container">
                       <router-link :to="`/cylinders/${cyl.id}`" class="unslotted-item">{{ cyl.label }}</router-link>
-                      <span class="item-date">{{ formatDate(cyl.receive_date) }}</span>
+                      <span class="item-date">{{ formatDate(cyl.operational_date) }}</span>
                     </div>
                   </div>
                 </div>

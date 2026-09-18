@@ -10,14 +10,29 @@
         <span>Hazmat Equipment Inventory</span>
       </router-link>
     </div>
-
+    
     <div class="nav-links">
-      <router-link to="/detectors" class="nav-link">Detectors</router-link>
-      <router-link to="/cylinders" class="nav-link">Cylinders</router-link>
+      <!-- Detectors Dropdown -->
+      <div class="dropdown">
+        <button class="dropdown-button nav-link">Detectors</button>
+        <div class="dropdown-content">
+          <router-link to="/detectors" class="dropdown-item">List</router-link>
+          <router-link to="/faults" class="dropdown-item">Faults</router-link>
+        </div>
+      </div>
+
+      <!-- Cylinders Dropdown -->
+      <div class="dropdown">
+        <button class="dropdown-button nav-link">Cylinders</button>
+        <div class="dropdown-content">
+          <router-link to="/cylinders" class="dropdown-item">List</router-link>
+          <router-link to="/cylinderfaults" class="dropdown-item">Faults</router-link>
+        </div>
+      </div>
+
       <router-link to="/sensors" class="nav-link">Sensors</router-link>
       <router-link to="/maintenances" class="nav-link">Maintenance</router-link>
-      <router-link to="/faults" class="nav-link">Faults</router-link>
-      
+
       <!-- Locations Dropdown -->
       <div class="dropdown">
         <button class="dropdown-button nav-link">Locations</button>
@@ -26,7 +41,7 @@
           <router-link to="/location-cylinder-slots" class="dropdown-item">Location Cylinder Slots</router-link>
         </div>
       </div>
-      
+
       <!-- Dropdown menu for "Other Stuff" -->
       <div class="dropdown">
         <button class="dropdown-button nav-link">Other Stuff</button>
@@ -35,11 +50,11 @@
           <router-link to="/locations/new" class="dropdown-item">Add New Location</router-link>
           <router-link to="/detectormodelconfigurations/new" class="dropdown-item">Add New Configuration</router-link>
           <router-link to="/cylindertypes/new" class="dropdown-item">Add New Cylinder Type</router-link>
-	  <router-link to="/cylindermodels/new" class="dropdown-item">Add New Cylinder Model</router-link>
+          <router-link to="/cylindermodels/new" class="dropdown-item">Add New Cylinder Model</router-link>
           <router-link to="/sensortypes/new" class="dropdown-item">Add New Sensor Type</router-link>
         </div>
       </div>
-      
+
       <button @click="handleLogout" class="nav-link logout-button">Logout</button>
     </div>
   </div>
@@ -125,6 +140,7 @@ const handleLogout = async () => {
   background-color: #c0392b;
 }
 
+/* Dropdown Styles */
 .dropdown {
   position: relative;
   display: inline-block;

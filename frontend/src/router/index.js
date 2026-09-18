@@ -69,6 +69,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/cylinderfaultreports/:cylinderId/:faultId?',
+      name: 'CylinderFaultReportDetails',
+      component: () => import('@/components/CylinderFaultReportDetails.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/maintenances/:detectorId/:maintenanceId?',
       name: 'MaintenanceDetails',
       component: () => import('@/components/MaintenanceDetails.vue'),
@@ -158,6 +164,12 @@ const router = createRouter({
       path: '/faults',
       name: 'Faults',
       component: () => import('@/components/Faults.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/cylinderfaults',
+      name: 'CylinderFaults',
+      component: () => import('@/components/CylinderFaults.vue'),
       meta: { requiresAuth: true }
     },
     {
