@@ -26,28 +26,10 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/locations/new',
-      name: 'AddLocation',
-      component: () => import('@/components/LocationForm.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/detectormodelconfigurations/new',
-      name: 'AddDetectorModelConfiguration',
-      component: () => import('@/components/DetectorModelConfigurationForm.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/detectors/:id',
       name: 'DetectorDetails',
       component: DetectorDetails,
       props: true,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/detectormodels/new',
-      name: 'AddDetectorModel',
-      component: () => import('@/components/DetectorModelForm.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -134,24 +116,6 @@ const router = createRouter({
       path: '/sensors/update-multiple',
       name: 'UpdateMultipleSensors',
       component: () => import('@/components/UpdateMultipleSensors.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/cylindertypes/new',
-      name: 'AddCylinderType',
-      component: () => import('@/components/CylinderTypeForm.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/cylindermodels/new',
-      name: 'AddCylinderModel',
-      component: () => import('@/components/CylinderModelForm.vue'),
-      meta: { requiresAuth: true }
-    },  
-    {
-      path: '/sensortypes/new',
-      name: 'AddSensorType',
-      component: () => import('@/components/SensorTypeForm.vue'),
       meta: { requiresAuth: true }
     },
     {

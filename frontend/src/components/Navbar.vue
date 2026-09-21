@@ -42,19 +42,6 @@
         </div>
       </div>
 
-      <!-- Dropdown menu for "Other Stuff" -->
-      <div class="dropdown">
-        <button class="dropdown-button nav-link">Other Stuff</button>
-        <div class="dropdown-content">
-          <router-link to="/detectormodels/new" class="dropdown-item">Add New Model</router-link>
-          <router-link to="/locations/new" class="dropdown-item">Add New Location</router-link>
-          <router-link to="/detectormodelconfigurations/new" class="dropdown-item">Add New Configuration</router-link>
-          <router-link to="/cylindertypes/new" class="dropdown-item">Add New Cylinder Type</router-link>
-          <router-link to="/cylindermodels/new" class="dropdown-item">Add New Cylinder Model</router-link>
-          <router-link to="/sensortypes/new" class="dropdown-item">Add New Sensor Type</router-link>
-        </div>
-      </div>
-
       <button @click="handleLogout" class="nav-link logout-button">Logout</button>
     </div>
   </div>
