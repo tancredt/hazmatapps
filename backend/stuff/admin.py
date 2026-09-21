@@ -1,25 +1,11 @@
 from django.contrib import admin
 from .models import (
-    Location,
-    DetectorModel,
-    DetectorModelConfiguration,
-    Detector,
-    LocationDetectorSlot,
-    LocationDetectorLog,
-    DetectorFault,
-    Maintenance,
-    MaintenanceTask,
-    CylinderType,
-    CylinderModel,
-    Cylinder,
-    LocationCylinderSlot,
-    LocationCylinderLog,
-    CylinderFault,
-    SensorType,
-    Sensor,
-    SensorSlot,
+    Location, DetectorModel, DetectorModelConfiguration, Detector,
+    LocationDetectorSlot, LocationDetectorLog, DetectorFault,
+    Maintenance, MaintenanceTask, CylinderType, CylinderModel, Cylinder,
+    LocationCylinderSlot, LocationCylinderLog, CylinderFault,
+    SensorType, Sensor, SensorSlot,
 )
-
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
@@ -28,20 +14,17 @@ class LocationAdmin(admin.ModelAdmin):
     search_fields = ("label", "address", "district")
     ordering = ("-priority", "location_type", "label")
 
-
 @admin.register(DetectorModel)
 class DetectorModelAdmin(admin.ModelAdmin):
     list_display = ("id", "label", "manufacturer", "detector_type", "supplier", "part_number")
     list_filter = ("manufacturer", "detector_type", "supplier")
     search_fields = ("label", "part_number")
 
-
 @admin.register(DetectorModelConfiguration)
 class DetectorModelConfigurationAdmin(admin.ModelAdmin):
     list_display = ("id", "label", "detector_model")
     search_fields = ("label", "detector_model__label")
     raw_id_fields = ("detector_model",)
-
 
 @admin.register(Detector)
 class DetectorAdmin(admin.ModelAdmin):
@@ -51,13 +34,11 @@ class DetectorAdmin(admin.ModelAdmin):
     raw_id_fields = ("location", "detector_model", "configuration")
     readonly_fields = ("created_at", "updated_at")
 
-
 @admin.register(LocationDetectorSlot)
 class LocationDetectorSlotAdmin(admin.ModelAdmin):
     list_display = ("id", "location", "detector_model")
     search_fields = ("location__label", "detector_model__label")
     autocomplete_fields = ("location", "detector_model")
-
 
 @admin.register(LocationDetectorLog)
 class LocationDetectorLogAdmin(admin.ModelAdmin):
@@ -68,7 +49,6 @@ class LocationDetectorLogAdmin(admin.ModelAdmin):
     readonly_fields = ("detector", "new_location", "old_location", "updated")
     ordering = ("-updated",)
 
-
 @admin.register(DetectorFault)
 class DetectorFaultAdmin(admin.ModelAdmin):
     list_display = ("id", "detector", "fault_type", "status", "report_dt", "report_location")
@@ -76,14 +56,12 @@ class DetectorFaultAdmin(admin.ModelAdmin):
     search_fields = ("detector__label", "detector__serial", "report_location__label")
     raw_id_fields = ("detector", "report_location")
 
-
 @admin.register(Maintenance)
 class MaintenanceAdmin(admin.ModelAdmin):
     list_display = ("id", "maintenance_type", "status", "detector", "date_due", "date_performed")
     list_filter = ("maintenance_type", "status")
     search_fields = ("detector__label", "detector__serial")
     raw_id_fields = ("detector",)
-
 
 @admin.register(MaintenanceTask)
 class MaintenanceTaskAdmin(admin.ModelAdmin):
@@ -96,7 +74,7 @@ class MaintenanceTaskAdmin(admin.ModelAdmin):
 class CylinderTypeAdmin(admin.ModelAdmin):
     list_display = ("id", "balance_gas", "cylinder_1_gas", "cylinder_1_conc", "cylinder_1_units", "active")
     list_filter = ("active", "balance_gas", "cylinder_1_gas")
-    search_fields = ("id", "balance_gas", "cylinder_1_gas") 
+    search_fields = ("id", "balance_gas", "cylinder_1_gas")
 
 @admin.register(CylinderModel)
 class CylinderModelAdmin(admin.ModelAdmin):
@@ -107,11 +85,11 @@ class CylinderModelAdmin(admin.ModelAdmin):
 
 @admin.register(Cylinder)
 class CylinderAdmin(admin.ModelAdmin):
-    # Changed cylinder_type to cylinder_model
     list_display = ("label", "serial", "cylinder_model", "location", "detector", "status", "expiry_date")
     list_filter = ("status", "cylinder_model", "location")
-    search_fields = ("cylinder_number", "serial", "location__label", "detector__label")
-    raw_id_fields = ("cylinder_model", "location", "detector") # Changed cylinder_type to cylinder_model
+    # REMOVED cylinder_number from search_fields
+    search_fields = ("serial", "location__label", "detector__label") 
+    raw_id_fields = ("cylinder_model", "location", "detector")
 
 @admin.register(LocationCylinderSlot)
 class LocationCylinderSlotAdmin(admin.ModelAdmin):
@@ -123,19 +101,19 @@ class LocationCylinderSlotAdmin(admin.ModelAdmin):
 class LocationCylinderLogAdmin(admin.ModelAdmin):
     list_display = ("id", "cylinder", "old_location", "new_location", "updated")
     list_filter = ("new_location", "old_location", "updated")
-    search_fields = ("cylinder__cylinder_number", "new_location__label", "old_location__label")
+    # CHANGED cylinder__cylinder_number to cylinder__serial
+    search_fields = ("cylinder__serial", "new_location__label", "old_location__label") 
     raw_id_fields = ("cylinder", "new_location", "old_location")
     readonly_fields = ("cylinder", "new_location", "old_location", "updated")
     ordering = ("-updated",)
-
 
 @admin.register(CylinderFault)
 class CylinderFaultAdmin(admin.ModelAdmin):
     list_display = ("id", "cylinder", "fault_type", "status", "report_dt", "report_location")
     list_filter = ("status", "fault_type")
-    search_fields = ("cylinder__cylinder_number", "cylinder__serial", "report_location__label")
+    # REMOVED cylinder__cylinder_number from search_fields
+    search_fields = ("cylinder__serial", "report_location__label") 
     raw_id_fields = ("cylinder", "report_location")
-
 
 @admin.register(SensorType)
 class SensorTypeAdmin(admin.ModelAdmin):
@@ -143,14 +121,12 @@ class SensorTypeAdmin(admin.ModelAdmin):
     list_filter = ("active", "manufacturer", "sensorgas")
     search_fields = ("part_number",)
 
-
 @admin.register(Sensor)
 class SensorAdmin(admin.ModelAdmin):
     list_display = ("id", "serial", "sensor_type", "detector", "status", "expiry_date")
     list_filter = ("status", "sensor_type")
     search_fields = ("serial", "sensor_type__part_number", "detector__label")
     raw_id_fields = ("sensor_type", "detector")
-
 
 @admin.register(SensorSlot)
 class SensorSlotAdmin(admin.ModelAdmin):

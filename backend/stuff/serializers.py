@@ -300,11 +300,12 @@ class CylinderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Cylinder
-        exclude = ['cylinder_number']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['label'] = f"CYL{instance.cylinder_number:05d}"
+        
+        data['label'] = f"CYL{instance.id:05d}"
+        
         return data
 
 class LocationCylinderSlotSerializer(serializers.ModelSerializer):
