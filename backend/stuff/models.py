@@ -463,6 +463,25 @@ class CylinderModel(models.Model):
         """
     )
 )
+
+@pgtrigger.register(
+    pgtrigger.Trigger(
+        name="auto_increment_cylinder_number",
+        when=pgtrigger.Before,
+        operation=pgtrigger.Insert,
+        func="""
+        IF NEW.cylinder_number IS NULL THEN
+            -- Lock the table to prevent race conditions during concurrent inserts
+            LOCK TABLE stuff_cylinder IN EXCLUSIVE MODE;
+            SELECT COALESCE(MAX(cylinder_number), 0) + 1 
+            INTO NEW.cylinder_number 
+            FROM stuff_cylinder;
+        END IF;
+        RETURN NEW;
+        """
+    )
+)
+
 class Cylinder(models.Model):
     cylinder_number = models.IntegerField(unique=True)
     serial = models.CharField(max_length=16, null=True, blank=True)

@@ -307,14 +307,6 @@ class CylinderSerializer(serializers.ModelSerializer):
         data['label'] = f"CYL{instance.cylinder_number:05d}"
         return data
 
-    def create(self, validated_data):
-        from django.db import models as db_models
-        with transaction.atomic():
-            last_cylinder = Cylinder.objects.select_for_update().aggregate(db_models.Max('cylinder_number'))
-            next_number = (last_cylinder['cylinder_number__max'] or 0) + 1
-            validated_data['cylinder_number'] = next_number
-            return super().create(validated_data)
-
 class LocationCylinderSlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocationCylinderSlot
