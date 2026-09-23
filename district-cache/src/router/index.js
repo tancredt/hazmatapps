@@ -5,6 +5,7 @@ import ReturnScreen from '../components/ReturnScreen.vue'
 import RestockScreen from '../components/RestockScreen.vue'
 import DistrictStatus from '../components/DistrictStatus.vue'
 import LoginScreen from '../components/LoginScreen.vue'
+import ReportCylinderEmpty.vue from '../components/ReportCylinderEmpty.vue'
 
 const routes = [
   {
@@ -38,6 +39,13 @@ const routes = [
     path: '/status/:district',
     name: 'DistrictStatus',
     component: DistrictStatus,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cylinder-empty/:district/:location_label',
+    name: 'CylinderEmpty',
+    component: ReportCylinderEmpty,
     props: true,
     meta: { requiresAuth: true }
   },
