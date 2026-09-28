@@ -487,7 +487,7 @@ class Cylinder(models.Model):
 
     @property
     def label(self):
-        return f"CYL{self.cylinder_number:05d}"
+        return f"CYL{self.id:05d}" if self.id else "CYL-NEW"
 
     def __str__(self):
         return f"{self.label} - {self.cylinder_model.part_number} ({self.get_status_display()})"

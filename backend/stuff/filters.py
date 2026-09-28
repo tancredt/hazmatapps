@@ -358,7 +358,7 @@ class CylinderFaultFilter(filters.FilterSet):
         if value.startswith("CYL"):
             value = value.replace("CYL", "")
         try:
-            cylinder_number = int(value)
+            cylinder_id = int(value)
         except ValueError:
             return queryset.none()
-        return queryset.filter(cylinder__cylinder_number=cylinder_number)
+        return queryset.filter(cylinder__id=cylinder_id) # <-- Changed here
