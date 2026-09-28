@@ -5,7 +5,7 @@ import ReturnScreen from '../components/ReturnScreen.vue'
 import RestockScreen from '../components/RestockScreen.vue'
 import DistrictStatus from '../components/DistrictStatus.vue'
 import LoginScreen from '../components/LoginScreen.vue'
-import ReportCylinderEmpty.vue from '../components/ReportCylinderEmpty.vue'
+import ReportCylinderEmpty from '../components/ReportCylinderEmpty.vue'
 
 const routes = [
   {
