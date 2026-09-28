@@ -1,245 +1,561 @@
-import csv
-import os
-import pgtrigger
-from datetime import datetime
-from decimal import Decimal
-from django.core.management.base import BaseCommand
-from django.db import transaction, models
-from django.apps import apps
-from django.utils import timezone
-from django.utils.dateparse import parse_date as django_parse_date
-from django.utils.dateparse import parse_datetime as django_parse_datetime
+<template>
+<div class="report-cylinder-empty-screen">
+  <h2>Report Cylinder Empty</h2>
+  <h3>{{ location_label }} ({{ district }})</h3>
+  
+  <div v-if="isLoading" class="loading">Loading cylinders...</div>
+  <div v-if="error" class="error">{{ error }}</div>
+  
+  <div v-if="!isLoading && !error" class="sections-container">
+    <!-- Fallback if no slots or cylinders exist -->
+    <div v-if="displaySlots.length === 0 && overflowCylinders.length === 0" class="empty-state">
+      No cylinder slots or cylinders found for this location.
+    </div>
 
-class Command(BaseCommand):
-    help = "Import CSV files into the database using Django ORM."
+    <!-- Single Unified Slot Grid -->
+    <div v-if="displaySlots.length > 0" class="location-section">
+      <h3>Cylinder Slots</h3>
+      <p class="section-subtitle">Click an operational cylinder to report as empty</p>
+      <div class="slots-grid">
+        <div 
+          v-for="item in displaySlots" 
+          :key="item.slotId"
+          class="slot-rectangle"
+          :class="{ empty: !item.cylinder, clickable: item.cylinder }"
+          :role="item.cylinder ? 'button' : undefined"
+          :tabindex="item.cylinder ? 0 : -1"
+          @click="item.cylinder && openConfirmDialog(item.cylinder)"
+          @keydown.enter="item.cylinder && openConfirmDialog(item.cylinder)"
+        >
+          <template v-if="item.cylinder">
+            <span class="cylinder-label">{{ item.cylinder.label }}</span>
+            <span class="cylinder-details">{{ getCylinderDetails(item.cylinder).typeLabel }}</span>
+            <span class="cylinder-expiry" :class="{ 'expired': isExpired(item.cylinder.expiry_date) }">
+              Exp: {{ getCylinderDetails(item.cylinder).expiry }}
+            </span>
+          </template>
+          <template v-else>
+            <span class="empty-slot-text">Empty Slot</span>
+            <span class="empty-slot-type">{{ getCylinderTypeLabel(item.cylinderType) }}</span>
+          </template>
+        </div>
+      </div>
+    </div>
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--prefix",
-            default="inventory",
-            help="CSV filename prefix (e.g. 'inventory' or 'stuff')",
-        )
-        parser.add_argument(
-            "--dir",
-            default="csv_import",
-            help="Directory containing CSV files",
-        )
-        parser.add_argument(
-            "--reset-sequences",
-            action="store_true",
-            help="Reset PostgreSQL auto-increment sequences after import",
-        )
+    <!-- Single Unified Overflow Area -->
+    <div v-if="overflowCylinders.length > 0" class="location-section overflow-section">
+      <h4 class="overflow-title">
+        Overflow / Non-Operational ({{ overflowCylinders.length }})
+      </h4>
+      <div class="overflow-list">
+        <div 
+          v-for="cyl in overflowCylinders" 
+          :key="cyl.id" 
+          class="overflow-item"
+          role="button"
+          tabindex="0"
+          @click="openConfirmDialog(cyl)"
+          @keydown.enter="openConfirmDialog(cyl)"
+        >
+          {{ cyl.label }}
+          <span v-if="cyl.status !== 'OP'" class="status-badge">({{ cyl.status }})</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    def handle(self, *args, **options):
-        self.prefix = options["prefix"]
-        self.csv_dir = options["dir"]
-        
-        self.model_order = [
-            "stuff.Location",
-            "stuff.DetectorModel",
-            "stuff.DetectorModelConfiguration",
-            "stuff.LocationDetectorSlot",
-            "stuff.Detector",
-            "stuff.SensorType",
-            "stuff.Sensor",
-            "stuff.SensorSlot",
-            "stuff.Maintenance",
-            "stuff.MaintenanceTask",
-            "stuff.DetectorFault",
-            "stuff.CylinderType",
-            "stuff.CylinderModel",
-            "stuff.LocationCylinderSlot",
-            "stuff.Cylinder",
-            "stuff.LocationCylinderLog",
-            "stuff.CylinderFault",
-            "stuff.LocationDetectorLog",
-        ]
-        
-        # Define trigger URIs for both Detector and Cylinder
-        trigger_uri_detector = "stuff.Detector:log_detector_location_change"
-        trigger_uri_cylinder = "stuff.Cylinder:log_cylinder_location_change"
-        
-        self.stdout.write("🛡️ Disabling pgtriggers for Detector and Cylinder...")
-        pgtrigger.uninstall(trigger_uri_detector)
-        pgtrigger.uninstall(trigger_uri_cylinder)
+  <!-- Confirm Dialog -->
+  <div v-if="showConfirmDialog" class="modal-overlay" @click.self="closeConfirmDialog">
+    <div class="modal-content">
+      <h3>Confirm Report</h3>
+      <p>Are you sure you want to report <strong>{{ selectedCylinder?.label }}</strong> as empty?</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" @click="closeConfirmDialog" :disabled="isProcessing">Cancel</button>
+        <button class="btn-confirm" @click="submitFault" :disabled="isProcessing">
+          {{ isProcessing ? 'Reporting...' : 'Yes, Report Empty' }}
+        </button>
+      </div>
+    </div>
+  </div>
 
-        try:
-            for model_path in self.model_order:
-                self.import_model(model_path)
+  <!-- Success Dialog -->
+  <div v-if="showSuccessDialog" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Success</h3>
+      <p>Fault reported successfully for <strong>{{ selectedCylinder?.label }}</strong>.</p>
+      <div class="modal-actions">
+        <button class="btn-confirm" @click="closeSuccessDialog">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+</template>
 
-            if options["reset_sequences"]:
-                self.reset_sequences()
+<script setup>
+import { ref, onMounted } from 'vue';
+import { apiFetch } from '@/utils/api';
 
-            self.stdout.write(self.style.SUCCESS("\n✅ Import complete!"))
-        finally:
-            self.stdout.write("🛡️ Re-enabling pgtriggers for Detector and Cylinder...")
-            pgtrigger.install(trigger_uri_detector)
-            pgtrigger.install(trigger_uri_cylinder)
+const props = defineProps({
+  district: String,
+  location_label: String
+});
 
-    def import_model(self, model_path):
-        app_label, model_name = model_path.split(".")
-        csv_name = f"{self.prefix}_{model_name.lower()}.csv"
-        csv_path = os.path.join(self.csv_dir, csv_name)
+const isLoading = ref(false);
+const error = ref('');
+const isProcessing = ref(false);
 
-        if not os.path.exists(csv_path):
-            self.stdout.write(self.style.WARNING(f"⏭️ Skip  {csv_name} (not found)"))
-            return
+const currentLocation = ref(null);
+const cylinderModels = ref([]);
+const cylinderTypes = ref([]);
 
-        model = apps.get_model(model_path)
-        field_map = self.get_field_map(model)
+const displaySlots = ref([]);
+const overflowCylinders = ref([]);
 
-        self.stdout.write(f"📥 Load  {csv_name} → {model_path}")
+const showConfirmDialog = ref(false);
+const showSuccessDialog = ref(false);
+const selectedCylinder = ref(null);
 
-        with open(csv_path, "r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            if not reader.fieldnames:
-                self.stdout.write(self.style.WARNING("  ⚠️ Empty file"))
-                return
+// --- Helper Functions ---
+const getGasDisplay = (gasCode) => {
+  if (!gasCode) return '';
+  const gases = {
+    'CO': 'CO', 'HS': 'H2S', 'CH': 'CH4', 'O2': 'O2',
+    'IB': 'Iso', 'HC': 'HCN', 'N2': 'N2', 'CL': 'Cl2',
+    'PH': 'PH3', 'SO': 'SO2', 'NO': 'NO2', 'C2': 'CO2',
+    'NH': 'NH3', 'ET': 'ETO'
+  };
+  return gases[gasCode] || gasCode;
+};
 
-            valid_cols, skipped_cols = self.validate_columns(reader.fieldnames, field_map)
-            if skipped_cols:
-                self.stdout.write(f"  ℹ️ Ignore columns: {skipped_cols}")
+const getUnitDisplay = (unitCode) => {
+  if (!unitCode) return '';
+  const units = { 'PM': 'ppm', 'PV': '%v/v', 'PL': '%LEL', 'ML': 'mg/L' };
+  return units[unitCode] || unitCode;
+};
 
-            if not valid_cols:
-                self.stdout.write(self.style.ERROR("  ❌ No valid columns"))
-                return
+const getCylinderTypeLabel = (type) => {
+  if (!type) return 'N/A';
+  const gasEntries = [];
+  const buildEntry = (gas, conc, units) => {
+    if (!gas) return null;
+    return `${getGasDisplay(gas)} ${conc ?? ''} ${getUnitDisplay(units)}`.trim();
+  };
 
-            # Temporarily disable auto_now and auto_now_add ONLY for fields in the CSV
-            original_states = {}
-            for csv_col in valid_cols.keys():
-                field = field_map[csv_col]
-                if getattr(field, 'auto_now', False) or getattr(field, 'auto_now_add', False):
-                    original_states[field.name] = {
-                        'auto_now': field.auto_now,
-                        'auto_now_add': field.auto_now_add
-                    }
-                    field.auto_now = False
-                    field.auto_now_add = False
+  const entry1 = buildEntry(type.cylinder_1_gas, type.cylinder_1_conc, type.cylinder_1_units);
+  const entry2 = buildEntry(type.cylinder_2_gas, type.cylinder_2_conc, type.cylinder_2_units);
+  const entry3 = buildEntry(type.cylinder_3_gas, type.cylinder_3_conc, type.cylinder_3_units);
+  const entry4 = buildEntry(type.cylinder_4_gas, type.cylinder_4_conc, type.cylinder_4_units);
 
-            try:
-                objects_to_create = []
-                errors = 0
-                success = 0
-                
-                for row_num, row in enumerate(reader, start=2):
-                    try:
-                        data = self.convert_row(row, valid_cols, field_map)
-                        obj = model(**data)
-                        objects_to_create.append(obj)
-                        success += 1
-                    except Exception as e:
-                        errors += 1
-                        if errors <= 5:
-                            self.stdout.write(self.style.ERROR(f"  ❌ Row {row_num}: {e}"))
+  if (entry1) gasEntries.push(entry1);
+  if (entry2) gasEntries.push(entry2);
+  if (entry3) gasEntries.push(entry3);
+  if (entry4) gasEntries.push(entry4);
 
-                if objects_to_create:
-                    with transaction.atomic():
-                        model.objects.bulk_create(objects_to_create, batch_size=1000)
+  return gasEntries.length > 0 ? gasEntries.join('; ') : `Balance: ${getGasDisplay(type.balance_gas)}`;
+};
 
-                status = "✅ OK" if errors == 0 else f"❌ {errors} ERR"
-                self.stdout.write(self.style.SUCCESS(f"  → {success} rows ({status})"))
-            finally:
-                # Restore auto_now and auto_now_add states
-                for field_name, states in original_states.items():
-                    field = model._meta.get_field(field_name)
-                    field.auto_now = states['auto_now']
-                    field.auto_now_add = states['auto_now_add']
+const getCylinderDetails = (cylinder) => {
+  const model = cylinderModels.value.find(m => m.id === cylinder.cylinder_model);
+  const type = cylinderTypes.value.find(t => t.id === model?.cylinder_type);
 
-    def get_field_map(self, model):
-        field_map = {}
-        for field in model._meta.fields:
-            field_map[field.name] = field
-            field_map[field.attname] = field
-        return field_map
+  const typeLabel = type ? getCylinderTypeLabel(type) : (model?.part_number || 'Unknown Type');
+  const expiry = cylinder.expiry_date ? new Date(cylinder.expiry_date).toLocaleDateString('en-AU') : 'No Expiry';
 
-    def validate_columns(self, csv_columns, field_map):
-        valid = {}
-        skipped = []
-        for col in csv_columns:
-            col = col.strip()
-            if col in field_map:
-                field = field_map[col]
-                valid[col] = field.attname
-            else:
-                skipped.append(col)
-        return valid, skipped
+  return { typeLabel, expiry };
+};
 
-    def convert_row(self, row, valid_cols, field_map):
-        data = {}
-        for csv_col, orm_col in valid_cols.items():
-            raw = row.get(csv_col, "").strip()
-            field = field_map[csv_col]
-            converted = self.convert_value(raw, field)
-            
-            if converted is not None or not self.is_nullable(field):
-                data[orm_col] = converted
-        return data
+const isExpired = (expiryDate) => {
+  if (!expiryDate) return false;
+  return new Date(expiryDate) < new Date();
+};
 
-    def is_nullable(self, field):
-        return field.null and not getattr(field, "empty_strings_allowed", True)
+// --- Data Fetching ---
+const fetchData = async () => {
+  if (!props.location_label) return;
 
-    def convert_value(self, raw, field):
-        if raw == "":
-            if isinstance(field, (models.CharField, models.TextField)):
-                return ""
-            if getattr(field, 'auto_now', False) or getattr(field, 'auto_now_add', False):
-                return timezone.now()
-            return None
+  isLoading.value = true;
+  error.value = '';
+  try {
+    const locations = await apiFetch('/locations/');
+    currentLocation.value = locations.find(loc => loc.label === props.location_label);
+    if (!currentLocation.value) throw new Error('Location not found');
 
-        if isinstance(field, (models.AutoField, models.BigAutoField, models.IntegerField)):
-            return int(raw)
-        if isinstance(field, models.DecimalField):
-            return Decimal(raw)
-        if isinstance(field, models.BooleanField):
-            return raw.lower() in ("1", "true", "t", "yes", "on")
-            
-        if isinstance(field, models.DateTimeField):
-            return self.parse_datetime(raw)
-        if isinstance(field, models.DateField):
-            return self.parse_date(raw)
-        if isinstance(field, models.ForeignKey):
-            return int(raw)
-            
-        return raw
+    const [slotsRes, cylsRes, modelsRes, typesRes] = await Promise.all([
+      apiFetch(`/locationcylinderslots/?location=${currentLocation.value.id}`),
+      apiFetch(`/cylinders/?location__label=${encodeURIComponent(props.location_label)}&exclude_status=MT`),
+      apiFetch('/cylindermodels/'),
+      apiFetch('/cylindertypes/')
+    ]);
 
-    def parse_date(self, value):
-        parsed = django_parse_date(value)
-        if parsed:
-            return parsed
-        for fmt in ("%d/%m/%Y", "%m/%d/%Y"):
-            try:
-                return datetime.strptime(value, fmt).date()
-            except ValueError:
-                continue
-        raise ValueError(f"bad date: {value}")
+    cylinderModels.value = modelsRes || [];
+    cylinderTypes.value = typesRes || [];
 
-    def parse_datetime(self, value):
-        parsed = django_parse_datetime(value)
-        if parsed:
-            if timezone.is_naive(parsed):
-                parsed = timezone.make_aware(parsed)
-            return parsed
-        raise ValueError(f"bad datetime: {value}")
+    // Assign cylinders to slots
+    const assignedCylIds = new Set();
+    const tempSlots = [];
 
-    def reset_sequences(self):
-        self.stdout.write("\n🔄 Reset sequences...")
-        from django.db import connection
-        with connection.cursor() as cursor:
-            for model_path in self.model_order:
-                model = apps.get_model(model_path)
-                table = model._meta.db_table
-                try:
-                    cursor.execute(
-                        "SELECT pg_get_serial_sequence(%s, %s)", [table, "id"]
-                    )
-                    result = cursor.fetchone()
-                    if result and result[0]:
-                        cursor.execute(f"SELECT COALESCE(MAX(id),0) FROM {table}")
-                        max_id = cursor.fetchone()[0]
-                        if max_id:
-                            cursor.execute(
-                                f"SELECT setval(%s, %s, true)", [result[0], max_id]
-                            )
-                            self.stdout.write(f"  ✅ {table}: {max_id}")
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"  ⚠️ {table}: {e}"))
+    for (const slot of (slotsRes || [])) {
+      const typeId = slot.cylinder_type;
+      const type = cylinderTypes.value.find(t => t.id === Number(typeId));
+      
+      const availableCyls = (cylsRes || []).filter(c => {
+        if (assignedCylIds.has(c.id)) return false;
+        if (c.status !== 'OP') return false;
+        const model = cylinderModels.value.find(m => m.id === c.cylinder_model);
+        return model && model.cylinder_type === typeId;
+      });
+      
+      const cyl = availableCyls[0] || null;
+      if (cyl) assignedCylIds.add(cyl.id);
+      
+      tempSlots.push({
+        slotId: slot.id,
+        cylinderType: type,
+        cylinder: cyl
+      });
+    }
+    displaySlots.value = tempSlots;
+
+    // Remaining cylinders go to overflow
+    const tempOverflow = (cylsRes || []).filter(cyl => !assignedCylIds.has(cyl.id));
+    overflowCylinders.value = tempOverflow;
+
+  } catch (err) {
+    console.error('Failed to fetch data:', err);
+    error.value = 'Failed to load cylinder data. Please try again.';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// --- Dialog & Action Handlers ---
+const openConfirmDialog = (cylinder) => {
+  selectedCylinder.value = cylinder;
+  showConfirmDialog.value = true;
+};
+
+const closeConfirmDialog = () => {
+  showConfirmDialog.value = false;
+  selectedCylinder.value = null;
+};
+
+const closeSuccessDialog = () => {
+  showSuccessDialog.value = false;
+  selectedCylinder.value = null;
+  fetchData();
+};
+
+const submitFault = async () => {
+  if (!selectedCylinder.value || !currentLocation.value) return;
+
+  isProcessing.value = true;
+  try {
+    const payload = {
+      cylinder: selectedCylinder.value.id,
+      report_dt: new Date().toISOString(),
+      report_location: currentLocation.value.id,
+      fault_type: 'MT',
+      status: 'OP',
+      reported_by: 'District Cache App'
+    };
+
+    await apiFetch('/cylinderfaults/', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    showConfirmDialog.value = false;
+    showSuccessDialog.value = true;
+  } catch (err) {
+    console.error('Failed to report fault:', err);
+    alert('Failed to report cylinder as empty. Please check your connection and try again.');
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+onMounted(async () => {
+  await fetchData();
+});
+</script>
+
+<style scoped>
+.report-cylinder-empty-screen {
+  padding: 20px;
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: #333;
+}
+
+.sections-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.location-section {
+  flex: 1; 
+  min-width: 320px; 
+  background: #f8f9fa; 
+  padding: 20px; 
+  border-radius: 8px; 
+  border: 1px solid #dee2e6;
+}
+
+.section-subtitle { 
+  color: #666; 
+  margin-top: -5px; 
+  margin-bottom: 15px; 
+  font-size: 0.95rem; 
+}
+
+.slots-grid { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 12px; 
+  margin-top: 15px; 
+}
+
+.slot-rectangle {
+  width: 130px; 
+  height: 90px; 
+  border: 2px solid #adb5bd; 
+  border-radius: 6px;
+  display: flex; 
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center; 
+  text-align: center;
+  font-size: 0.9rem; 
+  font-weight: 600; 
+  background: #ffffff; 
+  color: #333;
+  transition: all 0.2s ease; 
+  padding: 8px; 
+  box-sizing: border-box;
+  word-break: break-word;
+  user-select: none;
+}
+
+.slot-rectangle.clickable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slot-rectangle.clickable:hover { 
+  border-color: #42b883; 
+  background: #f0fdf4; 
+  transform: translateY(-2px); 
+}
+
+.slot-rectangle.empty {
+  color: #adb5bd; 
+  font-style: italic; 
+  font-weight: 400; 
+  cursor: default;
+  background: #f8f9fa; 
+  border-style: dashed;
+}
+
+.empty-slot-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #868e96;
+  font-style: normal;
+}
+
+.empty-slot-type {
+  font-size: 0.7rem;
+  color: #adb5bd;
+  margin-top: 4px;
+  text-align: center;
+  line-height: 1.2;
+  font-style: normal;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.cylinder-label { 
+  font-size: 1rem; 
+  font-weight: 700; 
+  color: #2c3e50; 
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+.cylinder-details { 
+  font-size: 0.7rem; 
+  color: #555; 
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+.cylinder-expiry { 
+  font-size: 0.7rem; 
+  font-weight: 600; 
+  color: #2c3e50; 
+}
+.cylinder-expiry.expired {
+  color: #e74c3c;
+  font-weight: 700;
+}
+
+.overflow-section {
+  margin-top: 20px;
+}
+
+.overflow-title {
+  margin: 0 0 12px 0; 
+  color: #d35400; 
+  font-size: 1.1rem; 
+  font-weight: 600;
+}
+
+.overflow-list { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+}
+
+.overflow-item {
+  padding: 8px 14px; 
+  background: #fff3cd; 
+  border: 1px solid #ffeeba; 
+  border-radius: 20px;
+  cursor: pointer; 
+  font-size: 0.9rem; 
+  font-weight: 500; 
+  color: #333; 
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent; 
+  user-select: none;
+}
+
+.overflow-item:hover { 
+  background: #ffe69c; 
+  transform: translateY(-1px); 
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  color: #856404;
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #adb5bd;
+  font-size: 1.1rem;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed; 
+  top: 0; left: 0; right: 0; bottom: 0; 
+  background: rgba(0, 0, 0, 0.6);
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 1000;
+  padding: 20px; 
+  animation: fadeIn 0.2s ease-out;
+} 
+
+.modal-content {
+  background: white; 
+  padding: 24px; 
+  border-radius: 12px; 
+  width: 100%; 
+  max-width: 400px;
+  text-align: center; 
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); 
+  animation: slideUp 0.2s ease-out;
+}
+
+.modal-content h3 { 
+  margin: 0 0 12px 0; 
+  color: #333; 
+  font-size: 1.25rem; 
+}
+
+.modal-content p { 
+  color: #666; 
+  margin-bottom: 20px; 
+  font-size: 1rem; 
+  line-height: 1.4; 
+}
+
+.modal-actions { 
+  display: flex; 
+  gap: 12px; 
+}
+
+.btn-cancel, .btn-confirm {
+  flex: 1; 
+  padding: 12px; 
+  border: none; 
+  border-radius: 8px; 
+  font-size: 1rem;
+  font-weight: 600; 
+  cursor: pointer; 
+  transition: opacity 0.2s;
+}
+
+.btn-cancel { 
+  background: #e9ecef; 
+  color: #495057; 
+}
+
+.btn-confirm { 
+  background: #42b883; 
+  color: white; 
+}
+
+.btn-cancel:disabled, .btn-confirm:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed; 
+}
+
+.loading, .error { 
+  text-align: center; 
+  padding: 20px; 
+  font-size: 1.1rem; 
+}
+
+.error { 
+  color: #e74c3c; 
+  background: #fdecea; 
+  border-radius: 6px; 
+}
+
+@keyframes fadeIn { 
+  from { opacity: 0; } 
+  to { opacity: 1; } 
+}
+
+@keyframes slideUp { 
+  from { transform: translateY(20px); opacity: 0; } 
+  to { transform: translateY(0); opacity: 1; } 
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .report-cylinder-empty-screen {
+    padding: 15px;
+  }
+  .slot-rectangle {
+    width: calc(50% - 6px);
+    height: 90px;
+  }
+}
+</style>
