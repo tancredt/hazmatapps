@@ -1,62 +1,77 @@
 <template>
-  <div class="report-cylinder-empty-screen">
-    <h2>Report Cylinder Empty</h2>
-    <h3>{{ location_label }} ({{ district }})</h3>
+<div class="report-cylinder-empty-screen">
+<h2>Report Cylinder Empty</h2>
+<h3>{{ location_label }} ({{ district }})</h3>
+<div v-if="isLoading" class="loading">Loading cylinders...</div>
+ <div v-if="error" class="error">{{ error }}</div>
+ <div v-if="!isLoading && !error" class="slots-container">
+   <!-- Fallback if no slots are configured for this location at all -->
+   <div v-if="Object.keys(slotsByType).length === 0" class="empty-state">
+     No cylinder slots configured for this location.
+   </div>
 
-    <div v-if="isLoading" class="loading">Loading cylinders...</div>
-    <div v-if="error" class="error">{{ error }}</div>
+   <!-- Render a section for each CylinderType that has slots -->
+   <div v-for="(slotCount, typeId) in slotsByType" :key="'type-' + typeId" class="type-section">
+     <h3 class="type-header">
+       {{ getCylinderTypeLabel(getCylinderType(typeId)) }} 
+       <span class="slot-summary">({{ getCylindersForType(typeId).length }} / {{ slotCount }})</span>
+     </h3>
+     
+     <div class="slots-grid">
+       <div 
+         v-for="i in slotCount" 
+         :key="'slot-' + typeId + '-' + i"
+         class="slot-rectangle"
+         :class="{ 
+           filled: getCylindersForType(typeId)[i-1], 
+           empty: !getCylindersForType(typeId)[i-1] 
+         }"
+         @click="getCylindersForType(typeId)[i-1] && openConfirmDialog(getCylindersForType(typeId)[i-1])"
+       >
+         <template v-if="getCylindersForType(typeId)[i-1]">
+           <span class="cylinder-label">{{ getCylindersForType(typeId)[i-1].label }}</span>
+           <span class="cylinder-details">{{ getCylinderDetails(getCylindersForType(typeId)[i-1]).typeLabel }}</span>
+           <span class="cylinder-expiry" :class="{ 'expired': isExpired(getCylindersForType(typeId)[i-1].expiry_date) }">
+             Exp: {{ getCylinderDetails(getCylindersForType(typeId)[i-1]).expiry }}
+           </span>
+         </template>
+         <template v-else>
+           Empty
+         </template>
+       </div>
+     </div>
+   </div>
+ </div>
 
-    <div v-if="!isLoading && !error" class="slots-container">
-      <!-- Cylinders Grid -->
-      <div class="slots-grid">
-        <div 
-          v-for="cylinder in displayItems" 
-          :key="'cyl-' + cylinder.id"
-          class="slot-rectangle filled"
-          @click="openConfirmDialog(cylinder)"
-        >
-          <span class="cylinder-label">{{ cylinder.label }}</span>
-          <span class="cylinder-details">{{ getCylinderDetails(cylinder).typeLabel }}</span>
-          <span class="cylinder-expiry" :class="{ 'expired': isExpired(cylinder.expiry_date) }">
-            Exp: {{ getCylinderDetails(cylinder).expiry }}
-          </span>
-        </div>
-      </div>
+ <!-- Confirm Dialog -->
+ <div v-if="showConfirmDialog" class="modal-overlay" @click.self="closeConfirmDialog">
+   <div class="modal-content">
+     <h3>Confirm Report</h3>
+     <p>Are you sure you want to report <strong>{{ selectedCylinder?.label }}</strong> as empty?</p>
+     <div class="modal-actions">
+       <button class="btn-cancel" @click="closeConfirmDialog" :disabled="isProcessing">Cancel</button>
+       <button class="btn-confirm" @click="submitFault" :disabled="isProcessing">
+         {{ isProcessing ? 'Reporting...' : 'Yes, Report Empty' }}
+       </button>
+     </div>
+   </div>
+ </div>
 
-      <div v-if="displayItems.length === 0" class="empty-state">
-        No active cylinders found at this location.
-      </div>
-    </div>
-
-    <!-- Confirm Dialog -->
-    <div v-if="showConfirmDialog" class="modal-overlay" @click.self="closeConfirmDialog">
-      <div class="modal-content">
-        <h3>Confirm Report</h3>
-        <p>Are you sure you want to report <strong>{{ selectedCylinder?.label }}</strong> as empty?</p>
-        <div class="modal-actions">
-          <button class="btn-cancel" @click="closeConfirmDialog" :disabled="isProcessing">Cancel</button>
-          <button class="btn-confirm" @click="submitFault" :disabled="isProcessing">
-            {{ isProcessing ? 'Reporting...' : 'Yes, Report Empty' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Success Dialog -->
-    <div v-if="showSuccessDialog" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Success</h3>
-        <p>Fault reported successfully for <strong>{{ selectedCylinder?.label }}</strong>.</p>
-        <div class="modal-actions">
-          <button class="btn-confirm" @click="closeSuccessDialog">OK</button>
-        </div>
-      </div>
-    </div>
-  </div>
+ <!-- Success Dialog -->
+ <div v-if="showSuccessDialog" class="modal-overlay">
+   <div class="modal-content">
+     <h3>Success</h3>
+     <p>Fault reported successfully for <strong>{{ selectedCylinder?.label }}</strong>.</p>
+     <div class="modal-actions">
+       <button class="btn-confirm" @click="closeSuccessDialog">OK</button>
+     </div>
+   </div>
+ </div>
+</div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { apiFetch } from '@/utils/api';
 
 const props = defineProps({
@@ -68,9 +83,15 @@ const isLoading = ref(false);
 const error = ref('');
 const isProcessing = ref(false);
 
+const currentLocation = ref(null);
 const cylinderModels = ref([]);
 const cylinderTypes = ref([]);
 const locationCylinders = ref([]);
+const locationCylinderSlots = ref([]);
+
+// Grouped data structures
+const cylindersByType = ref({}); 
+const slotsByType = ref({}); 
 
 const showConfirmDialog = ref(false);
 const showSuccessDialog = ref(false);
@@ -101,7 +122,7 @@ const getCylinderTypeLabel = (type) => {
     if (!gas) return null;
     return `${getGasDisplay(gas)} ${conc ?? ''} ${getUnitDisplay(units)}`.trim();
   };
-  
+
   const entry1 = buildEntry(type.cylinder_1_gas, type.cylinder_1_conc, type.cylinder_1_units);
   const entry2 = buildEntry(type.cylinder_2_gas, type.cylinder_2_conc, type.cylinder_2_units);
   const entry3 = buildEntry(type.cylinder_3_gas, type.cylinder_3_conc, type.cylinder_3_units);
@@ -115,13 +136,21 @@ const getCylinderTypeLabel = (type) => {
   return gasEntries.length > 0 ? gasEntries.join('; ') : `Balance: ${getGasDisplay(type.balance_gas)}`;
 };
 
+const getCylinderType = (typeId) => {
+  return cylinderTypes.value.find(t => t.id === Number(typeId));
+};
+
+const getCylindersForType = (typeId) => {
+  return cylindersByType.value[typeId] || [];
+};
+
 const getCylinderDetails = (cylinder) => {
   const model = cylinderModels.value.find(m => m.id === cylinder.cylinder_model);
   const type = cylinderTypes.value.find(t => t.id === model?.cylinder_type);
-  
+
   const typeLabel = type ? getCylinderTypeLabel(type) : (model?.part_number || 'Unknown Type');
   const expiry = cylinder.expiry_date ? new Date(cylinder.expiry_date).toLocaleDateString('en-AU') : 'No Expiry';
-  
+
   return { typeLabel, expiry };
 };
 
@@ -137,16 +166,44 @@ const fetchData = async () => {
   isLoading.value = true;
   error.value = '';
   try {
-    const [cylsRes, modelsRes, typesRes] = await Promise.all([
-      // Fetch all cylinders at this location, excluding 'MT' (Empty)
+    // 1. Resolve Location ID
+    const locations = await apiFetch('/locations/');
+    currentLocation.value = locations.find(loc => loc.label === props.location_label);
+    if (!currentLocation.value) throw new Error('Location not found');
+
+    // 2. Fetch all required data in parallel
+    const [slotsRes, cylsRes, modelsRes, typesRes] = await Promise.all([
+      apiFetch(`/locationcylinderslots/?location=${currentLocation.value.id}`),
       apiFetch(`/cylinders/?location__label=${encodeURIComponent(props.location_label)}&exclude_status=MT`),
       apiFetch('/cylindermodels/'),
       apiFetch('/cylindertypes/')
     ]);
 
+    locationCylinderSlots.value = slotsRes || [];
     locationCylinders.value = cylsRes || [];
     cylinderModels.value = modelsRes || [];
     cylinderTypes.value = typesRes || [];
+
+    // 3. Group slots by cylinder_type
+    const slotsGrouped = {};
+    for (const slot of locationCylinderSlots.value) {
+      const typeId = slot.cylinder_type;
+      slotsGrouped[typeId] = (slotsGrouped[typeId] || 0) + 1;
+    }
+    slotsByType.value = slotsGrouped;
+
+    // 4. Group cylinders by cylinder_type
+    const cylsGrouped = {};
+    for (const cyl of locationCylinders.value) {
+      const model = cylinderModels.value.find(m => m.id === cyl.cylinder_model);
+      if (model) {
+        const typeId = model.cylinder_type;
+        if (!cylsGrouped[typeId]) cylsGrouped[typeId] = [];
+        cylsGrouped[typeId].push(cyl);
+      }
+    }
+    cylindersByType.value = cylsGrouped;
+
   } catch (err) {
     console.error('Failed to fetch data:', err);
     error.value = 'Failed to load cylinder data. Please try again.';
@@ -154,9 +211,6 @@ const fetchData = async () => {
     isLoading.value = false;
   }
 };
-
-// --- Computed Layout ---
-const displayItems = computed(() => locationCylinders.value);
 
 // --- Dialog & Action Handlers ---
 const openConfirmDialog = (cylinder) => {
@@ -180,31 +234,27 @@ const submitFault = async () => {
 
   isProcessing.value = true;
   try {
-    // 1. Resolve Location ID (required for the fault report foreign key)
-    const locations = await apiFetch('/locations/');
-    const location = locations.find(loc => loc.label === props.location_label);
-
-    if (!location) {
+    if (!currentLocation.value) {
       throw new Error('Could not determine location ID for fault report.');
     }
 
-    // 2. Build the fault payload
+    // Build the fault payload
     const payload = {
       cylinder: selectedCylinder.value.id,
       report_dt: new Date().toISOString(),
-      report_location: location.id,
+      report_location: currentLocation.value.id,
       fault_type: 'MT', // MT = Empty
       status: 'OP',     // Open
       reported_by: 'District Cache App'
     };
 
-    // 3. Submit to API
+    // Submit to API
     await apiFetch('/cylinderfaults/', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
 
-    // 4. Success flow
+    // Success flow
     showConfirmDialog.value = false;
     showSuccessDialog.value = true;
   } catch (err) {
@@ -231,6 +281,23 @@ onMounted(async () => {
 
 .slots-container { margin-top: 20px; }
 
+.type-section {
+  margin-bottom: 30px;
+}
+.type-header {
+  font-size: 1.2rem;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 8px;
+}
+.slot-summary {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: normal;
+  margin-left: 8px;
+}
+
 .slots-grid { 
   display: flex; 
   flex-wrap: wrap; 
@@ -241,27 +308,39 @@ onMounted(async () => {
 .slot-rectangle {
   width: 140px; 
   height: 90px; 
-  border: 2px solid #42b883; 
   border-radius: 8px;
   display: flex; 
   flex-direction: column; 
   align-items: center; 
   justify-content: center;
   text-align: center; 
-  background: #e8f8f2; 
-  color: #333;
   padding: 8px; 
   box-sizing: border-box; 
   word-break: break-word;
   transition: all 0.2s ease;
+}
+
+.slot-rectangle.filled {
+  border: 2px solid #42b883;
+  background: #e8f8f2;
+  color: #333;
   cursor: pointer;
 }
 
-.slot-rectangle:hover { 
-  border-color: #36966d; 
-  background: #d1f2eb; 
-  transform: translateY(-3px); 
+.slot-rectangle.filled:hover {
+  border-color: #36966d;
+  background: #d1f2eb;
+  transform: translateY(-3px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.slot-rectangle.empty {
+  border: 2px dashed #adb5bd;
+  background: #f8f9fa;
+  color: #adb5bd;
+  font-style: italic;
+  font-weight: 400;
+  cursor: default;
 }
 
 .cylinder-label { 
