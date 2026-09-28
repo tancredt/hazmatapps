@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.apps import apps
 from django.db import models
 
-#docker compose exec -e DB_USER="$DB_ADMIN_USER" -e DB_PASSWORD="$DB_ADMIN_PASSWORD" web python manage.py export_csv [your_arguments_here]
+#docker compose exec web python manage.py export_csv --dir /app/hazmatapps/csv_export
 
 class Command(BaseCommand):
     help = "Export database models to CSV files compatible with import_csv.py"
