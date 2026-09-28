@@ -44,10 +44,12 @@ class Command(BaseCommand):
             "stuff.DetectorFault",
             "stuff.CylinderType",
             "stuff.CylinderModel",
+            "stuff.LocationCylinderSlot",    
             "stuff.Cylinder",
             "stuff.CylinderFault",
             "stuff.LocationDetectorLog",
-        ]
+            "stuff.LocationCylinderLog",     
+]
 
         for model_path in model_order:
             self.export_model(model_path, prefix, export_dir)
