@@ -338,7 +338,7 @@ class CylinderFaultViewSet(viewsets.ModelViewSet):
     filterset_class = CylinderFaultFilter
 
 
-============== PDF Report Views ==============
+#============== PDF Report Views ==============
 
 def get_date_context():
     today = timezone.now().date()
