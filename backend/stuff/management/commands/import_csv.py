@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction, models
 from django.apps import apps
 from django.utils import timezone
-# 🎯 Import Django's robust date/datetime parsers
+# Import Django's robust date/datetime parsers
 from django.utils.dateparse import parse_date as django_parse_date
 from django.utils.dateparse import parse_datetime as django_parse_datetime
 
@@ -34,7 +34,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.prefix = options["prefix"]
         self.csv_dir = options["dir"]
-
+        
+        # ✅ UPDATED: Added LocationCylinderSlot and LocationCylinderLog in correct FK order
         self.model_order = [
             "stuff.Location",
             "stuff.DetectorModel",
@@ -49,13 +50,14 @@ class Command(BaseCommand):
             "stuff.DetectorFault",
             "stuff.CylinderType",
             "stuff.CylinderModel",
+            "stuff.LocationCylinderSlot",   # <--- ADDED (Depends on Location, CylinderType)
             "stuff.Cylinder",
+            "stuff.LocationCylinderLog",    # <--- ADDED (Depends on Location, Cylinder)
             "stuff.CylinderFault",
             "stuff.LocationDetectorLog",
         ]
-
+        
         trigger_uri = "stuff.Detector:log_detector_location_change"
-
         self.stdout.write("🛡️ Disabling pgtrigger for Detector...")
         pgtrigger.uninstall(trigger_uri)
 
@@ -77,24 +79,26 @@ class Command(BaseCommand):
         csv_path = os.path.join(self.csv_dir, csv_name)
 
         if not os.path.exists(csv_path):
-            self.stdout.write(self.style.WARNING(f"Skip  {csv_name} (not found)"))
+            self.stdout.write(self.style.WARNING(f"⏭️ Skip  {csv_name} (not found)"))
             return
 
         model = apps.get_model(model_path)
         field_map = self.get_field_map(model)
 
-        self.stdout.write(f"Load  {csv_name} → {model_path}")
+        self.stdout.write(f"📥 Load  {csv_name} → {model_path}")
+
         with open(csv_path, "r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             if not reader.fieldnames:
-                self.stdout.write(self.style.WARNING("  Empty file"))
+                self.stdout.write(self.style.WARNING("  ⚠️ Empty file"))
                 return
 
             valid_cols, skipped_cols = self.validate_columns(reader.fieldnames, field_map)
             if skipped_cols:
-                self.stdout.write(f"  Ignore columns: {skipped_cols}")
+                self.stdout.write(f"  ℹ️ Ignore columns: {skipped_cols}")
+
             if not valid_cols:
-                self.stdout.write(self.style.ERROR("  No valid columns"))
+                self.stdout.write(self.style.ERROR("  ❌ No valid columns"))
                 return
 
             # Temporarily disable auto_now and auto_now_add ONLY for fields in the CSV
@@ -113,7 +117,7 @@ class Command(BaseCommand):
                 objects_to_create = []
                 errors = 0
                 success = 0
-
+                
                 for row_num, row in enumerate(reader, start=2):
                     try:
                         data = self.convert_row(row, valid_cols, field_map)
@@ -123,15 +127,14 @@ class Command(BaseCommand):
                     except Exception as e:
                         errors += 1
                         if errors <= 5:
-                            self.stdout.write(self.style.ERROR(f"  Row {row_num}: {e}"))
+                            self.stdout.write(self.style.ERROR(f"  ❌ Row {row_num}: {e}"))
 
                 if objects_to_create:
                     with transaction.atomic():
                         model.objects.bulk_create(objects_to_create, batch_size=1000)
 
-                status = "OK" if errors == 0 else f"{errors} ERR"
+                status = "✅ OK" if errors == 0 else f"❌ {errors} ERR"
                 self.stdout.write(self.style.SUCCESS(f"  → {success} rows ({status})"))
-            
             finally:
                 # Restore auto_now and auto_now_add states
                 for field_name, states in original_states.items():
@@ -164,6 +167,7 @@ class Command(BaseCommand):
             raw = row.get(csv_col, "").strip()
             field = field_map[csv_col]
             converted = self.convert_value(raw, field)
+            
             if converted is not None or not self.is_nullable(field):
                 data[orm_col] = converted
         return data
@@ -178,30 +182,29 @@ class Command(BaseCommand):
             if getattr(field, 'auto_now', False) or getattr(field, 'auto_now_add', False):
                 return timezone.now()
             return None
-        
+
         if isinstance(field, (models.AutoField, models.BigAutoField, models.IntegerField)):
             return int(raw)
         if isinstance(field, models.DecimalField):
             return Decimal(raw)
         if isinstance(field, models.BooleanField):
             return raw.lower() in ("1", "true", "t", "yes", "on")
-        
+            
         # DateTimeField is a subclass of DateField in Django, so checking DateField first 
         # will incorrectly catch all datetimes and try to parse them as dates.
         if isinstance(field, models.DateTimeField):
             return self.parse_datetime(raw)
         if isinstance(field, models.DateField):
             return self.parse_date(raw)
-            
         if isinstance(field, models.ForeignKey):
             return int(raw)
+            
         return raw
 
     def parse_date(self, value):
         parsed = django_parse_date(value)
         if parsed:
             return parsed
-        
         # Fallback for other formats
         for fmt in ("%d/%m/%Y", "%m/%d/%Y"):
             try:
@@ -217,11 +220,10 @@ class Command(BaseCommand):
             if timezone.is_naive(parsed):
                 parsed = timezone.make_aware(parsed)
             return parsed
-            
         raise ValueError(f"bad datetime: {value}")
 
     def reset_sequences(self):
-        self.stdout.write("\nReset sequences...")
+        self.stdout.write("\n🔄 Reset sequences...")
         from django.db import connection
         with connection.cursor() as cursor:
             for model_path in self.model_order:
@@ -239,6 +241,6 @@ class Command(BaseCommand):
                             cursor.execute(
                                 f"SELECT setval(%s, %s, true)", [result[0], max_id]
                             )
-                            self.stdout.write(f"  {table}: {max_id}")
+                            self.stdout.write(f"  ✅ {table}: {max_id}")
                 except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"  {table}: {e}"))
+                    self.stdout.write(self.style.WARNING(f"  ⚠️ {table}: {e}"))

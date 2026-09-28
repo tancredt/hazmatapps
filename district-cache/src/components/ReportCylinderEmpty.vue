@@ -1,77 +1,91 @@
 <template>
 <div class="report-cylinder-empty-screen">
-<h2>Report Cylinder Empty</h2>
-<h3>{{ location_label }} ({{ district }})</h3>
-<div v-if="isLoading" class="loading">Loading cylinders...</div>
- <div v-if="error" class="error">{{ error }}</div>
- <div v-if="!isLoading && !error" class="slots-container">
-   <!-- Fallback if no slots are configured for this location at all -->
-   <div v-if="Object.keys(slotsByType).length === 0" class="empty-state">
-     No cylinder slots configured for this location.
-   </div>
+  <h2>Report Cylinder Empty</h2>
+  <h3>{{ location_label }} ({{ district }})</h3>
+  
+  <div v-if="isLoading" class="loading">Loading cylinders...</div>
+  <div v-if="error" class="error">{{ error }}</div>
+  
+  <div v-if="!isLoading && !error" class="sections-container">
+    <!-- Fallback if no slots are configured -->
+    <div v-if="typeSections.length === 0" class="empty-state">
+      No cylinder slots configured for this location.
+    </div>
 
-   <!-- Render a section for each CylinderType that has slots -->
-   <div v-for="(slotCount, typeId) in slotsByType" :key="'type-' + typeId" class="type-section">
-     <h3 class="type-header">
-       {{ getCylinderTypeLabel(getCylinderType(typeId)) }} 
-       <span class="slot-summary">({{ getCylindersForType(typeId).length }} / {{ slotCount }})</span>
-     </h3>
-     
-     <div class="slots-grid">
-       <div 
-         v-for="i in slotCount" 
-         :key="'slot-' + typeId + '-' + i"
-         class="slot-rectangle"
-         :class="{ 
-           filled: getCylindersForType(typeId)[i-1], 
-           empty: !getCylindersForType(typeId)[i-1] 
-         }"
-         @click="getCylindersForType(typeId)[i-1] && openConfirmDialog(getCylindersForType(typeId)[i-1])"
-       >
-         <template v-if="getCylindersForType(typeId)[i-1]">
-           <span class="cylinder-label">{{ getCylindersForType(typeId)[i-1].label }}</span>
-           <span class="cylinder-details">{{ getCylinderDetails(getCylindersForType(typeId)[i-1]).typeLabel }}</span>
-           <span class="cylinder-expiry" :class="{ 'expired': isExpired(getCylindersForType(typeId)[i-1].expiry_date) }">
-             Exp: {{ getCylinderDetails(getCylindersForType(typeId)[i-1]).expiry }}
-           </span>
-         </template>
-         <template v-else>
-           Empty
-         </template>
-       </div>
-     </div>
-   </div>
- </div>
+    <!-- Render a section for each CylinderType that has slots -->
+    <div v-for="section in typeSections" :key="'type-' + section.typeId" class="location-section">
+      <h3>{{ getCylinderTypeLabel(section.type) }}</h3>
+      <p class="section-subtitle">Click an operational cylinder to report as empty</p>
+      
+      <!-- Slot Rectangles -->
+      <div class="slots-grid">
+        <div 
+          v-for="i in section.slotCount" 
+          :key="'slot-' + section.typeId + '-' + i"
+          class="slot-rectangle"
+          :class="{ empty: !section.slottedCyls[i-1] }"
+          @click="section.slottedCyls[i-1] && openConfirmDialog(section.slottedCyls[i-1])"
+        >
+          <template v-if="section.slottedCyls[i-1]">
+            <span class="cylinder-label">{{ section.slottedCyls[i-1].label }}</span>
+            <span class="cylinder-details">{{ getCylinderDetails(section.slottedCyls[i-1]).typeLabel }}</span>
+            <span class="cylinder-expiry" :class="{ 'expired': isExpired(section.slottedCyls[i-1].expiry_date) }">
+              Exp: {{ getCylinderDetails(section.slottedCyls[i-1]).expiry }}
+            </span>
+          </template>
+          <template v-else>
+            Empty
+          </template>
+        </div>
+      </div>
 
- <!-- Confirm Dialog -->
- <div v-if="showConfirmDialog" class="modal-overlay" @click.self="closeConfirmDialog">
-   <div class="modal-content">
-     <h3>Confirm Report</h3>
-     <p>Are you sure you want to report <strong>{{ selectedCylinder?.label }}</strong> as empty?</p>
-     <div class="modal-actions">
-       <button class="btn-cancel" @click="closeConfirmDialog" :disabled="isProcessing">Cancel</button>
-       <button class="btn-confirm" @click="submitFault" :disabled="isProcessing">
-         {{ isProcessing ? 'Reporting...' : 'Yes, Report Empty' }}
-       </button>
-     </div>
-   </div>
- </div>
+      <!-- Overflow Area -->
+      <div v-if="section.overflowCyls.length > 0" class="overflow-area">
+        <h4>Overflow / Non-Operational ({{ section.overflowCyls.length }})</h4>
+        <div class="overflow-list">
+          <div 
+            v-for="cyl in section.overflowCyls" 
+            :key="'ov-' + cyl.id" 
+            class="overflow-item"
+            @click="openConfirmDialog(cyl)"
+          >
+            {{ cyl.label }}
+            <span v-if="cyl.status !== 'OP'" class="status-badge">({{ cyl.status }})</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
- <!-- Success Dialog -->
- <div v-if="showSuccessDialog" class="modal-overlay">
-   <div class="modal-content">
-     <h3>Success</h3>
-     <p>Fault reported successfully for <strong>{{ selectedCylinder?.label }}</strong>.</p>
-     <div class="modal-actions">
-       <button class="btn-confirm" @click="closeSuccessDialog">OK</button>
-     </div>
-   </div>
- </div>
+  <!-- Confirm Dialog -->
+  <div v-if="showConfirmDialog" class="modal-overlay" @click.self="closeConfirmDialog">
+    <div class="modal-content">
+      <h3>Confirm Report</h3>
+      <p>Are you sure you want to report <strong>{{ selectedCylinder?.label }}</strong> as empty?</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" @click="closeConfirmDialog" :disabled="isProcessing">Cancel</button>
+        <button class="btn-confirm" @click="submitFault" :disabled="isProcessing">
+          {{ isProcessing ? 'Reporting...' : 'Yes, Report Empty' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Dialog -->
+  <div v-if="showSuccessDialog" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Success</h3>
+      <p>Fault reported successfully for <strong>{{ selectedCylinder?.label }}</strong>.</p>
+      <div class="modal-actions">
+        <button class="btn-confirm" @click="closeSuccessDialog">OK</button>
+      </div>
+    </div>
+  </div>
 </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { apiFetch } from '@/utils/api';
 
 const props = defineProps({
@@ -91,7 +105,7 @@ const locationCylinderSlots = ref([]);
 
 // Grouped data structures
 const cylindersByType = ref({}); 
-const slotsByType = ref({}); 
+const slotCountByType = ref({}); 
 
 const showConfirmDialog = ref(false);
 const showSuccessDialog = ref(false);
@@ -136,14 +150,6 @@ const getCylinderTypeLabel = (type) => {
   return gasEntries.length > 0 ? gasEntries.join('; ') : `Balance: ${getGasDisplay(type.balance_gas)}`;
 };
 
-const getCylinderType = (typeId) => {
-  return cylinderTypes.value.find(t => t.id === Number(typeId));
-};
-
-const getCylindersForType = (typeId) => {
-  return cylindersByType.value[typeId] || [];
-};
-
 const getCylinderDetails = (cylinder) => {
   const model = cylinderModels.value.find(m => m.id === cylinder.cylinder_model);
   const type = cylinderTypes.value.find(t => t.id === model?.cylinder_type);
@@ -159,6 +165,37 @@ const isExpired = (expiryDate) => {
   return new Date(expiryDate) < new Date();
 };
 
+// --- Computed Layout ---
+const typeSections = computed(() => {
+  const sections = [];
+  for (const [typeId, slotCount] of Object.entries(slotCountByType.value)) {
+    const type = cylinderTypes.value.find(t => t.id === Number(typeId));
+    const allCyls = cylindersByType.value[typeId] || [];
+    
+    // Strictly filter for Operational status to fill slots
+    const opCyls = allCyls.filter(c => c.status === 'OP');
+    const otherCyls = allCyls.filter(c => c.status !== 'OP');
+    
+    // Fill slots with OP cylinders up to the slot count
+    const slottedCyls = opCyls.slice(0, slotCount);
+    
+    // Everything else goes to overflow (excess OP cylinders + non-OP cylinders)
+    const overflowCyls = [
+      ...opCyls.slice(slotCount),
+      ...otherCyls
+    ];
+    
+    sections.push({
+      typeId,
+      type,
+      slotCount,
+      slottedCyls,
+      overflowCyls
+    });
+  }
+  return sections;
+});
+
 // --- Data Fetching ---
 const fetchData = async () => {
   if (!props.location_label) return;
@@ -171,7 +208,7 @@ const fetchData = async () => {
     currentLocation.value = locations.find(loc => loc.label === props.location_label);
     if (!currentLocation.value) throw new Error('Location not found');
 
-    // 2. Fetch all required data in parallel
+    // 2. Fetch all required data in parallel (Exclude MT/Empty cylinders)
     const [slotsRes, cylsRes, modelsRes, typesRes] = await Promise.all([
       apiFetch(`/locationcylinderslots/?location=${currentLocation.value.id}`),
       apiFetch(`/cylinders/?location__label=${encodeURIComponent(props.location_label)}&exclude_status=MT`),
@@ -184,13 +221,13 @@ const fetchData = async () => {
     cylinderModels.value = modelsRes || [];
     cylinderTypes.value = typesRes || [];
 
-    // 3. Group slots by cylinder_type
+    // 3. Group slots by cylinder_type (Count them)
     const slotsGrouped = {};
     for (const slot of locationCylinderSlots.value) {
       const typeId = slot.cylinder_type;
       slotsGrouped[typeId] = (slotsGrouped[typeId] || 0) + 1;
     }
-    slotsByType.value = slotsGrouped;
+    slotCountByType.value = slotsGrouped;
 
     // 4. Group cylinders by cylinder_type
     const cylsGrouped = {};
@@ -238,7 +275,6 @@ const submitFault = async () => {
       throw new Error('Could not determine location ID for fault report.');
     }
 
-    // Build the fault payload
     const payload = {
       cylinder: selectedCylinder.value.id,
       report_dt: new Date().toISOString(),
@@ -248,13 +284,11 @@ const submitFault = async () => {
       reported_by: 'District Cache App'
     };
 
-    // Submit to API
     await apiFetch('/cylinderfaults/', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
 
-    // Success flow
     showConfirmDialog.value = false;
     showSuccessDialog.value = true;
   } catch (err) {
@@ -279,93 +313,139 @@ onMounted(async () => {
   color: #333;
 }
 
-.slots-container { margin-top: 20px; }
+.sections-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 20px;
+}
 
-.type-section {
-  margin-bottom: 30px;
+/* Reusing SwapScreen Layout Classes */
+.location-section {
+  flex: 1; 
+  min-width: 320px; 
+  background: #f8f9fa; 
+  padding: 20px; 
+  border-radius: 8px; 
+  border: 1px solid #dee2e6;
 }
-.type-header {
-  font-size: 1.2rem;
-  color: #2c3e50;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #dee2e6;
-  padding-bottom: 8px;
-}
-.slot-summary {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: normal;
-  margin-left: 8px;
+
+.section-subtitle { 
+  color: #666; 
+  margin-top: -5px; 
+  margin-bottom: 15px; 
+  font-size: 0.95rem; 
 }
 
 .slots-grid { 
   display: flex; 
   flex-wrap: wrap; 
-  gap: 16px; 
+  gap: 12px; 
   margin-top: 15px; 
 }
 
 .slot-rectangle {
-  width: 140px; 
-  height: 90px; 
-  border-radius: 8px;
+  width: 130px; 
+  height: 90px; /* Slightly taller to fit 3 lines of text */
+  border: 2px solid #adb5bd; 
+  border-radius: 6px;
   display: flex; 
-  flex-direction: column; 
+  flex-direction: column;
   align-items: center; 
-  justify-content: center;
-  text-align: center; 
-  padding: 8px; 
-  box-sizing: border-box; 
-  word-break: break-word;
-  transition: all 0.2s ease;
-}
-
-.slot-rectangle.filled {
-  border: 2px solid #42b883;
-  background: #e8f8f2;
+  justify-content: center; 
+  text-align: center;
+  font-size: 0.9rem; 
+  font-weight: 600; 
+  background: #ffffff; 
   color: #333;
-  cursor: pointer;
+  cursor: pointer; 
+  transition: all 0.2s ease; 
+  padding: 8px; 
+  box-sizing: border-box;
+  word-break: break-word;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.slot-rectangle.filled:hover {
-  border-color: #36966d;
-  background: #d1f2eb;
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.slot-rectangle:hover:not(.empty) { 
+  border-color: #42b883; 
+  background: #f0fdf4; 
+  transform: translateY(-2px); 
 }
 
 .slot-rectangle.empty {
-  border: 2px dashed #adb5bd;
-  background: #f8f9fa;
-  color: #adb5bd;
-  font-style: italic;
-  font-weight: 400;
+  color: #adb5bd; 
+  font-style: italic; 
+  font-weight: 400; 
   cursor: default;
+  background: #f8f9fa; 
+  border-style: dashed;
 }
 
+/* Cylinder specific text inside the slot */
 .cylinder-label { 
-  font-size: 1.1rem; 
+  font-size: 1rem; 
   font-weight: 700; 
   color: #2c3e50; 
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  line-height: 1.2;
 }
-
 .cylinder-details { 
-  font-size: 0.75rem; 
+  font-size: 0.7rem; 
   color: #555; 
   line-height: 1.2;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
-
 .cylinder-expiry { 
-  font-size: 0.75rem; 
+  font-size: 0.7rem; 
   font-weight: 600; 
   color: #2c3e50; 
 }
-
 .cylinder-expiry.expired {
   color: #e74c3c;
   font-weight: 700;
+}
+
+/* Overflow Area (Exact match from SwapScreen) */
+.overflow-area { 
+  margin-top: 25px; 
+  padding-top: 15px; 
+  border-top: 1px dashed #ced4da; 
+}
+.overflow-area h4 { 
+  margin: 0 0 12px 0; 
+  color: #d35400; 
+  font-size: 1rem; 
+  font-weight: 600; 
+}
+.overflow-list { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+}
+.overflow-item {
+  padding: 8px 14px; 
+  background: #fff3cd; 
+  border: 1px solid #ffeeba; 
+  border-radius: 20px;
+  cursor: pointer; 
+  font-size: 0.9rem; 
+  font-weight: 500; 
+  color: #333; 
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent; 
+  user-select: none;
+}
+.overflow-item:hover { 
+  background: #ffe69c; 
+  transform: translateY(-1px); 
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  color: #856404;
+  margin-left: 4px;
+  font-weight: 600;
 }
 
 .empty-state {
@@ -379,6 +459,7 @@ onMounted(async () => {
   border: 2px dashed #dee2e6;
 }
 
+/* Modals (Exact match from SwapScreen) */
 .modal-overlay {
   position: fixed; 
   top: 0; left: 0; right: 0; bottom: 0; 
@@ -389,8 +470,7 @@ onMounted(async () => {
   z-index: 1000;
   padding: 20px; 
   animation: fadeIn 0.2s ease-out;
-}
-
+} 
 .modal-content {
   background: white; 
   padding: 24px; 
@@ -401,25 +481,21 @@ onMounted(async () => {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); 
   animation: slideUp 0.2s ease-out;
 }
-
 .modal-content h3 { 
   margin: 0 0 12px 0; 
   color: #333; 
   font-size: 1.25rem; 
 }
-
 .modal-content p { 
   color: #666; 
   margin-bottom: 20px; 
   font-size: 1rem; 
   line-height: 1.4; 
 }
-
 .modal-actions { 
   display: flex; 
   gap: 12px; 
 }
-
 .btn-cancel, .btn-confirm {
   flex: 1; 
   padding: 12px; 
@@ -430,18 +506,15 @@ onMounted(async () => {
   cursor: pointer; 
   transition: opacity 0.2s;
 }
-
 .btn-cancel { 
   background: #e9ecef; 
   color: #495057; 
 }
-
 .btn-confirm { 
   background: #42b883; 
   color: white; 
 }
-
-.btn-confirm:disabled, .btn-cancel:disabled { 
+.btn-cancel:disabled, .btn-confirm:disabled { 
   opacity: 0.6; 
   cursor: not-allowed; 
 }
@@ -451,7 +524,6 @@ onMounted(async () => {
   padding: 20px; 
   font-size: 1.1rem; 
 }
-
 .error { 
   color: #e74c3c; 
   background: #fdecea; 
@@ -462,7 +534,6 @@ onMounted(async () => {
   from { opacity: 0; } 
   to { opacity: 1; } 
 }
-
 @keyframes slideUp { 
   from { transform: translateY(20px); opacity: 0; } 
   to { transform: translateY(0); opacity: 1; } 
@@ -474,14 +545,8 @@ onMounted(async () => {
     padding: 15px;
   }
   .slot-rectangle {
-    width: calc(50% - 8px);
-    height: 85px;
-  }
-  .cylinder-label {
-    font-size: 1rem;
-  }
-  .cylinder-details, .cylinder-expiry {
-    font-size: 0.7rem;
+    width: calc(50% - 6px);
+    height: 90px;
   }
 }
 </style>
