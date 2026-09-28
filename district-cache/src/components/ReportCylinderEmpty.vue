@@ -63,7 +63,7 @@
       </div>
     </div>
 
-    <!-- ================= RECENT FAULTS TABLE ================= -->
+    <!-- Recent Faults Table -->
     <div v-if="recentFaults.length > 0" class="location-section">
       <h3>Recent Cylinder Faults</h3>
       <div class="table-container">
@@ -223,7 +223,6 @@ const fetchData = async () => {
   isLoading.value = true;
   error.value = '';
   try {
-    // 1. Fetch all required data in parallel
     const [slotsRes, cylsRes, modelsRes, typesRes, faultsRes] = await Promise.all([
       apiFetch(`/locationcylinderslots/?location__label=${encodeURIComponent(props.location_label)}`),
       apiFetch(`/cylinders/?location__label=${encodeURIComponent(props.location_label)}&exclude_status=MT`),
@@ -235,7 +234,7 @@ const fetchData = async () => {
     cylinderModels.value = modelsRes || [];
     cylinderTypes.value = typesRes || [];
 
-    // 2. Process Slots & Cylinders
+    // 1. Process Slots & Cylinders
     const assignedCylIds = new Set();
     const tempSlots = [];
 
@@ -264,7 +263,7 @@ const fetchData = async () => {
     const tempOverflow = (cylsRes || []).filter(cyl => !assignedCylIds.has(cyl.id));
     overflowCylinders.value = tempOverflow;
 
-    // 3. Process Recent Faults (Sort descending by date, limit to 10)
+    // 2. Process Recent Faults (Sort descending by date, limit to 10)
     recentFaults.value = (faultsRes || [])
       .sort((a, b) => new Date(b.report_dt) - new Date(a.report_dt))
       .slice(0, 10);
@@ -299,11 +298,16 @@ const submitFault = async () => {
 
   isProcessing.value = true;
   try {
-    const locations = await apiFetch('/locations/');
-    const location = locations.find(loc => loc.label === props.location_label);
+    // ✅ FIX: Fetch the specific location by label to avoid pagination issues. 
+    // Fetching all locations might return a paginated object { results: [...] } instead of an array.
+    const locationRes = await apiFetch(`/locations/?label=${encodeURIComponent(props.location_label)}`);
+    
+    // Safely handle both paginated { results: [] } and non-paginated [] responses
+    const locationData = Array.isArray(locationRes) ? locationRes : (locationRes.results || []);
+    const location = locationData[0];
 
     if (!location) {
-      throw new Error('Could not determine location ID for fault report.');
+      throw new Error(`Could not find location "${props.location_label}"`);
     }
 
     const payload = {
@@ -324,7 +328,7 @@ const submitFault = async () => {
     showSuccessDialog.value = true;
   } catch (err) {
     console.error('Failed to report fault:', err);
-    alert('Failed to report cylinder as empty. Please check your connection and try again.');
+    alert(`Failed to report cylinder as empty: ${err.message}`);
   } finally {
     isProcessing.value = false;
   }
