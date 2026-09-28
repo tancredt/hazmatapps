@@ -2,56 +2,29 @@
   <div class="report-cylinder-empty-screen">
     <h2>Report Cylinder Empty</h2>
     <h3>{{ location_label }} ({{ district }})</h3>
-    
-    <div class="model-selector">
-      <label>Cylinder Type:</label>
-      <select v-model="selectedCylinderTypeId" @change="fetchData">
-        <option value="">Select Cylinder Type</option>
-        <option v-for="type in cylinderTypes" :key="type.id" :value="type.id">
-          {{ getCylinderTypeLabel(type) }}
-        </option>
-      </select>
-    </div>
 
     <div v-if="isLoading" class="loading">Loading cylinders...</div>
     <div v-if="error" class="error">{{ error }}</div>
 
-    <div v-if="!isLoading && !error && selectedCylinderTypeId" class="slots-container">
-      <!-- Slotted Cylinders -->
+    <div v-if="!isLoading && !error" class="slots-container">
+      <!-- Cylinders Grid -->
       <div class="slots-grid">
         <div 
-          v-for="(item, index) in displayItems" 
-          :key="'slot-' + index"
-          class="slot-rectangle"
-          :class="{ 
-            empty: !item.cylinder, 
-            filled: item.cylinder
-          }"
-          @click="item.cylinder ? openConfirmDialog(item.cylinder) : null"
+          v-for="cylinder in displayItems" 
+          :key="'cyl-' + cylinder.id"
+          class="slot-rectangle filled"
+          @click="openConfirmDialog(cylinder)"
         >
-          <template v-if="item.cylinder">
-            <span class="cylinder-label">{{ item.cylinder.label }}</span>
-            <span class="cylinder-details">{{ getCylinderModelLabel(item.cylinder.cylinder_model) }}</span>
-          </template>
-          <template v-else>
-            Empty
-          </template>
+          <span class="cylinder-label">{{ cylinder.label }}</span>
+          <span class="cylinder-details">{{ getCylinderDetails(cylinder).typeLabel }}</span>
+          <span class="cylinder-expiry" :class="{ 'expired': isExpired(cylinder.expiry_date) }">
+            Exp: {{ getCylinderDetails(cylinder).expiry }}
+          </span>
         </div>
       </div>
 
-      <!-- Overflow Cylinders -->
-      <div v-if="overflowCylinders.length > 0" class="overflow-area">
-        <h4>Overflow Cylinders ({{ overflowCylinders.length }})</h4>
-        <div class="overflow-list">
-          <div 
-            v-for="cyl in overflowCylinders" 
-            :key="'ov-' + cyl.id"
-            class="overflow-item"
-            @click="openConfirmDialog(cyl)"
-          >
-            {{ cyl.label }}
-          </div>
-        </div>
+      <div v-if="displayItems.length === 0" class="empty-state">
+        No active cylinders found at this location.
       </div>
     </div>
 
@@ -95,11 +68,8 @@ const isLoading = ref(false);
 const error = ref('');
 const isProcessing = ref(false);
 
-const cylinderTypes = ref([]);
 const cylinderModels = ref([]);
-const selectedCylinderTypeId = ref('');
-
-const locationSlots = ref([]);
+const cylinderTypes = ref([]);
 const locationCylinders = ref([]);
 
 const showConfirmDialog = ref(false);
@@ -131,50 +101,52 @@ const getCylinderTypeLabel = (type) => {
     if (!gas) return null;
     return `${getGasDisplay(gas)} ${conc ?? ''} ${getUnitDisplay(units)}`.trim();
   };
+  
   const entry1 = buildEntry(type.cylinder_1_gas, type.cylinder_1_conc, type.cylinder_1_units);
   const entry2 = buildEntry(type.cylinder_2_gas, type.cylinder_2_conc, type.cylinder_2_units);
   const entry3 = buildEntry(type.cylinder_3_gas, type.cylinder_3_conc, type.cylinder_3_units);
   const entry4 = buildEntry(type.cylinder_4_gas, type.cylinder_4_conc, type.cylinder_4_units);
-  
+
   if (entry1) gasEntries.push(entry1);
   if (entry2) gasEntries.push(entry2);
   if (entry3) gasEntries.push(entry3);
   if (entry4) gasEntries.push(entry4);
-  
+
   return gasEntries.length > 0 ? gasEntries.join('; ') : `Balance: ${getGasDisplay(type.balance_gas)}`;
 };
 
-const getCylinderModelLabel = (modelId) => {
-  const model = cylinderModels.value.find(m => m.id === modelId);
-  return model ? model.part_number : `ID: ${modelId}`;
+const getCylinderDetails = (cylinder) => {
+  const model = cylinderModels.value.find(m => m.id === cylinder.cylinder_model);
+  const type = cylinderTypes.value.find(t => t.id === model?.cylinder_type);
+  
+  const typeLabel = type ? getCylinderTypeLabel(type) : (model?.part_number || 'Unknown Type');
+  const expiry = cylinder.expiry_date ? new Date(cylinder.expiry_date).toLocaleDateString('en-AU') : 'No Expiry';
+  
+  return { typeLabel, expiry };
+};
+
+const isExpired = (expiryDate) => {
+  if (!expiryDate) return false;
+  return new Date(expiryDate) < new Date();
 };
 
 // --- Data Fetching ---
-const fetchCylinderTypes = async () => {
-  try {
-    const data = await apiFetch('/cylindertypes/');
-    cylinderTypes.value = data || [];
-  } catch (err) {
-    console.error('Failed to fetch cylinder types:', err);
-  }
-};
-
 const fetchData = async () => {
-  if (!props.location_label || !selectedCylinderTypeId.value) return;
-  
+  if (!props.location_label) return;
+
   isLoading.value = true;
   error.value = '';
   try {
-    const [slotsRes, cylsRes, modelsRes] = await Promise.all([
-      apiFetch(`/locationcylinderslots/?location__label=${encodeURIComponent(props.location_label)}&cylinder_type=${selectedCylinderTypeId.value}`),
-      // Exclude 'MT' (Empty) cylinders so we only report on active ones
-      apiFetch(`/cylinders/?location__label=${encodeURIComponent(props.location_label)}&cylinder_model__cylinder_type=${selectedCylinderTypeId.value}&exclude_status=MT`),
-      apiFetch('/cylindermodels/')
+    const [cylsRes, modelsRes, typesRes] = await Promise.all([
+      // Fetch all cylinders at this location, excluding 'MT' (Empty)
+      apiFetch(`/cylinders/?location__label=${encodeURIComponent(props.location_label)}&exclude_status=MT`),
+      apiFetch('/cylindermodels/'),
+      apiFetch('/cylindertypes/')
     ]);
-    
-    locationSlots.value = slotsRes || [];
+
     locationCylinders.value = cylsRes || [];
     cylinderModels.value = modelsRes || [];
+    cylinderTypes.value = typesRes || [];
   } catch (err) {
     console.error('Failed to fetch data:', err);
     error.value = 'Failed to load cylinder data. Please try again.';
@@ -184,19 +156,7 @@ const fetchData = async () => {
 };
 
 // --- Computed Layout ---
-const displayItems = computed(() => {
-  const slotsCount = locationSlots.value.length;
-  const items = [];
-  for (let i = 0; i < slotsCount; i++) {
-    items.push({ cylinder: locationCylinders.value[i] || null });
-  }
-  return items;
-});
-
-const overflowCylinders = computed(() => {
-  const slotsCount = locationSlots.value.length;
-  return locationCylinders.value.slice(slotsCount);
-});
+const displayItems = computed(() => locationCylinders.value);
 
 // --- Dialog & Action Handlers ---
 const openConfirmDialog = (cylinder) => {
@@ -217,13 +177,13 @@ const closeSuccessDialog = () => {
 
 const submitFault = async () => {
   if (!selectedCylinder.value) return;
-  
+
   isProcessing.value = true;
   try {
     // 1. Resolve Location ID (required for the fault report foreign key)
     const locations = await apiFetch('/locations/');
     const location = locations.find(loc => loc.label === props.location_label);
-    
+
     if (!location) {
       throw new Error('Could not determine location ID for fault report.');
     }
@@ -233,7 +193,7 @@ const submitFault = async () => {
       cylinder: selectedCylinder.value.id,
       report_dt: new Date().toISOString(),
       report_location: location.id,
-      fault_type: 'MT', // MT = Empty (per CylinderFaultType choices)
+      fault_type: 'MT', // MT = Empty
       status: 'OP',     // Open
       reported_by: 'District Cache App'
     };
@@ -256,7 +216,7 @@ const submitFault = async () => {
 };
 
 onMounted(async () => {
-  await fetchCylinderTypes();
+  await fetchData();
 });
 </script>
 
@@ -269,108 +229,75 @@ onMounted(async () => {
   color: #333;
 }
 
-.model-selector { 
-  margin-bottom: 20px; 
-}
-.model-selector select {
-  padding: 8px 12px; 
-  font-size: 1rem; 
-  border-radius: 4px; 
-  border: 1px solid #ccc; 
-  width: 100%;
-  max-width: 400px;
-}
-
 .slots-container { margin-top: 20px; }
 
 .slots-grid { 
   display: flex; 
   flex-wrap: wrap; 
-  gap: 12px; 
+  gap: 16px; 
   margin-top: 15px; 
 }
 
 .slot-rectangle {
-  width: 110px; 
-  height: 80px; 
-  border: 2px solid #adb5bd; 
-  border-radius: 6px;
+  width: 140px; 
+  height: 90px; 
+  border: 2px solid #42b883; 
+  border-radius: 8px;
   display: flex; 
   flex-direction: column; 
   align-items: center; 
   justify-content: center;
   text-align: center; 
-  font-size: 0.9rem; 
-  font-weight: 600; 
-  background: #ffffff; 
+  background: #e8f8f2; 
   color: #333;
-  padding: 5px; 
+  padding: 8px; 
   box-sizing: border-box; 
   word-break: break-word;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.slot-rectangle.filled { 
-  border-color: #42b883; 
-  background: #e8f8f2; 
-  cursor: pointer; 
-}
-.slot-rectangle.filled:hover { 
+.slot-rectangle:hover { 
   border-color: #36966d; 
   background: #d1f2eb; 
-  transform: translateY(-2px); 
-}
-
-.slot-rectangle.empty {
-  color: #adb5bd; 
-  font-style: italic; 
-  font-weight: 400; 
-  background: #f8f9fa; 
-  border-style: dashed; 
-  cursor: default;
+  transform: translateY(-3px); 
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .cylinder-label { 
-  font-size: 1rem; 
+  font-size: 1.1rem; 
   font-weight: 700; 
   color: #2c3e50; 
-}
-.cylinder-details { 
-  font-size: 0.7rem; 
-  color: #666; 
-  margin-top: 4px; 
+  margin-bottom: 4px;
 }
 
-.overflow-area { 
-  margin-top: 25px; 
-  padding-top: 15px; 
-  border-top: 1px dashed #ced4da; 
+.cylinder-details { 
+  font-size: 0.75rem; 
+  color: #555; 
+  line-height: 1.2;
+  margin-bottom: 4px;
 }
-.overflow-area h4 { 
-  margin: 0 0 12px 0; 
-  color: #d35400; 
-  font-size: 1rem; 
+
+.cylinder-expiry { 
+  font-size: 0.75rem; 
   font-weight: 600; 
+  color: #2c3e50; 
 }
-.overflow-list { 
-  display: flex; 
-  flex-wrap: wrap; 
-  gap: 10px; 
+
+.cylinder-expiry.expired {
+  color: #e74c3c;
+  font-weight: 700;
 }
-.overflow-item {
-  padding: 8px 14px; 
-  background: #fff3cd; 
-  border: 1px solid #ffeeba; 
-  border-radius: 20px;
-  cursor: pointer; 
-  font-size: 0.9rem; 
-  font-weight: 500; 
-  color: #333; 
-  transition: all 0.2s;
-}
-.overflow-item:hover { 
-  background: #ffe69c; 
-  transform: translateY(-1px); 
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #adb5bd;
+  font-size: 1.1rem;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
 }
 
 .modal-overlay {
@@ -384,6 +311,7 @@ onMounted(async () => {
   padding: 20px; 
   animation: fadeIn 0.2s ease-out;
 }
+
 .modal-content {
   background: white; 
   padding: 24px; 
@@ -394,21 +322,25 @@ onMounted(async () => {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); 
   animation: slideUp 0.2s ease-out;
 }
+
 .modal-content h3 { 
   margin: 0 0 12px 0; 
   color: #333; 
   font-size: 1.25rem; 
 }
+
 .modal-content p { 
   color: #666; 
   margin-bottom: 20px; 
   font-size: 1rem; 
   line-height: 1.4; 
 }
+
 .modal-actions { 
   display: flex; 
   gap: 12px; 
 }
+
 .btn-cancel, .btn-confirm {
   flex: 1; 
   padding: 12px; 
@@ -419,14 +351,17 @@ onMounted(async () => {
   cursor: pointer; 
   transition: opacity 0.2s;
 }
+
 .btn-cancel { 
   background: #e9ecef; 
   color: #495057; 
 }
+
 .btn-confirm { 
   background: #42b883; 
   color: white; 
 }
+
 .btn-confirm:disabled, .btn-cancel:disabled { 
   opacity: 0.6; 
   cursor: not-allowed; 
@@ -437,6 +372,7 @@ onMounted(async () => {
   padding: 20px; 
   font-size: 1.1rem; 
 }
+
 .error { 
   color: #e74c3c; 
   background: #fdecea; 
@@ -447,6 +383,7 @@ onMounted(async () => {
   from { opacity: 0; } 
   to { opacity: 1; } 
 }
+
 @keyframes slideUp { 
   from { transform: translateY(20px); opacity: 0; } 
   to { transform: translateY(0); opacity: 1; } 
@@ -458,8 +395,14 @@ onMounted(async () => {
     padding: 15px;
   }
   .slot-rectangle {
-    width: calc(50% - 6px);
-    height: 70px;
+    width: calc(50% - 8px);
+    height: 85px;
+  }
+  .cylinder-label {
+    font-size: 1rem;
+  }
+  .cylinder-details, .cylinder-expiry {
+    font-size: 0.7rem;
   }
 }
 </style>
