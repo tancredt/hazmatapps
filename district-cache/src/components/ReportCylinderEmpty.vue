@@ -62,6 +62,33 @@
         </div>
       </div>
     </div>
+
+    <!-- ================= RECENT FAULTS TABLE ================= -->
+    <div v-if="recentFaults.length > 0" class="location-section">
+      <h3>Recent Cylinder Faults</h3>
+      <div class="table-container">
+        <table class="faults-table">
+          <thead>
+            <tr>
+              <th>Cylinder</th>
+              <th>Reported</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="fault in recentFaults" :key="fault.id">
+              <td class="cylinder-cell">{{ getCylinderLabel(fault.cylinder) }}</td>
+              <td>{{ formatDate(fault.report_dt) }}</td>
+              <td>
+                <span class="status-pill" :class="fault.status === 'OP' ? 'status-open' : 'status-closed'">
+                  {{ getStatusLabel(fault.status) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- Confirm Dialog -->
@@ -104,12 +131,12 @@ const isLoading = ref(false);
 const error = ref('');
 const isProcessing = ref(false);
 
-const currentLocation = ref(null);
 const cylinderModels = ref([]);
 const cylinderTypes = ref([]);
 
 const displaySlots = ref([]);
 const overflowCylinders = ref([]);
+const recentFaults = ref([]);
 
 const showConfirmDialog = ref(false);
 const showSuccessDialog = ref(false);
@@ -169,6 +196,26 @@ const isExpired = (expiryDate) => {
   return new Date(expiryDate) < new Date();
 };
 
+// --- Fault Table Helpers ---
+const getCylinderLabel = (cylId) => {
+  return `CYL${String(cylId).padStart(5, '0')}`;
+};
+
+const getStatusLabel = (status) => {
+  return status === 'OP' ? 'Open' : status === 'CL' ? 'Closed' : status;
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleString('en-AU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 // --- Data Fetching ---
 const fetchData = async () => {
   if (!props.location_label) return;
@@ -176,21 +223,19 @@ const fetchData = async () => {
   isLoading.value = true;
   error.value = '';
   try {
-    const locations = await apiFetch('/locations/');
-    currentLocation.value = locations.find(loc => loc.label === props.location_label);
-    if (!currentLocation.value) throw new Error('Location not found');
-
-    const [slotsRes, cylsRes, modelsRes, typesRes] = await Promise.all([
-      apiFetch(`/locationcylinderslots/?location=${currentLocation.value.id}`),
+    // 1. Fetch all required data in parallel
+    const [slotsRes, cylsRes, modelsRes, typesRes, faultsRes] = await Promise.all([
+      apiFetch(`/locationcylinderslots/?location__label=${encodeURIComponent(props.location_label)}`),
       apiFetch(`/cylinders/?location__label=${encodeURIComponent(props.location_label)}&exclude_status=MT`),
       apiFetch('/cylindermodels/'),
-      apiFetch('/cylindertypes/')
+      apiFetch('/cylindertypes/'),
+      apiFetch(`/cylinderfaults/?report_location__label=${encodeURIComponent(props.location_label)}`)
     ]);
 
     cylinderModels.value = modelsRes || [];
     cylinderTypes.value = typesRes || [];
 
-    // Assign cylinders to slots
+    // 2. Process Slots & Cylinders
     const assignedCylIds = new Set();
     const tempSlots = [];
 
@@ -216,9 +261,13 @@ const fetchData = async () => {
     }
     displaySlots.value = tempSlots;
 
-    // Remaining cylinders go to overflow
     const tempOverflow = (cylsRes || []).filter(cyl => !assignedCylIds.has(cyl.id));
     overflowCylinders.value = tempOverflow;
+
+    // 3. Process Recent Faults (Sort descending by date, limit to 10)
+    recentFaults.value = (faultsRes || [])
+      .sort((a, b) => new Date(b.report_dt) - new Date(a.report_dt))
+      .slice(0, 10);
 
   } catch (err) {
     console.error('Failed to fetch data:', err);
@@ -246,14 +295,21 @@ const closeSuccessDialog = () => {
 };
 
 const submitFault = async () => {
-  if (!selectedCylinder.value || !currentLocation.value) return;
+  if (!selectedCylinder.value) return;
 
   isProcessing.value = true;
   try {
+    const locations = await apiFetch('/locations/');
+    const location = locations.find(loc => loc.label === props.location_label);
+
+    if (!location) {
+      throw new Error('Could not determine location ID for fault report.');
+    }
+
     const payload = {
       cylinder: selectedCylinder.value.id,
       report_dt: new Date().toISOString(),
-      report_location: currentLocation.value.id,
+      report_location: location.id,
       fault_type: 'MT',
       status: 'OP',
       reported_by: 'District Cache App'
@@ -456,6 +512,43 @@ onMounted(async () => {
   background: #f8f9fa;
   border-radius: 8px;
   border: 2px dashed #dee2e6;
+}
+
+/* ===== FAULTS TABLE ===== */
+.table-container { overflow-x: auto; margin-top: 15px; }
+.faults-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.faults-table th,
+.faults-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+.faults-table th {
+  background: #e9ecef;
+  font-weight: 600;
+  color: #495057;
+}
+.faults-table tbody tr:hover { background: #f1f3f5; }
+.cylinder-cell { font-weight: 600; color: #2c3e50; }
+
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.status-open {
+  background: #fff3cd;
+  color: #856404;
+}
+.status-closed {
+  background: #d4edda;
+  color: #155724;
 }
 
 /* Modals */
