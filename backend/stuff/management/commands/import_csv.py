@@ -7,7 +7,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction, models
 from django.apps import apps
 from django.utils import timezone
-# Import Django's robust date/datetime parsers
 from django.utils.dateparse import parse_date as django_parse_date
 from django.utils.dateparse import parse_datetime as django_parse_datetime
 
@@ -35,7 +34,6 @@ class Command(BaseCommand):
         self.prefix = options["prefix"]
         self.csv_dir = options["dir"]
         
-        # ✅ UPDATED: Added LocationCylinderSlot and LocationCylinderLog in correct FK order
         self.model_order = [
             "stuff.Location",
             "stuff.DetectorModel",
@@ -50,16 +48,20 @@ class Command(BaseCommand):
             "stuff.DetectorFault",
             "stuff.CylinderType",
             "stuff.CylinderModel",
-            "stuff.LocationCylinderSlot",   # <--- ADDED (Depends on Location, CylinderType)
+            "stuff.LocationCylinderSlot",
             "stuff.Cylinder",
-            "stuff.LocationCylinderLog",    # <--- ADDED (Depends on Location, Cylinder)
+            "stuff.LocationCylinderLog",
             "stuff.CylinderFault",
             "stuff.LocationDetectorLog",
         ]
         
-        trigger_uri = "stuff.Detector:log_detector_location_change"
-        self.stdout.write("🛡️ Disabling pgtrigger for Detector...")
-        pgtrigger.uninstall(trigger_uri)
+        # Define trigger URIs for both Detector and Cylinder
+        trigger_uri_detector = "stuff.Detector:log_detector_location_change"
+        trigger_uri_cylinder = "stuff.Cylinder:log_cylinder_location_change"
+        
+        self.stdout.write("🛡️ Disabling pgtriggers for Detector and Cylinder...")
+        pgtrigger.uninstall(trigger_uri_detector)
+        pgtrigger.uninstall(trigger_uri_cylinder)
 
         try:
             for model_path in self.model_order:
@@ -70,8 +72,9 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS("\n✅ Import complete!"))
         finally:
-            self.stdout.write("🛡️ Re-enabling pgtrigger for Detector...")
-            pgtrigger.install(trigger_uri)
+            self.stdout.write("🛡️ Re-enabling pgtriggers for Detector and Cylinder...")
+            pgtrigger.install(trigger_uri_detector)
+            pgtrigger.install(trigger_uri_cylinder)
 
     def import_model(self, model_path):
         app_label, model_name = model_path.split(".")
@@ -190,8 +193,6 @@ class Command(BaseCommand):
         if isinstance(field, models.BooleanField):
             return raw.lower() in ("1", "true", "t", "yes", "on")
             
-        # DateTimeField is a subclass of DateField in Django, so checking DateField first 
-        # will incorrectly catch all datetimes and try to parse them as dates.
         if isinstance(field, models.DateTimeField):
             return self.parse_datetime(raw)
         if isinstance(field, models.DateField):
@@ -205,7 +206,6 @@ class Command(BaseCommand):
         parsed = django_parse_date(value)
         if parsed:
             return parsed
-        # Fallback for other formats
         for fmt in ("%d/%m/%Y", "%m/%d/%Y"):
             try:
                 return datetime.strptime(value, fmt).date()
@@ -216,7 +216,6 @@ class Command(BaseCommand):
     def parse_datetime(self, value):
         parsed = django_parse_datetime(value)
         if parsed:
-            # If the parsed datetime is naive (no timezone), make it aware using Django's default timezone
             if timezone.is_naive(parsed):
                 parsed = timezone.make_aware(parsed)
             return parsed
