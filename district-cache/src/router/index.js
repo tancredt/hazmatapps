@@ -6,6 +6,7 @@ import RestockScreen from '../components/RestockScreen.vue'
 import DistrictStatus from '../components/DistrictStatus.vue'
 import LoginScreen from '../components/LoginScreen.vue'
 import ReportCylinderEmpty from '../components/ReportCylinderEmpty.vue'
+import ReportDetectorFault from '../components/ReportDetectorFault.vue' // <--- Added
 
 const routes = [
   {
@@ -15,37 +16,44 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/swap/:district/:location_label',
+    path: '/detector/swap/:district/:location_label',
     name: 'LocationChanger',
     component: LocationChanger,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/return/:district',
+    path: '/detector/return/:district',
     name: 'Return',
     component: ReturnScreen,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/restock/:district/',
+    path: '/detector/restock-district/:district/',
     name: 'Restock',
     component: RestockScreen,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/status/:district',
+    path: '/detector/district-status/:district',
     name: 'DistrictStatus',
     component: DistrictStatus,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/cylinder-empty/:district/:location_label',
+    path: '/cylinder/report/:district/:location_label',
     name: 'CylinderEmpty',
     component: ReportCylinderEmpty,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/detector/report/:district/:location_label',
+    name: 'DetectorFault',
+    component: ReportDetectorFault,
     props: true,
     meta: { requiresAuth: true }
   },
@@ -65,7 +73,6 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
       await authStore.checkAuth()
