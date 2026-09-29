@@ -723,30 +723,33 @@ class DetectorLocationStatusUpdateView(APIView):
 
 class PerformSwapView(APIView):
     """
-    Atomic endpoint to perform a detector swap and create a fault report simultaneously.
+    Atomic endpoint to perform a detector swap.
     """
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         serializer = PerformSwapSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         data = serializer.validated_data
-        fault_data = data.pop('fault_data')
+        
         try:
             with transaction.atomic():
-                DetectorFault.objects.create(**fault_data)
+                # Update removed detector
                 removed_det = Detector.objects.select_for_update().get(id=data['removed_detector_id'])
                 removed_det.location_id = data['removed_location_id']
                 removed_det.status = data['removed_status']
                 removed_det.save(update_fields=['location', 'status'])
                 
+                # Update replacement detector
                 replacement_det = Detector.objects.select_for_update().get(id=data['replacement_detector_id'])
                 replacement_det.location_id = data['replacement_location_id']
                 replacement_det.status = data['replacement_status']
                 replacement_det.save(update_fields=['location', 'status'])
+                
         except Detector.DoesNotExist as e:
             return Response({"error": f"Detector not found: {e}"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
         return Response({"success": True}, status=status.HTTP_200_OK)

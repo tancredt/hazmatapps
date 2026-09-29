@@ -276,10 +276,25 @@ class MaintenanceTaskSerializer(serializers.ModelSerializer):
 class DetectorFaultSerializer(serializers.ModelSerializer):
     report_dt = serializers.DateTimeField(allow_null=True, required=False)
     resolve_dt = serializers.DateField(allow_null=True, required=False)
+    detector_label = serializers.CharField(source="detector.label", read_only=True)
 
     class Meta:
         model = DetectorFault
-        fields = "__all__"
+        # Explicitly list fields so DRF includes our custom read-only field
+        fields = [
+            "id",
+            "detector",
+            "detector_label",
+            "report_dt",
+            "reported_by",
+            "report_location",
+            "status",
+            "fault_type",
+            "submit_notes",
+            "resolved_by",
+            "resolve_dt",
+            "resolve_notes",
+        ]
 
 class CylinderTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -435,6 +450,7 @@ class DetectorLocationStatusUpdateSerializer(serializers.Serializer):
     status = serializers.CharField(max_length=2)
 
 
+
 class PerformSwapSerializer(serializers.Serializer):
     removed_detector_id = serializers.IntegerField()
     removed_location_id = serializers.IntegerField()
@@ -442,4 +458,3 @@ class PerformSwapSerializer(serializers.Serializer):
     replacement_detector_id = serializers.IntegerField()
     replacement_location_id = serializers.IntegerField()
     replacement_status = serializers.CharField(max_length=2)
-    fault_data = DetectorFaultSerializer()
