@@ -28,21 +28,21 @@ const routes = [
   },
   // --- MENUS ---
   {
-    path: '/:district/:location_label/mainmenu',
+    path: ':district/:location_label/mainmenu',
     name: 'MainMenu',
     component: MainMenu,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/:district/:location_label/cylindermenu',
+    path: ':district/:location_label/cylindermenu',
     name: 'CylindersMenu',
     component: CylindersMenu,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/:district/:location_label/detectorsmenu',
+    path: ':district/:location_label/detectorsmenu',
     name: 'DetectorsMenu',
     component: DetectorsMenu,
     props: true,
@@ -50,7 +50,7 @@ const routes = [
   },
   // --- CYLINDER ACTIONS ---
   {
-    path: '/:district/:location_label/cylinder/report',
+    path: ':district/:location_label/cylinder/report',
     name: 'CylinderEmpty',
     component: ReportCylinderEmpty,
     props: true,
@@ -58,35 +58,35 @@ const routes = [
   },
   // --- DETECTOR ACTIONS ---
   {
-    path: '/:district/:location_label/detector/report',
+    path: ':district/:location_label/detector/report',
     name: 'DetectorFault',
     component: ReportDetectorFault,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/:district/:location_label/detector/swap',
+    path: ':district/:location_label/detector/swap',
     name: 'LocationChanger',
     component: LocationChanger,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/:district/:location_label/detector/return',
+    path: ':district/:location_label/detector/return',
     name: 'Return',
     component: ReturnScreen,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/:district/:location_label/detector/restock',
+    path: ':district/:location_label/detector/restock',
     name: 'Restock',
     component: RestockScreen,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/:district/:location_label/detector/status',
+    path: ':district/:location_label/detector/status',
     name: 'DistrictStatus',
     component: DistrictStatus,
     props: true,
@@ -102,7 +102,6 @@ const routes = [
 ]
 
 const router = createRouter({
-  // import.meta.env.BASE_URL will automatically be '/apps/cache/' from vite.config.js
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })

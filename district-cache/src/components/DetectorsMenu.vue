@@ -4,22 +4,22 @@
     <h1>Detectors</h1>
     <p class="subtitle">District: {{ district }} | Location: {{ location_label }}</p>
     <div class="menu-grid">
-      <router-link :to="`/cache/${district}/${location_label}/detector/report`" class="menu-card">
+      <router-link :to="{ name: 'DetectorFault', params: { district, location_label } }" class="menu-card">
         <div class="card-icon">🐛</div>
         <h2>Report Fault/Missing</h2>
         <p>Log a detector issue</p>
       </router-link>
-      <router-link :to="`/cache/${district}/${location_label}/detector/swap`" class="menu-card">
+      <router-link :to="{ name: 'LocationChanger', params: { district, location_label } }" class="menu-card">
         <div class="card-icon">🔄</div>
         <h2>Swap Detector</h2>
         <p>Replace a faulty detector</p>
       </router-link>
-      <router-link :to="`/cache/${district}/${location_label}/detector/return`" class="menu-card">
+      <router-link :to="{ name: 'Return', params: { district, location_label } }" class="menu-card">
         <div class="card-icon">📦</div>
         <h2>Return Detector</h2>
         <p>Return detectors to Burnley</p>
       </router-link>
-      <router-link :to="`/cache/${district}/${location_label}/detector/restock`" class="menu-card">
+      <router-link :to="{ name: 'Restock', params: { district, location_label } }" class="menu-card">
         <div class="card-icon">🏗️</div>
         <h2>Restock District Cache</h2>
         <p>Add detectors to cache</p>

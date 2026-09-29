@@ -4,7 +4,7 @@
     <h1>Cylinders</h1>
     <p class="subtitle">District: {{ district }} | Location: {{ location_label }}</p>
     <div class="menu-grid">
-      <router-link :to="`/cache/${district}/${location_label}/cylinder/report`" class="menu-card">
+      <router-link :to="{ name: 'CylinderEmpty', params: { district, location_label } }" class="menu-card">
         <div class="card-icon">⚠️</div>
         <h2>Report Empty</h2>
         <p>Report a cylinder as empty</p>
