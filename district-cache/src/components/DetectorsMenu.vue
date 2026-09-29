@@ -5,24 +5,23 @@
     <p class="subtitle">District: {{ district }} | Location: {{ location_label }}</p>
     <div class="menu-grid">
       <router-link :to="{ name: 'DetectorFault', params: { district, location_label } }" class="menu-card">
-        <div class="card-icon">🐛</div>
         <h2>Report Fault/Missing</h2>
         <p>Log a detector issue</p>
       </router-link>
       <router-link :to="{ name: 'LocationChanger', params: { district, location_label } }" class="menu-card">
-        <div class="card-icon">🔄</div>
         <h2>Swap Detector</h2>
         <p>Replace a faulty detector</p>
+        <span class="district-use">(District Use)</span>
       </router-link>
       <router-link :to="{ name: 'Return', params: { district, location_label } }" class="menu-card">
-        <div class="card-icon">📦</div>
         <h2>Return Detector</h2>
         <p>Return detectors to Burnley</p>
+        <span class="district-use">(District Use)</span>
       </router-link>
       <router-link :to="{ name: 'Restock', params: { district, location_label } }" class="menu-card">
-        <div class="card-icon">🏗️</div>
         <h2>Restock District Cache</h2>
         <p>Add detectors to cache</p>
+        <span class="district-use">(District Use)</span>
       </router-link>
     </div>
   </div>
@@ -54,7 +53,10 @@ h1 { font-size: 2.2rem; margin-bottom: 8px; color: #2c3e50; margin-top: 20px; }
   transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 .menu-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-color: #42b883; background: #f0fdf4; }
-.card-icon { font-size: 3rem; margin-bottom: 15px; }
 .menu-card h2 { font-size: 1.4rem; margin: 0 0 8px 0; color: #2c3e50; }
 .menu-card p { color: #666; font-size: 0.9rem; margin: 0; }
+.district-use {
+  display: block; margin-top: 10px; font-size: 0.75rem;
+  color: #888; font-style: italic; font-weight: 500;
+}
 </style>
