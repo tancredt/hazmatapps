@@ -2,183 +2,197 @@
   <div class="swap-screen">
     <h2>FRV - District Cache Restock</h2>
     <h3>{{ district }}</h3>
-
     <div class="model-selector">
       <label>Detector Model:</label>
-      <select v-model="restock.selectedModelId" @change="handleModelChange">
-        <option v-for="model in restock.models" :key="model.id" :value="model.id">
-          {{ model.label }}
-        </option>
+      <select v-model="selectedModelId" @change="handleModelChange">
+        <option v-for="model in models" :key="model.id" :value="model.id">{{ model.label }}</option>
       </select>
     </div>
-
-    <div v-if="restock.isLoading" class="loading">Loading equipment...</div>
-    <div v-if="restock.error" class="error">{{ restock.error }}</div>
-
-    <div v-if="!restock.isLoading && !restock.error">
-      <!-- ================= DISTRICT CACHE SUMMARY ================= -->
+    <div v-if="isLoading" class="loading">Loading equipment...</div>
+    <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="!isLoading && !error">
       <div class="cache-summary">
         <div class="summary-hero">
-          <span class="hero-number" :class="{ 'hero-negative': restock.availableSlots <= 0 }">
-            {{ restock.availableSlots }}
-          </span>
+          <span class="hero-number" :class="{ 'hero-negative': availableSlots <= 0 }">{{ availableSlots }}</span>
           <span class="hero-label">Slots Available</span>
         </div>
         <div class="summary-details">
-          <div class="summary-item">
-            <span class="summary-value">{{ restock.slotCount }}</span>
-            <span class="summary-label">Total detector slots</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-value">{{ restock.cacheDetectors.length }}</span>
-            <span class="summary-label">Detectors in cache</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-value">{{ restock.transitDetectors.length }}</span>
-            <span class="summary-label">Detectors in transit</span>
-          </div>
+          <div class="summary-item"><span class="summary-value">{{ slotCount }}</span><span class="summary-label">Total detector slots</span></div>
+          <div class="summary-item"><span class="summary-value">{{ cacheDetectors.length }}</span><span class="summary-label">Detectors in cache</span></div>
+          <div class="summary-item"><span class="summary-value">{{ transitDetectors.length }}</span><span class="summary-label">Detectors in transit</span></div>
         </div>
       </div>
-
-      <!-- ================= BURNLEY SELECTION SECTION (hidden if no space) ================= -->
-      <div v-if="restock.availableSlots > 0" class="location-section" style="margin-top: 20px;">
+      <div v-if="availableSlots > 0" class="location-section" style="margin-top: 20px;">
         <h3>Available at Burnley</h3>
-        <p class="section-subtitle">Select detectors to add to the cache ({{ restock.selectedCount }} selected)</p>
-        <div v-if="restock.burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
-          <div
-            v-for="det in restock.burnleyDetectors"
-            :key="'burnley-' + det.id"
-            class="overflow-item"
-            :class="{ selected: restock.selectedBurnleyIds.includes(det.id) }"
-            @click="restock.toggleBurnleySelection(det.id)"
-          >
+        <p class="section-subtitle">Select detectors to add to the cache ({{ selectedCount }} selected)</p>
+        <div v-if="burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
+          <div v-for="det in burnleyDetectors" :key="'burnley-' + det.id" class="overflow-item" :class="{ selected: selectedBurnleyIds.includes(det.id) }" @click="toggleBurnleySelection(det.id)">
             {{ det.label }}
           </div>
         </div>
         <p v-else class="empty-text">No available detectors at Burnley.</p>
       </div>
-
-      <!-- NO SPACE MESSAGE -->
-      <div v-if="restock.availableSlots <= 0" class="no-space-message" style="margin-top: 20px;">
+      <div v-if="availableSlots <= 0" class="no-space-message" style="margin-top: 20px;">
         <p>No available slots in this district cache for the selected detector model.</p>
       </div>
-
-      <!-- ACTION BUTTON (hidden if no space) -->
-      <div v-if="restock.availableSlots > 0" class="action-bar">
-        <button
-          class="btn-primary"
-          @click="attemptAddToCache"
-          :disabled="isProcessing || restock.isLoading || !!restock.error || restock.selectedCount === 0"
-        >
-          {{ isProcessing ? 'Adding...' : `Add to Cache (${restock.selectedCount})` }}
+      <div v-if="availableSlots > 0" class="action-bar">
+        <button class="btn-primary" @click="attemptAddToCache" :disabled="isProcessing || isLoading || !!error || selectedCount === 0">
+          {{ isProcessing ? 'Adding...' : `Add to Cache (${selectedCount})` }}
         </button>
       </div>
     </div>
-
-    <!-- ================= WARNING MODAL (TOO MANY) ================= -->
+    <!-- Modals (Warning, Confirm, Success) remain identical, just ensure bindings use local state -->
     <div v-if="showWarningModal" class="modal-overlay">
       <div class="modal-content warning-modal">
         <div class="warning-icon">⚠️</div>
         <h3>Cache Capacity Exceeded</h3>
-        <p>
-          You have selected {{ restock.selectedCount }} detector(s), but adding them would bring the total
-          to {{ restock.totalDetectors + restock.selectedCount }} which exceeds the {{ restock.slotCount }} available slots.
-          <br><br>
-          Currently: {{ restock.cacheDetectors.length }} cached + {{ restock.transitDetectors.length }} in transit = {{ restock.totalDetectors }} detectors.
-          <br>
-          Available slots remaining: {{ restock.availableSlots }}.
-        </p>
-        <div class="modal-actions">
-          <button class="btn-danger" @click="showWarningModal = false">OK</button>
-        </div>
+        <p>You have selected {{ selectedCount }} detector(s), but adding them would bring the total to {{ totalDetectors + selectedCount }} which exceeds the {{ slotCount }} available slots.</p>
+        <div class="modal-actions"><button class="btn-danger" @click="showWarningModal = false">OK</button></div>
       </div>
     </div>
-
-    <!-- ================= CONFIRMATION MODAL ================= -->
     <div v-if="showConfirmModal" class="modal-overlay" @click.self="showConfirmModal = false">
       <div class="modal-content">
         <h3>Confirm Restock</h3>
-        <p>You have selected {{ restock.selectedCount }} detector(s) to transfer to the {{ district }} district cache.</p>
+        <p>You have selected {{ selectedCount }} detector(s) to transfer to the {{ district }} district cache.</p>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showConfirmModal = false" :disabled="isProcessing">Cancel</button>
-          <button class="btn-confirm" @click="executeRestock" :disabled="isProcessing">
-            {{ isProcessing ? 'Transferring...' : 'Confirm' }}
-          </button>
+          <button class="btn-confirm" @click="executeRestock" :disabled="isProcessing">{{ isProcessing ? 'Transferring...' : 'Confirm' }}</button>
         </div>
       </div>
     </div>
-
-    <!-- ================= SUCCESS MODAL ================= -->
     <div v-if="showSuccessModal" class="modal-overlay">
       <div class="modal-content">
         <h3>Success</h3>
-        <p>{{ restock.selectedCount }} detector(s) have been transferred to the district cache.</p>
-        <div class="modal-actions">
-          <button class="btn-confirm" @click="closeSuccessModal">OK</button>
-        </div>
+        <p>{{ selectedCount }} detector(s) have been transferred to the district cache.</p>
+        <div class="modal-actions"><button class="btn-confirm" @click="closeSuccessModal">OK</button></div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRestockStore } from '../stores/restock'
+import { ref, computed, onMounted } from 'vue'
+import { apiFetch } from '@/utils/api'
 
 const props = defineProps({ district: String })
-const restock = useRestockStore()
+
+// --- State ---
+const models = ref([])
+const selectedModelId = ref(null)
+const district = ref('')
+const diLocation = ref(null)
+const slotCount = ref(0)
+const cacheDetectors = ref([])
+const transitDetectors = ref([])
+const burnleyDetectors = ref([])
+const selectedBurnleyIds = ref([])
+const isLoading = ref(false)
+const error = ref(null)
 
 const isProcessing = ref(false)
 const showWarningModal = ref(false)
 const showConfirmModal = ref(false)
 const showSuccessModal = ref(false)
 
+// --- Computed ---
+const totalDetectors = computed(() => cacheDetectors.value.length + transitDetectors.value.length)
+const availableSlots = computed(() => slotCount.value - totalDetectors.value)
+const selectedCount = computed(() => selectedBurnleyIds.value.length)
+const hasSpace = computed(() => selectedCount.value <= availableSlots.value)
+
+// --- Methods ---
+const fetchModels = async () => {
+  try {
+    const data = await apiFetch('/detectormodels/')
+    models.value = data
+    const microRae = data.find(m => m.label === 'MicroRAE')
+    selectedModelId.value = microRae?.id || data[0]?.id
+  } catch (err) { console.error('Failed to fetch models:', err) }
+}
+
+const resolveDistrictAndDI = async (dLabel) => {
+  district.value = dLabel
+  error.value = null
+  try {
+    const diResults = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(dLabel)}`)
+    diLocation.value = diResults[0] || null
+    if (!diLocation.value) error.value = `District Cache not found for district "${dLabel}".`
+  } catch (err) {
+    error.value = 'Failed to resolve district cache location.'
+    console.error(err)
+  }
+}
+
+const fetchSlotCount = async () => {
+  if (!diLocation.value || !selectedModelId.value) return
+  try {
+    const slots = await apiFetch(`/locationdetectorslots/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`)
+    slotCount.value = slots.length
+  } catch (err) { console.error('Failed to fetch slot count:', err); slotCount.value = 0 }
+}
+
+const fetchCacheAndTransit = async () => {
+  if (!diLocation.value || !selectedModelId.value || !district.value) return
+  isLoading.value = true; error.value = null
+  try {
+    const [cacheData, transitData] = await Promise.all([
+      apiFetch(`/detector-labels/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`),
+      apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
+    ])
+    cacheDetectors.value = cacheData; transitDetectors.value = transitData
+  } catch (err) { error.value = 'Failed to fetch detectors.'; console.error(err) } 
+  finally { isLoading.value = false }
+}
+
+const fetchBurnleyDetectors = async () => {
+  if (!selectedModelId.value) return
+  try {
+    const data = await apiFetch(`/detector-labels/?location__label=Burnley&status=IS&detector_model=${selectedModelId.value}`)
+    burnleyDetectors.value = data
+  } catch (err) { console.error('Failed to fetch Burnley detectors:', err); burnleyDetectors.value = [] }
+}
+
+const toggleBurnleySelection = (id) => {
+  const idx = selectedBurnleyIds.value.indexOf(id)
+  if (idx > -1) selectedBurnleyIds.value.splice(idx, 1)
+  else selectedBurnleyIds.value.push(id)
+}
+
+const clearSelection = () => { selectedBurnleyIds.value = [] }
+
 const handleModelChange = () => {
-  restock.clearSelection()
-  restock.fetchSlotCount()
-  restock.fetchCacheAndTransit()
-  restock.fetchBurnleyDetectors()
+  clearSelection(); fetchSlotCount(); fetchCacheAndTransit(); fetchBurnleyDetectors()
 }
 
 const attemptAddToCache = () => {
-  if (restock.selectedCount === 0) return
-
-  if (!restock.hasSpace) {
-    showWarningModal.value = true
-    return
-  }
-
+  if (selectedCount.value === 0) return
+  if (!hasSpace.value) { showWarningModal.value = true; return }
   showConfirmModal.value = true
 }
 
 const executeRestock = async () => {
   isProcessing.value = true
   try {
-    await restock.addToCache()
-    showConfirmModal.value = false
-    showSuccessModal.value = true
-  } catch (err) {
-    console.error('Failed to add to cache:', err)
-    alert('Failed to add detectors. Please try again.')
-  } finally {
-    isProcessing.value = false
-  }
+    if (!diLocation.value) throw new Error('District cache location not found')
+    const payload = selectedBurnleyIds.value.map(id => ({ detector_id: id, location_id: diLocation.value.id, status: 'IS' }))
+    await apiFetch('/detectors/update-location-status/', { method: 'POST', body: JSON.stringify(payload) })
+    showConfirmModal.value = false; showSuccessModal.value = true
+  } catch (err) { console.error('Failed to add to cache:', err); alert('Failed to add detectors. Please try again.') } 
+  finally { isProcessing.value = false }
 }
 
 const closeSuccessModal = () => {
-  showSuccessModal.value = false
-  restock.clearSelection()
-  restock.fetchSlotCount()
-  restock.fetchCacheAndTransit()
-  restock.fetchBurnleyDetectors()
+  showSuccessModal.value = false; clearSelection()
+  fetchSlotCount(); fetchCacheAndTransit(); fetchBurnleyDetectors()
 }
 
+// --- Lifecycle ---
 onMounted(async () => {
-  await restock.fetchModels()
-  await restock.resolveDistrictAndDI(props.district)
-  await restock.fetchSlotCount()
-  await restock.fetchCacheAndTransit()
-  await restock.fetchBurnleyDetectors()
+  await fetchModels()
+  await resolveDistrictAndDI(props.district)
+  await fetchSlotCount()
+  await fetchCacheAndTransit()
+  await fetchBurnleyDetectors()
 })
 </script>
 

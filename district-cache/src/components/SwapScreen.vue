@@ -1,155 +1,164 @@
 <template>
-<div class="swap-screen">
-<h2>FRV - Detector Swap</h2>
-<h3>{{ displayLocationLabel }}</h3>
-<div class="model-selector">
-   <label>Detector Model:</label>
-   <select v-model="swap.selectedModelId" @change="swap.fetchDetectors()">
-     <option v-for="model in swap.models" :key="model.id" :value="model.id">
-       {{ model.label }}
-     </option>
-   </select>
- </div>
- <div v-if="swap.isLoading" class="loading">Loading equipment...</div>
- <div v-if="swap.error" class="error">{{ swap.error }}</div>
- <div class="swap-container" v-if="!swap.isLoading && !swap.error">
-   <!-- ================= STATION SECTION ================= -->
-   <div class="location-section">
-     <h3>Station: {{ displayLocationLabel }}</h3>
-     <p class="section-subtitle">Select the detector to be removed</p>
-     <!-- Slot Rectangles -->
-     <div class="slots-grid">
-       <div 
-         v-for="i in swap.stationSlotCount" 
-         :key="'st-slot-' + i" 
-         class="slot-rectangle"
-         :class="{ 
-           selected: selectedDetectorId === stationSlottedDetectors[i-1]?.id,
-           empty: !stationSlottedDetectors[i-1]
-         }"
-         @click="stationSlottedDetectors[i-1] && selectStationDetector(stationSlottedDetectors[i-1].id)"
-       >
-         <template v-if="stationSlottedDetectors[i-1]">
-           {{ stationSlottedDetectors[i-1].label }}
-         </template>
-         <template v-else>
-           Empty
-         </template>
-       </div>
-     </div>
-     <!-- Overflow Area (No Rectangles) -->
-     <div v-if="stationOverflowDetectors.length > 0" class="overflow-area">
-       <h4>Overflow Detectors ({{ stationOverflowDetectors.length }})</h4>
-       <div class="overflow-list">
-         <div 
-           v-for="det in stationOverflowDetectors" 
-           :key="'st-ov-' + det.id" 
-           class="overflow-item"
-           :class="{ selected: selectedDetectorId === det.id }"
-           @click="selectStationDetector(det.id)"
-         >
-           {{ det.label }}
-         </div>
-       </div>
-     </div>
-   </div>
-   <!-- ================= DISTRICT CACHE SECTION ================= -->
-   <div class="location-section">
-     <h3>District Cache: {{ swap.districtLocation?.label }}</h3>
-     <p class="section-subtitle">Select replacement detector</p>
-     <!-- Slot Rectangles -->
-     <div class="slots-grid">
-       <div 
-         v-for="i in swap.districtSlotCount" 
-         :key="'dc-slot-' + i" 
-         class="slot-rectangle"
-         :class="{ 
-           selected: replacementDetectorId === districtSlottedDetectors[i-1]?.id,
-           empty: !districtSlottedDetectors[i-1]
-         }"
-         @click="districtSlottedDetectors[i-1] && selectDistrictDetector(districtSlottedDetectors[i-1].id)"
-       >
-         <template v-if="districtSlottedDetectors[i-1]">
-           {{ districtSlottedDetectors[i-1].label }}
-         </template>
-         <template v-else>
-           Empty
-         </template>
-       </div>
-     </div>
-     <!-- Overflow Area (No Rectangles) -->
-     <div v-if="districtOverflowDetectors.length > 0" class="overflow-area">
-       <h4>Overflow Detectors ({{ districtOverflowDetectors.length }})</h4>
-       <div class="overflow-list">
-         <div 
-           v-for="det in districtOverflowDetectors" 
-           :key="'dc-ov-' + det.id" 
-           class="overflow-item"
-           :class="{ selected: replacementDetectorId === det.id }"
-           @click="selectDistrictDetector(det.id)"
-         >
-           {{ det.label }}
-         </div>
-       </div>
-     </div>
-   </div>
- </div>
- <!-- ACTION BUTTON -->
+  <div class="swap-screen">
+    <h2>FRV - Detector Swap</h2>
+    <h3>{{ displayLocationLabel }}</h3>
+    
+    <div class="model-selector">
+      <label>Detector Model:</label>
+      <select v-model="selectedModelId" @change="fetchDetectors()">
+        <option v-for="model in models" :key="model.id" :value="model.id">
+          {{ model.label }}
+        </option>
+      </select>
+    </div>
 
- <div class="action-bar">
-   <button
-     class="btn-primary"
-     @click="showReasonDialog = true"
-     :disabled="isProcessing || swap.isLoading || !!swap.error || !selectedDetectorId || !replacementDetectorId"
-   >
-     {{ isProcessing ? 'Processing...' : 'Update' }}
-   </button>
- </div>
- <!-- ================= REASON FOR SWAP DIALOG ================= -->
- <div v-if="showReasonDialog" class="modal-overlay" @click.self="cancelReason">
-   <div class="modal-content">
-     <h3>Reason for Swap</h3>
-     <p>Please select the reason for removing the detector:</p>
-     <div class="fault-options">
-       <label 
-         v-for="ft in faultTypes" 
-         :key="ft.value" 
-         class="fault-option" 
-         :class="{ selected: selectedFaultType === ft.value.trim() }"
-       >
-         <input 
-           type="radio" 
-           :value="ft.value.trim()" 
-           v-model="selectedFaultType" 
-           name="fault-type"
-         />
-         <span>{{ ft.label }}</span>
-       </label>
-     </div>
-     <div class="modal-actions">
-       <button class="btn-cancel" @click="cancelReason" :disabled="isProcessing">Cancel</button>
-       <button class="btn-confirm" @click="submitReason" :disabled="isProcessing || !selectedFaultType">
-         {{ isProcessing ? 'Processing...' : 'Submit' }}
-       </button>
-     </div>
-   </div>
- </div>
- <!-- ================= INSTRUCTIONS INFO DIALOG ================= -->
- <div v-if="showInfoDialog" class="modal-overlay">
-   <div class="modal-content">
-     <h3>Instructions</h3>
-     <p>{{ infoMessage }}</p>
-     <div class="modal-actions">
-       <button class="btn-confirm" @click="closeInfoDialog">OK</button>
-     </div>
-   </div>
- </div>
-</div>
+    <div v-if="isLoading" class="loading">Loading equipment...</div>
+    <div v-if="error" class="error">{{ error }}</div>
+
+    <div class="swap-container" v-if="!isLoading && !error">
+      <!-- ================= STATION SECTION ================= -->
+      <div class="location-section">
+        <h3>Station: {{ displayLocationLabel }}</h3>
+        <p class="section-subtitle">Select the detector to be removed</p>
+        
+        <!-- Slot Rectangles -->
+        <div class="slots-grid">
+          <div 
+            v-for="i in stationSlotCount" 
+            :key="'st-slot-' + i" 
+            class="slot-rectangle"
+            :class="{ 
+              selected: selectedDetectorId === stationSlottedDetectors[i-1]?.id,
+              empty: !stationSlottedDetectors[i-1]
+            }"
+            @click="stationSlottedDetectors[i-1] && selectStationDetector(stationSlottedDetectors[i-1].id)"
+          >
+            <template v-if="stationSlottedDetectors[i-1]">
+              {{ stationSlottedDetectors[i-1].label }}
+            </template>
+            <template v-else>
+              Empty
+            </template>
+          </div>
+        </div>
+
+        <!-- Overflow Area -->
+        <div v-if="stationOverflowDetectors.length > 0" class="overflow-area">
+          <h4>Overflow Detectors ({{ stationOverflowDetectors.length }})</h4>
+          <div class="overflow-list">
+            <div 
+              v-for="det in stationOverflowDetectors" 
+              :key="'st-ov-' + det.id" 
+              class="overflow-item"
+              :class="{ selected: selectedDetectorId === det.id }"
+              @click="selectStationDetector(det.id)"
+            >
+              {{ det.label }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= DISTRICT CACHE SECTION ================= -->
+      <div class="location-section">
+        <h3>District Cache: {{ districtLocation?.label }}</h3>
+        <p class="section-subtitle">Select replacement detector</p>
+        
+        <!-- Slot Rectangles -->
+        <div class="slots-grid">
+          <div 
+            v-for="i in districtSlotCount" 
+            :key="'dc-slot-' + i" 
+            class="slot-rectangle"
+            :class="{ 
+              selected: replacementDetectorId === districtSlottedDetectors[i-1]?.id,
+              empty: !districtSlottedDetectors[i-1]
+            }"
+            @click="districtSlottedDetectors[i-1] && selectDistrictDetector(districtSlottedDetectors[i-1].id)"
+          >
+            <template v-if="districtSlottedDetectors[i-1]">
+              {{ districtSlottedDetectors[i-1].label }}
+            </template>
+            <template v-else>
+              Empty
+            </template>
+          </div>
+        </div>
+
+        <!-- Overflow Area -->
+        <div v-if="districtOverflowDetectors.length > 0" class="overflow-area">
+          <h4>Overflow Detectors ({{ districtOverflowDetectors.length }})</h4>
+          <div class="overflow-list">
+            <div 
+              v-for="det in districtOverflowDetectors" 
+              :key="'dc-ov-' + det.id" 
+              class="overflow-item"
+              :class="{ selected: replacementDetectorId === det.id }"
+              @click="selectDistrictDetector(det.id)"
+            >
+              {{ det.label }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTION BUTTON -->
+    <div class="action-bar">
+      <button
+        class="btn-primary"
+        @click="showReasonDialog = true"
+        :disabled="isProcessing || isLoading || !!error || !selectedDetectorId || !replacementDetectorId"
+      >
+        {{ isProcessing ? 'Processing...' : 'Update' }}
+      </button>
+    </div>
+
+    <!-- ================= REASON FOR SWAP DIALOG ================= -->
+    <div v-if="showReasonDialog" class="modal-overlay" @click.self="cancelReason">
+      <div class="modal-content">
+        <h3>Reason for Swap</h3>
+        <p>Please select the reason for removing the detector:</p>
+        <div class="fault-options">
+          <label 
+            v-for="ft in faultTypes" 
+            :key="ft.value" 
+            class="fault-option" 
+            :class="{ selected: selectedFaultType === ft.value.trim() }"
+          >
+            <input 
+              type="radio" 
+              :value="ft.value.trim()" 
+              v-model="selectedFaultType" 
+              name="fault-type"
+            />
+            <span>{{ ft.label }}</span>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="cancelReason" :disabled="isProcessing">Cancel</button>
+          <button class="btn-confirm" @click="submitReason" :disabled="isProcessing || !selectedFaultType">
+            {{ isProcessing ? 'Processing...' : 'Submit' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= INSTRUCTIONS INFO DIALOG ================= -->
+    <div v-if="showInfoDialog" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Instructions</h3>
+        <p>{{ infoMessage }}</p>
+        <div class="modal-actions">
+          <button class="btn-confirm" @click="closeInfoDialog">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useSwapStore } from '../stores/swap'
 import { apiFetch } from '@/utils/api'
 
 const props = defineProps({
@@ -157,7 +166,21 @@ const props = defineProps({
   location_label: String
 })
 
-const swap = useSwapStore()
+// --- Local State (formerly in Pinia store) ---
+const models = ref([])
+const selectedModelId = ref(null)
+const stationLocation = ref(null)
+const districtLocation = ref(null)
+const trLocation = ref(null)
+const unknownLocation = ref(null)
+const stationDetectors = ref([])
+const districtDetectors = ref([])
+const stationSlotCount = ref(0)
+const districtSlotCount = ref(0)
+const isLoading = ref(false)
+const error = ref(null)
+
+// --- Local UI State ---
 const isProcessing = ref(false)
 const selectedDetectorId = ref(null)
 const replacementDetectorId = ref(null)
@@ -168,20 +191,100 @@ const infoMessage = ref('')
 const faultTypes = ref([])
 const selectedFaultType = ref('')
 
+// --- Computed Properties ---
 const displayLocationLabel = computed(() => props.location_label || 'Unknown Location')
 
-const stationSlottedDetectors = computed(() => swap.stationDetectors.slice(0, swap.stationSlotCount))
-const stationOverflowDetectors = computed(() => swap.stationDetectors.slice(swap.stationSlotCount))
+const stationSlottedDetectors = computed(() => stationDetectors.value.slice(0, stationSlotCount.value))
+const stationOverflowDetectors = computed(() => stationDetectors.value.slice(stationSlotCount.value))
 
-const districtSlottedDetectors = computed(() => swap.districtDetectors.slice(0, swap.districtSlotCount))
-const districtOverflowDetectors = computed(() => swap.districtDetectors.slice(swap.districtSlotCount))
+const districtSlottedDetectors = computed(() => districtDetectors.value.slice(0, districtSlotCount.value))
+const districtOverflowDetectors = computed(() => districtDetectors.value.slice(districtSlotCount.value))
 
+// --- Methods ---
 const selectStationDetector = (id) => {
   selectedDetectorId.value = selectedDetectorId.value === id ? null : id
 }
 
 const selectDistrictDetector = (id) => {
   replacementDetectorId.value = replacementDetectorId.value === id ? null : id
+}
+
+const fetchModels = async () => {
+  try {
+    const data = await apiFetch('/detectormodels/')
+    models.value = data
+    const microRae = data.find(m => m.label === 'MicroRAE')
+    if (microRae) selectedModelId.value = microRae.id
+    else if (data.length > 0 && !selectedModelId.value) selectedModelId.value = data[0].id
+  } catch (err) { 
+    console.error('Failed to fetch models:', err) 
+  }
+}
+
+const resolveLocations = async (district, locationLabel) => {
+  error.value = null
+  try {
+    // 1. Station Location
+    const stationResults = await apiFetch(`/locations/?label=${encodeURIComponent(locationLabel)}&district=${encodeURIComponent(district)}`)
+    stationLocation.value = stationResults[0] || null
+
+    // 2. District Cache Location
+    const districtResults = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(district)}`)
+    districtLocation.value = districtResults[0] || null
+
+    // 3. Transit Location (Specific to this district)
+    const trResults = await apiFetch(`/locations/?location_type=TR&district=${encodeURIComponent(district)}`)
+    trLocation.value = trResults[0] || null
+
+    // 4. Unknown Location (Type: ET, District: AL)
+    const unknownResults = await apiFetch(`/locations/?location_type=ET&district=AL`)
+    unknownLocation.value = unknownResults[0] || null
+
+    // Validation Errors
+    if (!stationLocation.value) error.value = `Station location "${locationLabel}" not found.`
+    if (!districtLocation.value) error.value = `District Cache not found for district "${district}".`
+    if (!trLocation.value) error.value = `Transit (TR) location not found for district "${district}".`
+    if (!unknownLocation.value) error.value = `Unknown (ET/AL) location not found in database.`
+  } catch (err) {
+    error.value = 'Failed to resolve locations.'
+    console.error(err)
+  }
+}
+
+const fetchSlotCounts = async () => {
+  if (!stationLocation.value || !districtLocation.value || !selectedModelId.value) return
+  try {
+    const [stationSlots, districtSlots] = await Promise.all([
+      apiFetch(`/locationdetectorslots/?location=${stationLocation.value.id}&detector_model=${selectedModelId.value}`),
+      apiFetch(`/locationdetectorslots/?location=${districtLocation.value.id}&detector_model=${selectedModelId.value}`)
+    ])
+    stationSlotCount.value = stationSlots.length
+    districtSlotCount.value = districtSlots.length
+  } catch (err) {
+    console.error('Failed to fetch slot counts:', err)
+    stationSlotCount.value = 0
+    districtSlotCount.value = 0
+  }
+}
+
+const fetchDetectors = async () => {
+  if (!stationLocation.value || !districtLocation.value || !selectedModelId.value) return
+  isLoading.value = true
+  error.value = null
+  try {
+    await fetchSlotCounts()
+    const [stationData, districtData] = await Promise.all([
+      apiFetch(`/detector-labels/?location=${stationLocation.value.id}&detector_model=${selectedModelId.value}`),
+      apiFetch(`/detector-labels/?location=${districtLocation.value.id}&detector_model=${selectedModelId.value}`)
+    ])
+    stationDetectors.value = stationData
+    districtDetectors.value = districtData
+  } catch (err) {
+    error.value = 'Failed to fetch detectors.'
+    console.error(err)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const fetchFaultTypes = async () => {
@@ -209,19 +312,19 @@ const submitReason = async () => {
     let removedStatus = ''
 
     if (ft === 'MD') {
-      if (!swap.unknownLocation) throw new Error('System Error: "Unknown" location (Type: ET, District: AL) not found.')
+      if (!unknownLocation.value) throw new Error('System Error: "Unknown" location (Type: ET, District: AL) not found.')
       message = "Leave the cache detector at the station and ensure a Missing/Damaged equipment form is completed"
-      removedLocId = swap.unknownLocation.id
+      removedLocId = unknownLocation.value.id
       removedStatus = 'MI'
     } else {
-      if (!swap.trLocation) throw new Error(`System Error: "Transit" location (Type: TR, District: ${props.district}) not found.`)
+      if (!trLocation.value) throw new Error(`System Error: "Transit" location (Type: TR, District: ${props.district}) not found.`)
 
       if (['DD', 'DC'].includes(ft)) {
         message = "Leave the cache detector at the station, ensure a MissingDamaged equipment form is completed and return the faulty detector to Burnley"
       } else {
         message = "Leave the cache detector at the station and return the faulty detector to Burnley"
       }
-      removedLocId = swap.trLocation.id
+      removedLocId = trLocation.value.id
       removedStatus = 'TR' 
     }
 
@@ -230,13 +333,13 @@ const submitReason = async () => {
       removed_location_id: removedLocId,
       removed_status: removedStatus,
       replacement_detector_id: replacementDetectorId.value,
-      replacement_location_id: swap.stationLocation.id,
+      replacement_location_id: stationLocation.value.id,
       replacement_status: 'OP',
       fault_data: {
         detector: selectedDetectorId.value,
         report_dt: new Date().toISOString(),
         reported_by: 'District',
-        report_location: swap.stationLocation.id,
+        report_location: stationLocation.value.id,
         status: 'OP',
         fault_type: selectedFaultType.value
       }
@@ -265,21 +368,22 @@ const submitReason = async () => {
 
 const closeInfoDialog = () => {
   showInfoDialog.value = false
-  swap.fetchDetectors()
+  fetchDetectors()
 }
 
+// --- Lifecycle ---
 onMounted(async () => {
-  await swap.fetchModels()
+  await fetchModels()
   await fetchFaultTypes()
   if (props.district && props.location_label) {
-    await swap.resolveLocations(props.district, props.location_label)
-    await swap.fetchDetectors()
+    await resolveLocations(props.district, props.location_label)
+    await fetchDetectors()
   }
 })
 
-watch(() => swap.selectedModelId, () => {
-  if (swap.selectedModelId) {
-    swap.fetchDetectors()
+watch(() => selectedModelId.value, () => {
+  if (selectedModelId.value) {
+    fetchDetectors()
   }
 })
 </script>
