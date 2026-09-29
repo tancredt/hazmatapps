@@ -14,6 +14,9 @@ import DistrictStatus from '../components/DistrictStatus.vue'
 import LoginScreen from '../components/LoginScreen.vue'
 import ReportCylinderEmpty from '../components/ReportCylinderEmpty.vue'
 import ReportDetectorFault from '../components/ReportDetectorFault.vue'
+import CylinderSwapScreen from '../components/CylinderSwapScreen.vue'
+
+
 
 const routes = [
   {
@@ -28,7 +31,7 @@ const routes = [
   },
   // --- MENUS ---
   {
-    path: '/:district/:location_label/mainmenu', // 👈 RESTORED LEADING SLASH
+    path: '/:district/:location_label/mainmenu', 
     name: 'MainMenu',
     component: MainMenu,
     props: true,
@@ -38,6 +41,13 @@ const routes = [
     path: '/:district/:location_label/cylindermenu',
     name: 'CylindersMenu',
     component: CylindersMenu,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/:district/:location_label/cylinder/swap',
+    name: 'CylinderSwap',
+    component: CylinderSwapScreen,
     props: true,
     meta: { requiresAuth: true }
   },

@@ -8,10 +8,9 @@
         <h2>Report Empty</h2>
         <p>Report a cylinder as empty</p>
       </router-link>
-      <router-link to="#" class="menu-card disabled" @click.prevent>
+      <router-link :to="{ name: 'CylinderSwap', params: { district, location_label } }" class="menu-card">
         <h2>Swap Cylinder</h2>
-        <p>Coming soon</p>
-        <span class="district-use">(District Use)</span>
+        <p>Replace an empty cylinder</p>
       </router-link>
     </div>
   </div>

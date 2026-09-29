@@ -81,6 +81,7 @@ from .serializers import (
     CylinderUnitChoiceSerializer,
     CylinderVolumeChoiceSerializer,
     CylinderStatusChoiceSerializer,
+    PerformCylinderSwapSerializer,
     SensorStatusChoiceSerializer,
     SensorGasChoiceSerializer,
     ChangeDetectorLocationSerializer,
@@ -749,6 +750,42 @@ class PerformSwapView(APIView):
                 
         except Detector.DoesNotExist as e:
             return Response({"error": f"Detector not found: {e}"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        return Response({"success": True}, status=status.HTTP_200_OK)
+
+class PerformCylinderSwapView(APIView):
+    """
+    Atomic endpoint to perform a cylinder swap.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = PerformCylinderSwapSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        data = serializer.validated_data
+        
+        try:
+            with transaction.atomic():
+                # Update removed cylinder (mark as empty, move to Burnley)
+                removed_cyl = Cylinder.objects.select_for_update().get(id=data['removed_cylinder_id'])
+                removed_cyl.location_id = data['removed_location_id']
+                removed_cyl.status = data['removed_status']
+                removed_cyl.empty_date = timezone.now().date()
+                removed_cyl.save(update_fields=['location', 'status', 'empty_date'])
+                
+                # Update replacement cylinder (mark as operational, move to station)
+                replacement_cyl = Cylinder.objects.select_for_update().get(id=data['replacement_cylinder_id'])
+                replacement_cyl.location_id = data['replacement_location_id']
+                replacement_cyl.status = data['replacement_status']
+                replacement_cyl.operational_date = timezone.now().date()
+                replacement_cyl.save(update_fields=['location', 'status', 'operational_date'])
+                
+        except Cylinder.DoesNotExist as e:
+            return Response({"error": f"Cylinder not found: {e}"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             

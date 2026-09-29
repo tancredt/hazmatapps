@@ -458,3 +458,11 @@ class PerformSwapSerializer(serializers.Serializer):
     replacement_detector_id = serializers.IntegerField()
     replacement_location_id = serializers.IntegerField()
     replacement_status = serializers.CharField(max_length=2)
+
+class PerformCylinderSwapSerializer(serializers.Serializer):
+    removed_cylinder_id = serializers.IntegerField()
+    removed_location_id = serializers.IntegerField()
+    removed_status = serializers.CharField(max_length=2)
+    replacement_cylinder_id = serializers.IntegerField()
+    replacement_location_id = serializers.IntegerField()
+    replacement_status = serializers.CharField(max_length=2)
