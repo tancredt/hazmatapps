@@ -107,7 +107,6 @@ const props = defineProps({ district: String })
 const models = ref([])
 const selectedModelId = ref(null)
 const district = ref('')
-const diLocation = ref(null)
 const slotCount = ref(0)
 const cacheDetectors = ref([])
 const transitDetectors = ref([])
@@ -137,25 +136,21 @@ const fetchModels = async () => {
   } catch (err) { console.error('Failed to fetch models:', err) }
 }
 
-const resolveDistrictAndDI = async (dLabel) => {
-  district.value = dLabel
-  error.value = null
-  try {
-    const diResults = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(dLabel)}`)
-    diLocation.value = diResults[0] || null
-    if (!diLocation.value) error.value = `District Cache not found for district "${dLabel}".`
-  } catch (err) {
-    error.value = 'Failed to resolve district cache location.'
-    console.error(err)
-  }
-}
-
 const fetchSlotCount = async () => {
-  if (!diLocation.value || !selectedModelId.value) return
+  if (!district.value || !selectedModelId.value) return
   try {
-    // Filter by location (DI) AND detector_model
-    const slots = await apiFetch(`/locationdetectorslots/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`)
-    slotCount.value = slots.length
+    // Step 1: Find all DI locations in this district
+    const diLocations = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(district.value)}`)
+    if (!diLocations || diLocations.length === 0) {
+      slotCount.value = 0
+      return
+    }
+    // Step 2: For each DI location, fetch slots for the selected model and sum them up
+    const slotPromises = diLocations.map(loc =>
+      apiFetch(`/locationdetectorslots/?location=${loc.id}&detector_model=${selectedModelId.value}`)
+    )
+    const allSlots = await Promise.all(slotPromises)
+    slotCount.value = allSlots.reduce((sum, slots) => sum + (slots?.length || 0), 0)
   } catch (err) { 
     console.error('Failed to fetch slot count:', err)
     slotCount.value = 0 
@@ -163,18 +158,18 @@ const fetchSlotCount = async () => {
 }
 
 const fetchCacheAndTransit = async () => {
-  if (!diLocation.value || !selectedModelId.value || !district.value) return
+  if (!district.value || !selectedModelId.value) return
   isLoading.value = true
   error.value = null
   try {
     const [cacheData, transitData] = await Promise.all([
-      // Cache: Filter by DI location AND detector_model
-      apiFetch(`/detector-labels/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`),
-      // Transit: Filter by status=TR, detector_model, AND district
+      // 👇 Cache: detectors at locations where location_type=DI AND district=<district> AND detector_model=<model>
+      apiFetch(`/detector-labels/?location__location_type=DI&location__district=${encodeURIComponent(district.value)}&detector_model=${selectedModelId.value}`),
+      // Transit: detectors with status=TR AND district=<district> AND detector_model=<model>
       apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
     ])
-    cacheDetectors.value = cacheData
-    transitDetectors.value = transitData
+    cacheDetectors.value = cacheData || []
+    transitDetectors.value = transitData || []
   } catch (err) { 
     error.value = 'Failed to fetch detectors.'
     console.error(err) 
@@ -186,9 +181,8 @@ const fetchCacheAndTransit = async () => {
 const fetchBurnleyDetectors = async () => {
   if (!selectedModelId.value) return
   try {
-    // Filter by Burnley location, status=IS, AND detector_model
     const data = await apiFetch(`/detector-labels/?location__label=Burnley&status=IS&detector_model=${selectedModelId.value}`)
-    burnleyDetectors.value = data
+    burnleyDetectors.value = data || []
   } catch (err) { 
     console.error('Failed to fetch Burnley detectors:', err)
     burnleyDetectors.value = [] 
@@ -219,10 +213,15 @@ const attemptAddToCache = () => {
 const executeRestock = async () => {
   isProcessing.value = true
   try {
-    if (!diLocation.value) throw new Error('District cache location not found')
+    // Find the DI location in this district to use as the destination
+    const diLocations = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(district.value)}`)
+    if (!diLocations || diLocations.length === 0) {
+      throw new Error('District cache location not found')
+    }
+    const targetLocation = diLocations[0]
     const payload = selectedBurnleyIds.value.map(id => ({ 
       detector_id: id, 
-      location_id: diLocation.value.id, 
+      location_id: targetLocation.id, 
       status: 'IS' 
     }))
     await apiFetch('/detectors/update-location-status/', { 
@@ -249,8 +248,8 @@ const closeSuccessModal = () => {
 
 // --- Lifecycle ---
 onMounted(async () => {
+  district.value = props.district
   await fetchModels()
-  await resolveDistrictAndDI(props.district)
   await fetchSlotCount()
   await fetchCacheAndTransit()
   await fetchBurnleyDetectors()
