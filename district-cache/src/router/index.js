@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
-// New Menu Imports
+// Menu Components
 import MainMenu from '../components/MainMenu.vue'
 import CylindersMenu from '../components/CylindersMenu.vue'
 import DetectorsMenu from '../components/DetectorsMenu.vue'
 
-// Existing Imports
+// Action Components
 import LocationChanger from '../components/LocationChanger.vue'
 import ReturnScreen from '../components/ReturnScreen.vue'
 import RestockScreen from '../components/RestockScreen.vue'
@@ -17,91 +17,92 @@ import ReportDetectorFault from '../components/ReportDetectorFault.vue'
 
 const routes = [
   {
+    path: '/',
+    redirect: '/login'
+  },
+  {
     path: '/login',
     name: 'Login',
     component: LoginScreen,
     meta: { requiresAuth: false }
   },
-  // ================= MENUS =================
+  // --- MENUS ---
   {
-    path: '/cache/:district/:location_label/mainmenu',
+    path: '/:district/:location_label/mainmenu',
     name: 'MainMenu',
     component: MainMenu,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/cache/:district/:location_label/cylindermenu',
+    path: '/:district/:location_label/cylindermenu',
     name: 'CylindersMenu',
     component: CylindersMenu,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/cache/:district/:location_label/detectorsmenu',
+    path: '/:district/:location_label/detectorsmenu',
     name: 'DetectorsMenu',
     component: DetectorsMenu,
     props: true,
     meta: { requiresAuth: true }
   },
-
-  // ================= CYLINDER ACTIONS =================
+  // --- CYLINDER ACTIONS ---
   {
-    path: '/cache/:district/:location_label/cylinder/report',
+    path: '/:district/:location_label/cylinder/report',
     name: 'CylinderEmpty',
     component: ReportCylinderEmpty,
     props: true,
     meta: { requiresAuth: true }
   },
-
-  // ================= DETECTOR ACTIONS =================
+  // --- DETECTOR ACTIONS ---
   {
-    path: '/cache/:district/:location_label/detector/report',
+    path: '/:district/:location_label/detector/report',
     name: 'DetectorFault',
     component: ReportDetectorFault,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/cache/:district/:location_label/detector/swap',
+    path: '/:district/:location_label/detector/swap',
     name: 'LocationChanger',
     component: LocationChanger,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/cache/:district/:location_label/detector/return',
+    path: '/:district/:location_label/detector/return',
     name: 'Return',
     component: ReturnScreen,
-    props: true, // Passes both, but ReturnScreen only declares 'district' so it safely ignores location_label
+    props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/cache/:district/:location_label/detector/restock',
+    path: '/:district/:location_label/detector/restock',
     name: 'Restock',
     component: RestockScreen,
     props: true,
     meta: { requiresAuth: true }
   },
   {
-    path: '/cache/:district/:location_label/detector/status',
+    path: '/:district/:location_label/detector/status',
     name: 'DistrictStatus',
     component: DistrictStatus,
     props: true,
     meta: { requiresAuth: true }
   },
-
-  // ================= FALLBACK =================
   {
-    path: '/:pathMatch(.*)',
+    path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: {
-      template: `<div style="padding: 2rem; text-align: center; color: red; font-family: sans-serif;"><h1>404 - Route Not Found</h1><p>The URL you entered is invalid.</p></div>`
+      template: `<div style="padding: 2rem; text-align: center; color: red; font-family: sans-serif;"><h1>404 - Route Not Found</h1><p>Please check the URL or return to the main menu.</p></div>`
     }
   }
 ]
 
 const router = createRouter({
+  // import.meta.env.BASE_URL will automatically be '/apps/cache/' from vite.config.js
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
