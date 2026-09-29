@@ -33,6 +33,43 @@
           </div>
         </div>
       </div>
+
+      <!-- ================= SLOT GRID ================= -->
+      <div v-if="slotCount > 0" class="location-section" style="margin-top: 20px;">
+        <h3>District Cache Slots</h3>
+        <div class="slots-grid">
+          <div
+            v-for="i in slotCount"
+            :key="'slot-' + i"
+            class="slot-rectangle"
+            :class="{ empty: !slottedDetectors[i-1], transit: slottedDetectors[i-1]?.isTransit }"
+          >
+            <template v-if="slottedDetectors[i-1]">
+              <span class="slot-label">{{ slottedDetectors[i-1].label }}</span>
+              <span v-if="slottedDetectors[i-1].isTransit" class="transit-badge">In Transit</span>
+            </template>
+            <template v-else>
+              Empty
+            </template>
+          </div>
+        </div>
+        <!-- Overflow -->
+        <div v-if="overflowDetectors.length > 0" class="overflow-area">
+          <h4>Overflow ({{ overflowDetectors.length }})</h4>
+          <div class="overflow-list">
+            <div
+              v-for="det in overflowDetectors"
+              :key="'ov-' + det.id"
+              class="overflow-item"
+              :class="{ 'transit-item': det.isTransit }"
+            >
+              {{ det.label }}
+              <span v-if="det.isTransit" class="transit-badge-small">In Transit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ================= BURNLEY SELECTION SECTION ================= -->
       <div v-if="availableSlots > 0" class="location-section" style="margin-top: 20px;">
         <h3>Available at Burnley</h3>
@@ -126,6 +163,15 @@ const availableSlots = computed(() => slotCount.value - totalDetectors.value)
 const selectedCount = computed(() => selectedBurnleyIds.value.length)
 const hasSpace = computed(() => selectedCount.value <= availableSlots.value)
 
+const allDistrictDetectors = computed(() => {
+  const cached = cacheDetectors.value.map(d => ({ ...d, isTransit: false }))
+  const transit = transitDetectors.value.map(d => ({ ...d, isTransit: true }))
+  return [...cached, ...transit]
+})
+
+const slottedDetectors = computed(() => allDistrictDetectors.value.slice(0, slotCount.value))
+const overflowDetectors = computed(() => allDistrictDetectors.value.slice(slotCount.value))
+
 // --- Methods ---
 const fetchModels = async () => {
   try {
@@ -139,13 +185,11 @@ const fetchModels = async () => {
 const fetchSlotCount = async () => {
   if (!district.value || !selectedModelId.value) return
   try {
-    // Step 1: Find all DI locations in this district
     const diLocations = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(district.value)}`)
     if (!diLocations || diLocations.length === 0) {
       slotCount.value = 0
       return
     }
-    // Step 2: For each DI location, fetch slots for the selected model and sum them up
     const slotPromises = diLocations.map(loc =>
       apiFetch(`/locationdetectorslots/?location=${loc.id}&detector_model=${selectedModelId.value}`)
     )
@@ -163,9 +207,7 @@ const fetchCacheAndTransit = async () => {
   error.value = null
   try {
     const [cacheData, transitData] = await Promise.all([
-      // 👇 Cache: detectors at locations where location_type=DI AND district=<district> AND detector_model=<model>
       apiFetch(`/detector-labels/?location__location_type=DI&location__district=${encodeURIComponent(district.value)}&detector_model=${selectedModelId.value}`),
-      // Transit: detectors with status=TR AND district=<district> AND detector_model=<model>
       apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
     ])
     cacheDetectors.value = cacheData || []
@@ -213,7 +255,6 @@ const attemptAddToCache = () => {
 const executeRestock = async () => {
   isProcessing.value = true
   try {
-    // Find the DI location in this district to use as the destination
     const diLocations = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(district.value)}`)
     if (!diLocations || diLocations.length === 0) {
       throw new Error('District cache location not found')
@@ -276,14 +317,33 @@ onMounted(async () => {
 .summary-label { font-size: 0.85rem; color: #888; margin-top: 2px; }
 
 .location-section { flex: 1; min-width: 320px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
+
+.slots-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
+.slot-rectangle {
+  width: 110px; height: 80px; border: 2px solid #adb5bd; border-radius: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; font-size: 0.9rem; font-weight: 600; background: #ffffff; color: #333;
+  padding: 5px; box-sizing: border-box; word-break: break-word;
+}
+.slot-rectangle.empty {
+  color: #adb5bd; font-style: italic; font-weight: 400; background: #f8f9fa; border-style: dashed;
+}
+.slot-rectangle.transit { border-color: #f39c12; background: #fef9e7; }
+.slot-label { font-weight: 600; }
+.transit-badge {
+  font-size: 0.65rem; font-weight: 500; color: #e67e22; background: #fdebd0;
+  padding: 2px 6px; border-radius: 8px; margin-top: 3px;
+}
+
+.overflow-area { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ced4da; }
+.overflow-area h4 { margin: 0 0 12px 0; color: #d35400; font-size: 1rem; font-weight: 600; }
 .overflow-list { display: flex; flex-wrap: wrap; gap: 10px; }
 .overflow-item {
   padding: 8px 14px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 20px;
-  cursor: pointer; font-size: 0.9rem; font-weight: 500; color: #333; transition: all 0.2s;
-  -webkit-tap-highlight-color: transparent; user-select: none;
+  font-size: 0.9rem; font-weight: 500; color: #333;
 }
-.overflow-item:hover { background: #ffe69c; transform: translateY(-1px); }
-.overflow-item.selected { background: #e8f8f2; color: #333; border-color: #42b883; border-width: 2px; }
+.overflow-item.transit-item { background: #fef9e7; border-color: #f39c12; }
+.transit-badge-small { font-size: 0.65rem; color: #e67e22; font-weight: 600; margin-left: 4px; }
 
 .no-space-message {
   background: #fdecea; border: 1px solid #f5c6cb; border-radius: 8px; padding: 20px;
