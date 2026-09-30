@@ -193,7 +193,10 @@ class SensorStatus(models.TextChoices):
 
 class District(models.TextChoices):
     WESTERN1 = "W1", "W1"
+    WESTERN2 = "W2", "W2"
     EASTERN1 = "E1", "E1"
+    CENTRAL = "CC", "Central"
+    
     ALL = "AL", "AL"
 
 ###############-----Main Models----------#######################
