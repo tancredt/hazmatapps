@@ -130,3 +130,14 @@ class CsrfTokenView(APIView):
     def get(self, request):
         csrf_token = get_token(request)
         return Response({"csrfToken": csrf_token}, status=status.HTTP_200_OK)
+
+class LogoutView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        try:
+            logout(request)
+            return Response({"success": True, "message": "Logout successful"}, status=status.HTTP_200_OK)
+        except Exception as exc:
+            return Response({"success": False, "message": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
