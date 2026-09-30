@@ -86,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   // Inside the pinLogin function:
-  connst data = await response.json();
+  const data = await response.json();
   if (data.success) {
     isAuthenticated.value = true;
     currentUser.value = data.user;
