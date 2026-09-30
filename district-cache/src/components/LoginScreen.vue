@@ -61,21 +61,19 @@ const lockoutTimer = ref(null)
 const lockoutSeconds = ref(0)
 
 const pin = computed(() => pinDigits.value.join(''))
-
 const redirectPath = computed(() => route.query.redirect)
 
 onMounted(() => {
   inputs.value[0]?.focus()
 })
 
-// Clean up timer if component is destroyed
 onUnmounted(() => {
   if (lockoutTimer.value) clearInterval(lockoutTimer.value)
 })
 
 const handleDigitInput = (index, event) => {
   const value = event.target.value
-  if (value.length === 1 && index < 5) { // Changed from 3 to 5
+  if (value.length === 1 && index < 5) {
     inputs.value[index + 1]?.focus()
   }
 }
@@ -105,7 +103,7 @@ const startLockoutTimer = () => {
 }
 
 const submitPinLogin = async () => {
-  if (pin.value.length !== 6) return // Changed from 4 to 6
+  if (pin.value.length !== 6) return
   if (isLockedOut.value) return
 
   isLoading.value = true
@@ -122,13 +120,11 @@ const submitPinLogin = async () => {
   } else {
     errorMsg.value = result.message || 'Invalid PIN. Please try again.'
     
-    // Check if backend triggered the 5-minute lockout (HTTP 429)
     if (result.status === 429 || errorMsg.value.includes('blocked for 5 minutes')) {
       isLockedOut.value = true
-      lockoutSeconds.value = 300 // 5 minutes in seconds
+      lockoutSeconds.value = 300
       startLockoutTimer()
     } else {
-      // Standard failure: clear inputs and refocus
       pinDigits.value = ['', '', '', '', '', '']
       inputs.value[0]?.focus()
     }
@@ -138,3 +134,4 @@ const submitPinLogin = async () => {
 }
 </script>
 
+<!-- NO STYLE BLOCK NEEDED! All styles are now in styles.css -->
