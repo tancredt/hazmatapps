@@ -2,8 +2,7 @@
   <div class="login-screen">
     <div class="login-box">
       <h2>District Cache Access</h2>
-      <p>Enter your 4-digit PIN to continue</p>
-      
+      <p>Enter your 6-digit PIN to continue</p>
       <form @submit.prevent="submitPinLogin">
         <div class="pin-inputs">
           <input 
@@ -18,17 +17,23 @@
             @input="handleDigitInput(index, $event)"
             @keydown.backspace="handleBackspace(index, $event)"
             class="pin-digit"
-            :disabled="isLoading"
+            :disabled="isLoading || isLockedOut"
             required
           />
         </div>
-        <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
-        <button type="submit" :disabled="isLoading || pin.length !== 4" class="submit-btn">
-          {{ isLoading ? 'Checking...' : 'Unlock' }}
+        
+        <!-- Lockout Message -->
+        <div v-if="isLockedOut" class="error-msg lockout-msg">
+          ⚠️ {{ errorMsg }}
+        </div>
+        <!-- Standard Error Message -->
+        <div v-else-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
+
+        <button type="submit" :disabled="isLoading || isLockedOut || pin.length !== 6" class="submit-btn">
+          {{ isLoading ? 'Checking...' : (isLockedOut ? 'Blocked' : 'Unlock') }}
         </button>
       </form>
-      
-      <div v-if="redirectPath" class="redirect-info">
+      <div v-if="redirectPath && !isLockedOut" class="redirect-info">
         <small>After login, you'll be redirected to: {{ redirectPath }}</small>
       </div>
     </div>
@@ -36,7 +41,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -44,23 +49,33 @@ const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-const pinDigits = ref(['', '', '', ''])
+// Expanded to 6 digits
+const pinDigits = ref(['', '', '', '', '', '']) 
 const inputs = ref([])
 const isLoading = ref(false)
 const errorMsg = ref('')
 
+// Lockout State
+const isLockedOut = ref(false)
+const lockoutTimer = ref(null)
+const lockoutSeconds = ref(0)
+
 const pin = computed(() => pinDigits.value.join(''))
 
-// Capture the redirect path from the query parameter
 const redirectPath = computed(() => route.query.redirect)
 
 onMounted(() => {
   inputs.value[0]?.focus()
 })
 
+// Clean up timer if component is destroyed
+onUnmounted(() => {
+  if (lockoutTimer.value) clearInterval(lockoutTimer.value)
+})
+
 const handleDigitInput = (index, event) => {
   const value = event.target.value
-  if (value.length === 1 && index < 3) {
+  if (value.length === 1 && index < 5) { // Changed from 3 to 5
     inputs.value[index + 1]?.focus()
   }
 }
@@ -71,8 +86,27 @@ const handleBackspace = (index, event) => {
   }
 }
 
+const startLockoutTimer = () => {
+  if (lockoutTimer.value) clearInterval(lockoutTimer.value)
+  lockoutTimer.value = setInterval(() => {
+    lockoutSeconds.value--
+    if (lockoutSeconds.value <= 0) {
+      clearInterval(lockoutTimer.value)
+      isLockedOut.value = false
+      errorMsg.value = ''
+      pinDigits.value = ['', '', '', '', '', '']
+      inputs.value[0]?.focus()
+    } else {
+      const mins = Math.floor(lockoutSeconds.value / 60)
+      const secs = lockoutSeconds.value % 60
+      errorMsg.value = `Login blocked. Try again in ${mins}:${secs.toString().padStart(2, '0')}.`
+    }
+  }, 1000)
+}
+
 const submitPinLogin = async () => {
-  if (pin.value.length !== 4) return
+  if (pin.value.length !== 6) return // Changed from 4 to 6
+  if (isLockedOut.value) return
 
   isLoading.value = true
   errorMsg.value = ''
@@ -81,93 +115,26 @@ const submitPinLogin = async () => {
 
   if (result.success) {
     let destination = redirectPath.value
-
-    // 1. If no redirect path exists, default to a valid MainMenu route (Fixes the 404 bug)
     if (!destination || destination === '/' || destination === '/apps/cache/') {
-      destination = '/W1/FS40/mainmenu' 
-    } else {
-      // 2. Extract district and location_label to ensure we ALWAYS land on the mainmenu
-      // e.g., /W1/FS40/detector/swap -> /W1/FS40/mainmenu
-      const match = destination.match(/^\/([^/]+)\/([^/]+)/)
-      if (match) {
-        const district = match[1]
-        const location_label = match[2]
-        destination = `/${district}/${location_label}/mainmenu`
-      }
+      destination = '/W1/FS40' 
     }
-
-    // Use replace to prevent user from clicking "back" to the login screen
     router.replace(destination)
   } else {
     errorMsg.value = result.message || 'Invalid PIN. Please try again.'
-    pinDigits.value = ['', '', '', '']
-    inputs.value[0]?.focus()
+    
+    // Check if backend triggered the 5-minute lockout (HTTP 429)
+    if (result.status === 429 || errorMsg.value.includes('blocked for 5 minutes')) {
+      isLockedOut.value = true
+      lockoutSeconds.value = 300 // 5 minutes in seconds
+      startLockoutTimer()
+    } else {
+      // Standard failure: clear inputs and refocus
+      pinDigits.value = ['', '', '', '', '', '']
+      inputs.value[0]?.focus()
+    }
   }
 
   isLoading.value = false
 }
 </script>
 
-<style scoped>
-.login-screen {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f5f5f5;
-}
-.login-box {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  text-align: center;
-  width: 320px;
-}
-.pin-inputs {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin: 1.5rem 0;
-}
-.pin-digit {
-  width: 50px;
-  height: 60px;
-  font-size: 1.5rem;
-  text-align: center;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-.pin-digit:focus {
-  outline: none;
-  border-color: #42b883;
-  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
-}
-.submit-btn {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #42b883;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-.submit-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-.error-msg {
-  color: #e74c3c;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-.redirect-info {
-  margin-top: 1.5rem;
-  padding: 0.75rem;
-  background-color: #e8f5e9;
-  border-radius: 4px;
-  color: #2e7d32;
-  font-size: 0.85rem;
-}
-</style>
