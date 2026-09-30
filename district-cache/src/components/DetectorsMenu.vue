@@ -53,21 +53,3 @@ const district = computed(() => props.district || route.params.district)
 const location_label = computed(() => props.location_label || route.params.location_label)
 </script>
 
-<style scoped>
-.sub-menu-screen { padding: 40px 20px; font-family: system-ui, -apple-system, sans-serif; max-width: 1000px; margin: 0 auto; text-align: center; color: #333; }
-h1 { font-size: 2.2rem; margin-bottom: 8px; color: #2c3e50; margin-top: 20px; }
-.subtitle { color: #666; font-size: 1.1rem; margin-bottom: 40px; font-weight: 500; }
-.menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
-.menu-card {
-  background: #ffffff; border: 2px solid #dee2e6; border-radius: 16px;
-  padding: 30px 20px; text-decoration: none; color: #333;
-  transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-.menu-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-color: #42b883; background: #f0fdf4; }
-.menu-card h2 { font-size: 1.4rem; margin: 0 0 8px 0; color: #2c3e50; }
-.menu-card p { color: #666; font-size: 0.9rem; margin: 0; }
-.district-use {
-  display: block; margin-top: 10px; font-size: 0.75rem;
-  color: #888; font-style: italic; font-weight: 500;
-}
-</style>
