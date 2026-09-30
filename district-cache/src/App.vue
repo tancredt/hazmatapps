@@ -1,3 +1,8 @@
+<template>
+  <!-- This is the placeholder where Vue Router will render your matched components -->
+  <router-view />
+</template>
+
 <script setup>
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -69,12 +74,6 @@ onUnmounted(() => {
   }
 })
 </script>
-
-<template>
-  <!-- This is the placeholder where Vue Router will render your matched components -->
-  <router-view />
-</template>
-
 <style>
 /* Ensure the app takes up the full viewport height for mobile layouts */
 html, body, #app {
@@ -83,3 +82,4 @@ html, body, #app {
   padding: 0;
 }
 </style>
+

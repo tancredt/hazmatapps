@@ -51,12 +51,8 @@ const errorMsg = ref('')
 
 const pin = computed(() => pinDigits.value.join(''))
 
-// 🎯 Capture the redirect path from the query parameter
-const redirectPath = computed(() => {
-  const path = route.query.redirect
-  console.log('🔑 [LoginScreen] Redirect path from query:', path)
-  return path
-})
+// Capture the redirect path from the query parameter
+const redirectPath = computed(() => route.query.redirect)
 
 onMounted(() => {
   inputs.value[0]?.focus()
@@ -81,29 +77,28 @@ const submitPinLogin = async () => {
   isLoading.value = true
   errorMsg.value = ''
 
-  console.log('🔑 [LoginScreen] Attempting PIN login with:', pin.value)
-  console.log('🔑 [LoginScreen] Full route object:', route)
-  console.log('🔑 [LoginScreen] Route query:', route.query)
-  
   const result = await auth.pinLogin(pin.value)
-  console.log('🔑 [LoginScreen] Login result:', result)
 
   if (result.success) {
-    // 🎯 Determine where to redirect
     let destination = redirectPath.value
-    
-    // If no redirect path or it's just the login page, go to a default location
+
+    // 1. If no redirect path exists, default to a valid MainMenu route (Fixes the 404 bug)
     if (!destination || destination === '/' || destination === '/apps/cache/') {
-      destination = '/W1/FS40' // Default operational route
-      console.log('🔑 [LoginScreen] No valid redirect path, using default:', destination)
+      destination = '/W1/FS40/mainmenu' 
     } else {
-      console.log('🚀 [LoginScreen] Redirecting to saved path:', destination)
+      // 2. Extract district and location_label to ensure we ALWAYS land on the mainmenu
+      // e.g., /W1/FS40/detector/swap -> /W1/FS40/mainmenu
+      const match = destination.match(/^\/([^/]+)\/([^/]+)/)
+      if (match) {
+        const district = match[1]
+        const location_label = match[2]
+        destination = `/${district}/${location_label}/mainmenu`
+      }
     }
-    
-    // Use replace to prevent user from clicking "back" to login screen
+
+    // Use replace to prevent user from clicking "back" to the login screen
     router.replace(destination)
   } else {
-    console.warn('❌ [LoginScreen] Login failed:', result.message)
     errorMsg.value = result.message || 'Invalid PIN. Please try again.'
     pinDigits.value = ['', '', '', '']
     inputs.value[0]?.focus()

@@ -1,7 +1,6 @@
 let csrfToken = null;
 
 export async function apiFetch(endpoint, options = {}) {
-  // FIX: Added /inventory to match your main urls.py
   const url = endpoint.startsWith('http') ? endpoint : `/api/inventory${endpoint}`;
   
   // Fetch CSRF token if we are making a state-changing request
@@ -33,7 +32,13 @@ export async function apiFetch(endpoint, options = {}) {
     credentials: 'include' // Crucial for Django session cookies
   });
 
-  // FIX: Safely handle the response based on Content-Type
+  if (response.status === 401 || response.status === 403) {
+    // Session timed out or unauthorized. Force redirect to login.
+    const currentPath = window.location.pathname + window.location.search;
+    window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+  
+    return Promise.reject(new Error('Session expired'));
+  }
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
