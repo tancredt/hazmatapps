@@ -10,7 +10,6 @@ export const getCsrfToken = async () => {
       return cookie.substring('csrftoken='.length, cookie.length);
     }
   }
-  
   try {
     const response = await fetch('/api/inventory/csrf-token/', {
       method: 'GET',
@@ -85,16 +84,38 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
-  // Inside the pinLogin function:
-  const data = await response.json();
-  if (data.success) {
-    isAuthenticated.value = true;
-    currentUser.value = data.user;
-    return { success: true, user: data.user };
-  }
-  else {  
-    return { success: false, message: data.message, status: response.status }; 
-  }
+  // 👇 NEW: PIN Login specifically for the Location Changer App 👇
+  const pinLogin = async (pin) => {
+    loading.value = true;
+    try {
+      const csrfToken = await getCsrfToken();
+      const response = await fetch('/api/inventory/auth/pin-login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+        },
+        body: JSON.stringify({ pin }),
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        isAuthenticated.value = true;
+        currentUser.value = data.user;
+        return { success: true, user: data.user };
+      } else {
+        // 👇 Pass the HTTP status code back so the frontend knows if it's a 429 lockout
+        return { success: false, message: data.message, status: response.status };
+      }
+    } catch (error) {
+      console.error('PIN Login error:', error);
+      return { success: false, message: 'Network error occurred' };
+    } finally {
+      loading.value = false;
+    }
+  };
 
   const logout = async () => {
     loading.value = true;
@@ -129,7 +150,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     checkAuth,
     login,
-    pinLogin, 
+    pinLogin,
     logout
   };
 });
