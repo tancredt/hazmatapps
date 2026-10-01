@@ -7,7 +7,7 @@ from .views import (
     DetectorStatusView, DetectorTypeView, DetectorViewSet, DistrictView,
     LocationDetectorSlotViewSet, LocationDetectorLogViewSet, LocationTypeView,
     LocationViewSet, MaintenanceStatusView, MaintenanceTaskTypeView,
-    DetectorFaultStatusView, CylinderFaultStatusView,
+    DetectorFaultStatusView, CylinderFaultStatusView, CylinderFaultTypeView,
     MaintenanceTaskViewSet, MaintenanceTypeView, MaintenanceViewSet, ManufacturerView,
     SensorGasView, SensorSlotViewSet, SensorStatusView, SensorTypeViewSet,
     SensorViewSet, SupplierView, cylinders_pdf, detector_detail_pdf, detectors_pdf,
@@ -66,6 +66,7 @@ urlpatterns = [
     path("cylinder-statuses/", CylinderStatusView.as_view(), name="cylinder-status-list"),
     path("sensor-statuses/", SensorStatusView.as_view(), name="sensor-status-list"),
     path("sensor-gases/", SensorGasView.as_view(), name="sensor-gas-list"),
+    path("cylinder-fault-types/", CylinderFaultTypeView.as_view(), name="cylinder-fault-type-list"),
     path("detector-fault-statuses/", DetectorFaultStatusView.as_view(), name="detector-fault-status-list"),
 path("cylinder-fault-statuses/", CylinderFaultStatusView.as_view(), name="cylinder-fault-status-list"),
     # Auth endpoints (NO trailing spaces, correct views)
