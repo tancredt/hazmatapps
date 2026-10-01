@@ -38,6 +38,8 @@ from .models import (
     DetectorModelConfiguration,
     Supplier,
     DetectorStatus,
+    DetectorFaultStatus,
+    CylinderFaultStatus,
     MaintenanceType,
     MaintenanceTaskType,
     MaintenanceStatus,
