@@ -103,7 +103,8 @@ const filterCylinderType = ref('');
 const filterCylinderModel = ref('');
 const filterOldLocation = ref('');
 const filterNewLocation = ref('');
-const filterDays = ref('');
+// Default to 7 days
+const filterDays = ref(7);
 
 const showFilters = ref(false);
 const currentPage = ref(1);
@@ -124,7 +125,10 @@ onMounted(async () => {
     filterCylinderModel.value = state.filterCylinderModel || '';
     filterOldLocation.value = state.filterOldLocation || '';
     filterNewLocation.value = state.filterNewLocation || '';
-    filterDays.value = state.filterDays || '';
+    // Respect saved state if it exists, otherwise fallback to 7
+    filterDays.value = (state.filterDays !== undefined && state.filterDays !== '') ? state.filterDays : 7;
+  } else {
+    filterDays.value = 7;
   }
 
   await Promise.all([fetchCylinderTypes(), fetchCylinderModels(), fetchLocations()]);
@@ -273,7 +277,9 @@ const toggleFilters = () => { showFilters.value = !showFilters.value; };
 const resetFilters = () => {
   filterCylinderLabel.value = ''; filterCylinderType.value = '';
   filterCylinderModel.value = ''; filterOldLocation.value = ''; 
-  filterNewLocation.value = ''; filterDays.value = '';
+  filterNewLocation.value = ''; 
+  // Reset back to default 7 days
+  filterDays.value = 7; 
   sortKey.value = 'updated'; sortDirection.value = 'desc';
   currentPage.value = 1;
   localStorage.removeItem('cylinderLogsFilterState');

@@ -95,7 +95,8 @@ const filterDetectorLabel = ref('');
 const filterDetectorModel = ref('');
 const filterOldLocation = ref('');
 const filterNewLocation = ref('');
-const filterDays = ref('');
+// Default to 7 days
+const filterDays = ref(7); 
 
 const showFilters = ref(false);
 const currentPage = ref(1);
@@ -115,7 +116,10 @@ onMounted(async () => {
     filterDetectorModel.value = state.filterDetectorModel || '';
     filterOldLocation.value = state.filterOldLocation || '';
     filterNewLocation.value = state.filterNewLocation || '';
-    filterDays.value = state.filterDays || '';
+    // Respect saved state if it exists, otherwise fallback to 7
+    filterDays.value = (state.filterDays !== undefined && state.filterDays !== '') ? state.filterDays : 7;
+  } else {
+    filterDays.value = 7;
   }
 
   await Promise.all([fetchDetectorModels(), fetchLocations()]);
@@ -240,7 +244,9 @@ const toggleFilters = () => { showFilters.value = !showFilters.value; };
 
 const resetFilters = () => {
   filterDetectorLabel.value = ''; filterDetectorModel.value = '';
-  filterOldLocation.value = ''; filterNewLocation.value = ''; filterDays.value = '';
+  filterOldLocation.value = ''; filterNewLocation.value = ''; 
+  // Reset back to default 7 days
+  filterDays.value = 7; 
   sortKey.value = 'updated'; sortDirection.value = 'desc';
   currentPage.value = 1;
   localStorage.removeItem('detectorLogsFilterState');
