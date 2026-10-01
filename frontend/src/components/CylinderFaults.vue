@@ -226,26 +226,6 @@ const fetchLocations = async () => {
   }
 };
 
-const fetchFaultTypes = async () => {
-  try {
-    const result = await get('/api/inventory/cylinder-fault-types/');
-    if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`);
-    faultTypeChoices.value = result.data;
-  } catch (error) {
-    console.error('Error fetching fault types:', error);
-  }
-};
-
-const fetchFaultStatuses = async () => {
-  try {
-    const result = await get('/api/inventory/cylinder-fault-statuses/');
-    if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`);
-    faultStatusChoices.value = result.data;
-  } catch (error) {
-    console.error('Error fetching fault statuses:', error);
-  }
-};
-
 const fetchFaults = async () => {
   try {
     loading.value = true;
@@ -270,6 +250,22 @@ const fetchFaults = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const fetchFaultTypes = async () => {
+  try {
+    const result = await get('/api/inventory/cylinder-fault-types/');
+    if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`);
+    faultTypeChoices.value = result.data;
+  } catch (error) { console.error('Error fetching fault types:', error); }
+};
+
+const fetchFaultStatuses = async () => {
+  try {
+    const result = await get('/api/inventory/cylinder-fault-statuses/');
+    if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`);
+    faultStatusChoices.value = result.data;
+  } catch (error) { console.error('Error fetching fault statuses:', error); }
 };
 
 const getStatusDisplay = (statusValue) => {
