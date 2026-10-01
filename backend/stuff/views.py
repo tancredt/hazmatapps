@@ -224,6 +224,19 @@ class DistrictView(APIView):
         serializer = DistrictChoiceSerializer(choice_list, many=True)
         return Response(serializer.data)
 
+class DetectorFaultStatusView(APIView):
+    def get(self, request):
+        choices = DetectorFaultStatus.choices
+        choice_list = [{'value': value, 'label': label} for value, label in choices]
+        serializer = DetectorFaultTypeChoiceSerializer(choice_list, many=True)  
+        return Response(serializer.data)
+
+class CylinderFaultStatusView(APIView):
+    def get(self, request):
+        choices = CylinderFaultStatus.choices
+        choice_list = [{'value': value, 'label': label} for value, label in choices]
+        serializer = CylinderStatusChoiceSerializer(choice_list, many=True)
+        return Response(serializer.data)
 
 ##################---Main Views---##########################
 
