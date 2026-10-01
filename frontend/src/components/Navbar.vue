@@ -1,14 +1,7 @@
 <template>
   <div class="navbar">
     <div class="nav-left">
-      <router-link to="/" class="nav-brand">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-          <path d="M2 17l10 5 10-5"></path>
-          <path d="M2 12l10 5 10-5"></path>
-        </svg>
-        <span>Hazmat Equipment Inventory</span>
-      </router-link>
+      <!-- ... brand ... -->
     </div>
 
     <div class="nav-links">
@@ -21,6 +14,9 @@
         <div class="dropdown-content">
           <router-link to="/detectors" class="dropdown-item" @click="closeDropdown">List</router-link>
           <router-link to="/faults" class="dropdown-item" @click="closeDropdown">Faults</router-link>
+          <router-link to="/location-slots" class="dropdown-item" @click="closeDropdown">Detector Slots</router-link>
+          <!-- Added Link -->
+          <router-link to="/location-detector-logs" class="dropdown-item" @click="closeDropdown">Location Logs</router-link>
         </div>
       </div>
 
@@ -33,29 +29,20 @@
         <div class="dropdown-content">
           <router-link to="/cylinders" class="dropdown-item" @click="closeDropdown">List</router-link>
           <router-link to="/cylinderfaults" class="dropdown-item" @click="closeDropdown">Faults</router-link>
+          <router-link to="/location-cylinder-slots" class="dropdown-item" @click="closeDropdown">Cylinder Slots</router-link>
+          <!-- Added Link -->
+          <router-link to="/location-cylinder-logs" class="dropdown-item" @click="closeDropdown">Location Logs</router-link>
         </div>
       </div>
-
       <router-link to="/sensors" class="nav-link">Sensors</router-link>
       <router-link to="/maintenances" class="nav-link">Maintenance</router-link>
 
-      <!-- Locations Dropdown -->
-      <div class="dropdown" :class="{ 'is-active': activeDropdown === 'locations' }">
-        <button class="dropdown-button nav-link" @click.stop="toggleDropdown('locations')">
-          Locations
-          <svg class="caret" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </button>
-        <div class="dropdown-content">
-          <router-link to="/location-slots" class="dropdown-item" @click="closeDropdown">Detector Slots</router-link>
-          <router-link to="/location-cylinder-slots" class="dropdown-item" @click="closeDropdown">Cylinder Slots</router-link>
-        </div>
-      </div>
+      <!-- Locations Dropdown has been removed -->
 
       <button @click="handleLogout" class="nav-link logout-button">Logout</button>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -120,7 +107,7 @@ const handleLogout = async () => {
 }
 
 .nav-brand {
-  display: flex;
+  display: flex; 
   align-items: center;
   gap: 0.5rem;
   color: white;
@@ -209,7 +196,7 @@ const handleLogout = async () => {
   border-radius: 6px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   padding: 0.5rem 0;
-  
+
   /* Animation properties */
   opacity: 0;
   visibility: hidden;

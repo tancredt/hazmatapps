@@ -141,6 +141,18 @@ const router = createRouter({
       name: 'LocationSlots',
       component: () => import('@/components/LocationSlots.vue'),
       meta: { requiresAuth: true, title: 'Location Slots - FRV Hazmat Equipment Inventory' }
+    },
+    {
+      path: '/location-detector-logs',
+      name: 'LocationDetectorLogs',
+      component: () => import('@/components/LocationDetectorLogs.vue'),
+      meta: { requiresAuth: true, title: 'Detector Location Logs - FRV Hazmat Equipment Inventory' }
+    },
+    {
+      path: '/location-cylinder-logs',
+      name: 'LocationCylinderLogs',
+      component: () => import('@/components/LocationCylinderLogs.vue'),
+      meta: { requiresAuth: true, title: 'Cylinder Location Logs - FRV Hazmat Equipment Inventory' }
     }
   ],
 })

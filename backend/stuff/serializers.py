@@ -466,3 +466,55 @@ class PerformCylinderSwapSerializer(serializers.Serializer):
     replacement_cylinder_id = serializers.IntegerField()
     replacement_location_id = serializers.IntegerField()
     replacement_status = serializers.CharField(max_length=2)
+
+##  Logs    ########
+
+class LocationDetectorLogSerializer(serializers.ModelSerializer):
+    new_location_label = serializers.CharField(source="new_location.label", read_only=True)
+    new_location_district = serializers.CharField(source="new_location.district", read_only=True)
+    old_location_label = serializers.CharField(source="old_location.label", read_only=True, allow_null=True)
+    old_location_district = serializers.CharField(source="old_location.district", read_only=True, allow_null=True)
+    detector_label = serializers.CharField(source="detector.label", read_only=True)
+    # Added fields for filtering and display
+    detector_model = serializers.IntegerField(source='detector.detector_model_id', read_only=True)
+    detector_model_label = serializers.CharField(source='detector.detector_model.label', read_only=True)
+
+    class Meta:
+        model = LocationDetectorLog
+        fields = [
+            "id",
+            "new_location",
+            "new_location_label",
+            "new_location_district",
+            "old_location",
+            "old_location_label",
+            "old_location_district",
+            "detector",
+            "detector_label",
+            "detector_model",
+            "detector_model_label",
+            "updated"
+        ]
+        read_only_fields = fields
+
+class LocationCylinderLogSerializer(serializers.ModelSerializer):
+    new_location_label = serializers.CharField(source="new_location.label", read_only=True)
+    new_location_district = serializers.CharField(source="new_location.district", read_only=True)
+    old_location_label = serializers.CharField(source="old_location.label", read_only=True, allow_null=True)
+    old_location_district = serializers.CharField(source="old_location.district", read_only=True, allow_null=True)
+    cylinder_label = serializers.CharField(source="cylinder.label", read_only=True)
+    # Added fields for filtering and display
+    cylinder_model = serializers.IntegerField(source='cylinder.cylinder_model_id', read_only=True)
+    cylinder_model_label = serializers.CharField(source='cylinder.cylinder_model.part_number', read_only=True)
+    cylinder_type = serializers.IntegerField(source='cylinder.cylinder_model.cylinder_type_id', read_only=True)
+
+    class Meta:
+        model = LocationCylinderLog
+        fields = [
+            "id", "new_location", "new_location_label", "new_location_district",
+            "old_location", "old_location_label", "old_location_district",
+            "cylinder", "cylinder_label",
+            "cylinder_model", "cylinder_model_label", "cylinder_type",
+            "updated"
+        ]
+        read_only_fields = fields

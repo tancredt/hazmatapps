@@ -362,3 +362,91 @@ class CylinderFaultFilter(filters.FilterSet):
         except ValueError:
             return queryset.none()
         return queryset.filter(cylinder__id=cylinder_id) # <-- Changed here
+
+class LocationDetectorLogFilter(filters.FilterSet):
+    detector = filters.NumberFilter()
+    detector__label = filters.CharFilter(lookup_expr='icontains') # Changed to icontains for better UX
+    detector__detector_model = filters.NumberFilter() # Added
+    detector__detector_model__label = filters.CharFilter(lookup_expr='iexact') # Added
+    new_location = filters.NumberFilter()
+    new_location__label = filters.CharFilter(lookup_expr='iexact')
+    new_location__district = filters.CharFilter(lookup_expr='iexact')
+    old_location = filters.NumberFilter()
+    old_location__label = filters.CharFilter(lookup_expr='iexact')
+    old_location__district = filters.CharFilter(lookup_expr='iexact')
+    updated_gte = filters.DateTimeFilter(field_name='updated', lookup_expr='gte')
+    updated_lte = filters.DateTimeFilter(field_name='updated', lookup_expr='lte')
+    district = filters.CharFilter(method='filter_district')
+
+    def filter_district(self, queryset, name, value):
+        from django.db.models import Q
+        return queryset.filter(
+            Q(new_location__district=value) | Q(old_location__district=value)
+        ).distinct()
+
+    class Meta:
+        model = LocationDetectorLog
+        fields = [
+            'detector',
+            'detector__label',
+            'detector__detector_model',
+            'detector__detector_model__label',
+            'new_location',
+            'new_location__label',
+            'new_location__district',
+            'old_location',
+            'old_location__label',
+            'old_location__district',
+            'updated_gte',
+            'updated_lte',
+            'district'
+        ]
+
+class LocationCylinderLogFilter(filters.FilterSet):
+    cylinder = filters.NumberFilter()
+    cylinder_label = filters.CharFilter(method="filter_cylinder_label")
+    cylinder__cylinder_model = filters.NumberFilter() # Added
+    cylinder__cylinder_model__cylinder_type = filters.NumberFilter() # Added
+    new_location = filters.NumberFilter()
+    new_location__label = filters.CharFilter(lookup_expr='iexact')
+    new_location__district = filters.CharFilter(lookup_expr='iexact')
+    old_location = filters.NumberFilter()
+    old_location__label = filters.CharFilter(lookup_expr='iexact')
+    old_location__district = filters.CharFilter(lookup_expr='iexact')
+    updated_gte = filters.DateTimeFilter(field_name='updated', lookup_expr='gte')
+    updated_lte = filters.DateTimeFilter(field_name='updated', lookup_expr='lte')
+    district = filters.CharFilter(method='filter_district')
+
+    def filter_district(self, queryset, name, value):
+        from django.db.models import Q
+        return queryset.filter(
+            Q(new_location__district=value) | Q(old_location__district=value)
+        ).distinct()
+
+    def filter_cylinder_label(self, queryset, name, value):
+        value = value.strip().upper()
+        if value.startswith("CYL"):
+            value = value.replace("CYL", "")
+        try:
+            cylinder_id = int(value)
+        except ValueError:
+            return queryset.none()
+        return queryset.filter(cylinder__id=cylinder_id)
+
+    class Meta:
+        model = LocationCylinderLog
+        fields = [
+            'cylinder', 
+            'cylinder_label',
+            'cylinder__cylinder_model',
+            'cylinder__cylinder_model__cylinder_type',
+            'new_location', 
+            'new_location__label',
+            'new_location__district', 
+            'old_location', 
+            'old_location__label',
+            'old_location__district', 
+            'updated_gte', 
+            'updated_lte', 
+            'district'
+        ]
