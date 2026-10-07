@@ -194,20 +194,6 @@ class DetectorSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def create(self, validated_data):
-        detector = super().create(validated_data)
-        if detector.configuration_id is not None:
-            sync_detector_sensor_slots(detector)
-        return detector
-
-    def update(self, instance, validated_data):
-        old_configuration_id = instance.configuration_id
-        detector = super().update(instance, validated_data)
-        if detector.configuration_id != old_configuration_id:
-            sync_detector_sensor_slots(detector)
-        return detector
-
-
 class DetectorModelConfigurationSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetectorModelConfiguration
@@ -387,47 +373,6 @@ class CylinderFaultSerializer(serializers.ModelSerializer):
     class Meta:
         model = CylinderFault
         fields = "__all__"
-
-
-def sync_detector_sensor_slots(detector):
-    """
-    Sync a detector's sensor slots with its configuration.
-    """
-    if detector.configuration is None:
-        return
-
-    gas_string = detector.configuration.sensor_gases or ""
-    valid_gases = {value for value, _ in SensorGas.choices}
-
-    gases = []
-    for gas in gas_string.split(","):
-        gas = gas.strip()
-        if gas and gas in valid_gases and gas not in gases:
-            gases.append(gas)
-
-    if not gases:
-        return
-
-    with transaction.atomic():
-        SensorSlot.objects.filter(detector=detector).update(is_current=False)
-        for gas in gases:
-            slot = (
-                SensorSlot.objects
-                .filter(detector=detector, sensorgas=gas)
-                .order_by("id")
-                .first()
-            )
-            if slot:
-                slot.is_current = True
-                slot.save(update_fields=["is_current"])
-            else:
-                SensorSlot.objects.create(
-                    detector=detector,
-                    sensorgas=gas,
-                    sensor=None,
-                    is_current=True,
-                )
-
 
 ####################################################################
 # These are for the changing locations app

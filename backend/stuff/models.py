@@ -567,12 +567,10 @@ class Sensor(models.Model):
     def __str__(self):
         return f"{self.serial} - {self.sensor_type.get_sensorgas_display()}"
 
-
 class SensorSlot(models.Model):
     detector = models.ForeignKey(Detector, on_delete=models.PROTECT)
-    sensor = models.ForeignKey(Sensor, on_delete=models.PROTECT, null=True)
     sensorgas = models.CharField(max_length=2, choices=SensorGas.choices)
-    is_current = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.detector.label} - {self.get_sensorgas_display()} ({self.sensor.serial if self.sensor else 'Empty'})"
+        return f"{self.detector.label} - {self.get_sensorgas_display()}"
+

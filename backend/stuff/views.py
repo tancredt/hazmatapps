@@ -686,17 +686,24 @@ def detector_detail_pdf(request, detector_id):
         Detector.objects.select_related('detector_model', 'location', 'configuration'),
         id=detector_id
     )
-    sensor_slots = SensorSlot.objects.select_related('sensor__sensor_type').filter(detector=detector, is_current=True).order_by('sensorgas')
+    
+    # Fetch all OPERATIONAL sensors installed on this detector
+    sensors = Sensor.objects.filter(
+        detector=detector, 
+        status=SensorStatus.OPERATIONAL
+    ).select_related('sensor_type').order_by('sensor_type__sensorgas')
+    
     maintenances = Maintenance.objects.filter(detector=detector).order_by('-date_due')
     faults = DetectorFault.objects.filter(detector=detector).order_by('-report_dt')
-
+    
     context = {
         'detector': detector,
-        'sensor_slots': sensor_slots,
+        'sensors': sensors,  # Note: Changed context key from 'sensor_slots' to 'sensors'
         'maintenances': maintenances,
         'faults': faults,
         **get_date_context()
     }
+    
     html_string = render_to_string('inventory/pdf/detector_detail.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')

@@ -300,17 +300,14 @@ class SensorFilter(filters.FilterSet):
 
 
 class SensorSlotFilter(filters.FilterSet):
-    sensor_type__part_number = filters.CharFilter(lookup_expr='icontains')
     detector = filters.NumberFilter()
     detector__label = filters.CharFilter(lookup_expr='iexact')
     detector__serial = filters.CharFilter(lookup_expr='icontains')
     sensorgas = filters.CharFilter(lookup_expr='iexact')
-    is_current = filters.BooleanFilter()
 
     class Meta:
         model = SensorSlot
-        fields = ['sensor_type__part_number', 'detector', 'detector__label', 'detector__serial', 'sensorgas', 'is_current']
-
+        fields = ['detector', 'detector__label', 'detector__serial', 'sensorgas']
 
 class DetectorModelConfigurationFilter(filters.FilterSet):
     detector_model__label = filters.CharFilter(lookup_expr='iexact')
