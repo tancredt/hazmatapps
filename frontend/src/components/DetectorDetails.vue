@@ -89,44 +89,118 @@
 
   <!-- Tables Box (Right) -->
   <div class="fixed-box right">
-    <!-- Sensors Accordion -->
+
+    <!-- ==================== SENSORS ACCORDION ==================== -->
     <div class="accordion">
       <div class="accordion-header" @click="toggleAccordion('sensors')">
         <h3>Sensors Attached</h3>
         <span class="accordion-icon">{{ accordionStates.sensors ? '−' : '+' }}</span>
       </div>
       <div class="accordion-content" v-show="accordionStates.sensors">
-        <div class="table-container">
-          <table class="summary-table sensors-table">
-            <thead>
-              <tr>
-                <th>Gas</th>
-                <th>Sensor Serial</th>
-                <th>Warranty</th>
-                <th>Expiry</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="sensor in detectorSensors" :key="sensor.id">
-                <td>
-                  <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
-                    {{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}
-                  </router-link>
-                </td>
-                <td>{{ sensor.serial || 'N/A' }}</td>
-                <td :class="getDateStatus(sensor.warranty_date)">
-                  {{ sensor.warranty_date || 'N/A' }}
-                </td>
-                <td :class="getDateStatus(sensor.expiry_date)">
-                  {{ sensor.expiry_date || 'N/A' }}
-                </td>
-              </tr>
-              <tr v-if="detectorSensors.length === 0">
-                <td colspan="4">No sensors assigned</td>
-              </tr>
-            </tbody>
-          </table>
+
+        <!-- GREEN: Configured Slots with Operational Sensors -->
+        <div class="sensor-section sensor-section-green">
+          <h4 class="sensor-section-title">Configured Sensor Slots</h4>
+          <div class="table-container">
+            <table class="summary-table sensors-table">
+              <thead>
+                <tr>
+                  <th>Slot Gas</th>
+                  <th>Sensor Serial</th>
+                  <th>Warranty</th>
+                  <th>Expiry</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="slot in matchedSlots" :key="'slot-' + slot.id">
+                  <td>{{ getSensorGasDisplay(slot.sensorgas) }}</td>
+                  <td v-if="slot.matchedSensor">
+                    <router-link :to="`/sensors/${slot.matchedSensor.id}`" class="sensor-slot-link">
+                      {{ slot.matchedSensor.serial || 'N/A' }}
+                    </router-link>
+                  </td>
+                  <td v-else class="no-sensor-cell">No sensor assigned</td>
+                  <td :class="getDateStatus(slot.matchedSensor?.warranty_date)">
+                    {{ slot.matchedSensor?.warranty_date || 'N/A' }}
+                  </td>
+                  <td :class="getDateStatus(slot.matchedSensor?.expiry_date)">
+                    {{ slot.matchedSensor?.expiry_date || 'N/A' }}
+                  </td>
+                </tr>
+                <tr v-if="matchedSlots.length === 0">
+                  <td colspan="4">No sensor slots configured</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- ORANGE: Leftover Operational Sensors (no matching slot) -->
+        <div class="sensor-section sensor-section-orange" v-if="leftoverOperationalSensors.length > 0">
+          <h4 class="sensor-section-title">Unassigned Operational Sensors</h4>
+          <div class="table-container">
+            <table class="summary-table sensors-table">
+              <thead>
+                <tr>
+                  <th>Gas</th>
+                  <th>Sensor Serial</th>
+                  <th>Warranty</th>
+                  <th>Expiry</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="sensor in leftoverOperationalSensors" :key="'leftover-' + sensor.id">
+                  <td>{{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}</td>
+                  <td>
+                    <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
+                      {{ sensor.serial || 'N/A' }}
+                    </router-link>
+                  </td>
+                  <td :class="getDateStatus(sensor.warranty_date)">
+                    {{ sensor.warranty_date || 'N/A' }}
+                  </td>
+                  <td :class="getDateStatus(sensor.expiry_date)">
+                    {{ sensor.expiry_date || 'N/A' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- RED: Decommissioned Sensors -->
+        <div class="sensor-section sensor-section-red" v-if="decommissionedSensors.length > 0">
+          <h4 class="sensor-section-title">Decommissioned Sensors</h4>
+          <div class="table-container">
+            <table class="summary-table sensors-table">
+              <thead>
+                <tr>
+                  <th>Gas</th>
+                  <th>Sensor Serial</th>
+                  <th>Warranty</th>
+                  <th>Expiry</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="sensor in decommissionedSensors" :key="'decom-' + sensor.id">
+                  <td>{{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}</td>
+                  <td>
+                    <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
+                      {{ sensor.serial || 'N/A' }}
+                    </router-link>
+                  </td>
+                  <td :class="getDateStatus(sensor.warranty_date)">
+                    {{ sensor.warranty_date || 'N/A' }}
+                  </td>
+                  <td :class="getDateStatus(sensor.expiry_date)">
+                    {{ sensor.expiry_date || 'N/A' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -273,6 +347,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </div>
 </div>
@@ -332,6 +407,7 @@ const errorMessages = ref([]);
 
 // State for related data
 const detectorSensors = ref([]);
+const detectorSensorSlots = ref([]);
 const detectorFaults = ref([]);
 const detectorMaintenance = ref([]);
 const locationHistory = ref([]);
@@ -358,6 +434,54 @@ const paginatedLocationHistory = computed(() => {
   const start = (locationHistoryPage.value - 1) * locationHistoryPerPage;
   return locationHistory.value.slice(start, start + locationHistoryPerPage);
 });
+
+// ==================== SENSOR GROUPING LOGIC ====================
+
+// Helper to get gas code from sensor type ID
+const getSensorGas = (sensorTypeId) => {
+  if (!sensorTypeId) return '';
+  const st = sensorTypes.value.find(s => s.id === sensorTypeId);
+  return st ? st.sensorgas : '';
+};
+
+// GREEN: Slots matched with their operational sensor (if any)
+const matchedSlots = computed(() => {
+  const operationalSensors = detectorSensors.value.filter(s => s.status === 'OP');
+  const usedSensorIds = new Set();
+
+  return detectorSensorSlots.value.map(slot => {
+    const matchingSensor = operationalSensors.find(s => {
+      if (usedSensorIds.has(s.id)) return false;
+      return getSensorGas(s.sensor_type) === slot.sensorgas;
+    });
+    if (matchingSensor) usedSensorIds.add(matchingSensor.id);
+    return { ...slot, matchedSensor: matchingSensor || null };
+  });
+});
+
+// ORANGE: Operational sensors that don't fit into any slot
+const leftoverOperationalSensors = computed(() => {
+  const operationalSensors = detectorSensors.value.filter(s => s.status === 'OP');
+  const usedSensorIds = new Set();
+
+  // Mark sensors that are already matched to a slot
+  for (const slot of detectorSensorSlots.value) {
+    const match = operationalSensors.find(s => {
+      if (usedSensorIds.has(s.id)) return false;
+      return getSensorGas(s.sensor_type) === slot.sensorgas;
+    });
+    if (match) usedSensorIds.add(match.id);
+  }
+
+  return operationalSensors.filter(s => !usedSensorIds.has(s.id));
+});
+
+// RED: Decommissioned sensors
+const decommissionedSensors = computed(() => {
+  return detectorSensors.value.filter(s => s.status === 'DC');
+});
+
+// ==================== END SENSOR GROUPING ====================
 
 const extractList = (data) => {
   if (Array.isArray(data)) return data;
@@ -439,13 +563,6 @@ const getSensorGasDisplay = (sensorgas) => {
   return gasMap[sensorgas] || sensorgas;
 };
 
-// Helper to get gas code from sensor type ID
-const getSensorGas = (sensorTypeId) => {
-  if (!sensorTypeId) return 'N/A';
-  const sensorType = sensorTypes.value.find(st => st.id === sensorTypeId);
-  return sensorType ? sensorType.sensorgas : 'N/A';
-};
-
 const closeDialog = () => { showSuccessDialog.value = false; };
 const closeErrorDialog = () => { showErrorDialog.value = false; errorMessages.value = []; };
 
@@ -523,7 +640,13 @@ const fetchRelatedData = async () => {
   try {
     if (isNewDetector.value) return;
 
-    // Fetch sensors assigned to this detector directly
+    // Fetch sensor slots for this detector (the configured gases)
+    const slotsResult = await get(`/api/inventory/sensorslots/?detector=${route.params.id}`);
+    if (slotsResult.ok) {
+      detectorSensorSlots.value = extractList(slotsResult.data);
+    }
+
+    // Fetch all sensors assigned to this detector
     const sensorsResult = await get(`/api/inventory/sensors/?detector=${route.params.id}`);
     if (sensorsResult.ok) {
       detectorSensors.value = extractList(sensorsResult.data);
@@ -618,7 +741,6 @@ const fetchDetectorModelConfigurations = async () => {
 </script>
 
 <style scoped>
-/* ... [Keep your existing styles exactly as they are] ... */
 .detector-details-page { min-height: 100vh; }
 .page-container { width: 100%; max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
 h1 { color: #2c3e50; margin-bottom: 2rem; }
@@ -647,10 +769,10 @@ h1 { color: #2c3e50; margin-bottom: 2rem; }
 .summary-table th, .summary-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; font-size: 0.9rem; }
 .summary-table th { background-color: #f8f9fa; font-weight: 600; position: sticky; top: 0; }
 .sensors-table th:nth-child(1), .sensors-table td:nth-child(1) { width: 20%; }
-.sensors-table th:nth-child(2), .sensors-table td:nth-child(2) { width: 20%; }
-.sensors-table th:nth-child(3), .sensors-table td:nth-child(3) { width: 20%; }
-.sensors-table th:nth-child(4), .sensors-table td:nth-child(4) { width: 20%; }
-.summary-table tbody tr:hover { background-color: #f8f9fa; }
+.sensors-table th:nth-child(2), .sensors-table td:nth-child(2) { width: 30%; }
+.sensors-table th:nth-child(3), .sensors-table td:nth-child(3) { width: 25%; }
+.sensors-table th:nth-child(4), .sensors-table td:nth-child(4) { width: 25%; }
+.summary-table tbody tr:hover { background-color: rgba(0,0,0,0.03); }
 .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
 .btn-primary { background-color: #42b883; color: white; }
 .btn-primary:hover { background-color: #36966d; }
@@ -669,6 +791,63 @@ h1 { color: #2c3e50; margin-bottom: 2rem; }
 .btn-pagination { background-color: #6c757d; color: white; border: none; border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s; }
 .btn-pagination:hover:not(:disabled) { background-color: #5a6268; }
 .btn-pagination:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.6; }
+
+/* ==================== SENSOR SECTION COLOURS ==================== */
+.sensor-section {
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.sensor-section:last-child {
+  margin-bottom: 0;
+}
+.sensor-section-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* GREEN — configured slots */
+.sensor-section-green {
+  background-color: #d4edda;
+  border: 1px solid #a3d9a5;
+}
+.sensor-section-green .sensor-section-title {
+  color: #155724;
+}
+.sensor-section-green .summary-table th {
+  background-color: #b7dfb9;
+}
+
+/* ORANGE — leftover operational */
+.sensor-section-orange {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+}
+.sensor-section-orange .sensor-section-title {
+  color: #856404;
+}
+.sensor-section-orange .summary-table th {
+  background-color: #ffe69c;
+}
+
+/* RED — decommissioned */
+.sensor-section-red {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+.sensor-section-red .sensor-section-title {
+  color: #721c24;
+}
+.sensor-section-red .summary-table th {
+  background-color: #f1b0b7;
+}
+
+.no-sensor-cell {
+  color: #888;
+  font-style: italic;
+}
+
 @media (max-width: 768px) {
   .page-container { padding: 0 1rem; margin-top: 1rem; }
   .layout-container { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 1rem; height: auto; }

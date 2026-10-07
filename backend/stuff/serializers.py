@@ -150,48 +150,75 @@ class DetectorModelSerializer(serializers.ModelSerializer):
 
 class DetectorSerializer(serializers.ModelSerializer):
     purchase_date = serializers.DateField(allow_null=True, required=False)
-
     class Meta:
-        model = Detector
-        fields = "__all__"
-        read_only_fields = ['location_updated']
+         model = Detector
+         fields = "__all__"
+         read_only_fields = ['location_updated']
 
     def validate(self, attrs):
         instance = getattr(self, 'instance', None)
-
         label = attrs.get('label')
         if label:
-            if instance and instance.label != label:
-                if Detector.objects.filter(label=label).exists():
-                    raise serializers.ValidationError({'label': ['A detector with this label already exists.']})
-            elif not instance:
-                if Detector.objects.filter(label=label).exists():
-                    raise serializers.ValidationError({'label': ['A detector with this label already exists.']})
-
+            qs = Detector.objects.filter(label=label)
+            if instance:
+                qs = qs.exclude(pk=instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({'label': ['A detector with this label already exists.']})
         serial = attrs.get('serial')
         if serial:
-            if instance and instance.serial != serial:
-                if Detector.objects.filter(serial=serial).exists():
-                    raise serializers.ValidationError({'serial': ['A detector with this serial already exists.']})
-            elif not instance:
-                if Detector.objects.filter(serial=serial).exists():
-                    raise serializers.ValidationError({'serial': ['A detector with this serial already exists.']})
-
-        required_fields = ['detector_model', 'status', 'location']
-        for field in required_fields:
+            qs = Detector.objects.filter(serial=serial)
+            if instance:
+                qs = qs.exclude(pk=instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({'serial': ['A detector with this serial already exists.']})
+        for field in ['detector_model', 'status', 'location']:
             if not attrs.get(field):
                 raise serializers.ValidationError({field: [f'{field.replace("_", " ").title()} is required.']})
-
         purchase_cost = attrs.get('purchase_cost')
         if purchase_cost is not None and purchase_cost < 0:
             raise serializers.ValidationError({'purchase_cost': ['Purchase cost cannot be negative.']})
-
         purchase_date = attrs.get('purchase_date')
         if purchase_date:
             from datetime import date
             if purchase_date > date.today():
                 raise serializers.ValidationError({'purchase_date': ['Purchase date cannot be in the future.']})
+        return attrs
 
+    # create() and update() no longer call sync_detector_sensor_slots
+
+
+class SensorSerializer(serializers.ModelSerializer):
+    order_date = serializers.DateField(allow_null=True, required=False)
+    receive_date = serializers.DateField(allow_null=True, required=False)
+    warranty_date = serializers.DateField(allow_null=True, required=False)
+    expiry_date = serializers.DateField(allow_null=True, required=False)
+    install_date = serializers.DateField(allow_null=True, required=False)
+    remove_date = serializers.DateField(allow_null=True, required=False)
+
+    class Meta:
+        model = Sensor
+        fields = "__all__"
+
+    def validate(self, attrs):
+        instance = getattr(self, 'instance', None)
+        detector = attrs.get('detector', getattr(instance, 'detector_id', None))
+        sensor_type = attrs.get('sensor_type', getattr(instance, 'sensor_type', None))
+        status_val = attrs.get('status', getattr(instance, 'status', None))
+
+        # Enforce unique constraint: (detector, sensorgas, status)
+        if detector and sensor_type and status_val:
+            gas = sensor_type.sensorgas if hasattr(sensor_type, 'sensorgas') else SensorType.objects.get(pk=sensor_type).sensorgas
+            qs = Sensor.objects.filter(
+                detector=detector,
+                sensor_type__sensorgas=gas,
+                status=status_val
+            )
+            if instance:
+                qs = qs.exclude(pk=instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({
+                    'detector': [f"A sensor with gas '{gas}' and status '{status_val}' already exists on this detector."]
+                })
         return attrs
 
 class DetectorModelConfigurationSerializer(serializers.ModelSerializer):

@@ -7,13 +7,7 @@
        <div class="form-grid">
          <div class="form-group">
            <label for="serial">Serial</label>
-           <input
-             type="text"
-             id="serial"
-             v-model="sensor.serial"
-             class="form-control"
-             placeholder="Enter sensor serial"
-           >
+           <input type="text" id="serial" v-model="sensor.serial" class="form-control" placeholder="Enter sensor serial">
          </div>
          <div class="form-group">
            <label for="sensor_type">Sensor Type *</label>
@@ -47,73 +41,40 @@
            <div class="date-row">
              <div class="date-field">
                <label for="order_date">Ordered</label>
-               <input
-                 type="date"
-                 id="order_date"
-                 v-model="sensor.order_date"
-                 class="form-control"
-               >
+               <input type="date" id="order_date" v-model="sensor.order_date" class="form-control">
              </div>
              <div class="date-field">
                <label for="receive_date">Received</label>
-               <input
-                 type="date"
-                 id="receive_date"
-                 v-model="sensor.receive_date"
-                 class="form-control"
-               >
+               <input type="date" id="receive_date" v-model="sensor.receive_date" class="form-control">
              </div>
            </div>
          </div>
-         <!-- Empty grid cell to maintain grid alignment -->
          <div class="empty-grid-cell"></div>
          <div class="form-group date-pair">
            <div class="date-row">
              <div class="date-field">
                <label for="warranty_date">Warranty</label>
-               <input
-                 type="date"
-                 id="warranty_date"
-                 v-model="sensor.warranty_date"
-                 class="form-control"
-               >
+               <input type="date" id="warranty_date" v-model="sensor.warranty_date" class="form-control">
              </div>
              <div class="date-field">
                <label for="expiry_date">Expiry</label>
-               <input
-                 type="date"
-                 id="expiry_date"
-                 v-model="sensor.expiry_date"
-                 class="form-control"
-               >
+               <input type="date" id="expiry_date" v-model="sensor.expiry_date" class="form-control">
              </div>
            </div>
          </div>
-         <!-- Empty grid cell to maintain grid alignment -->
          <div class="empty-grid-cell"></div>
          <div class="form-group date-pair">
            <div class="date-row">
              <div class="date-field">
                <label for="install_date">Install Date</label>
-               <input
-                 type="date"
-                 id="install_date"
-                 v-model="sensor.install_date"
-                 class="form-control"
-               >
+               <input type="date" id="install_date" v-model="sensor.install_date" class="form-control">
              </div>
              <div class="date-field">
                <label for="remove_date">Remove Date</label>
-               <input
-                 type="date"
-                 id="remove_date"
-                 v-model="sensor.remove_date"
-                 class="form-control"
-               >
+               <input type="date" id="remove_date" v-model="sensor.remove_date" class="form-control">
              </div>
            </div>
          </div>
-         <!-- Empty grid cell to maintain grid alignment -->
          <div class="empty-grid-cell"></div>
        </div>
        <div class="form-actions">
@@ -123,7 +84,6 @@
      </form>
    </div>
  </div>
- <!-- Success Dialog -->
  <div v-if="showSuccessDialog" class="dialog-overlay" @click="closeDialog">
    <div class="dialog-box" @click.stop>
      <h3>Success!</h3>
@@ -133,14 +93,11 @@
      </div>
    </div>
  </div>
- <!-- Error Dialog -->
  <div v-if="showErrorDialog" class="dialog-overlay" @click="closeErrorDialog">
    <div class="dialog-box" @click.stop>
      <h3>Validation Errors</h3>
      <div class="error-list">
-       <p v-for="(error, index) in errorMessages" :key="index" class="error-item">
-         {{ error }}
-       </p>
+       <p v-for="(error, index) in errorMessages" :key="index" class="error-item">{{ error }}</p>
      </div>
      <div class="dialog-actions">
        <button @click="closeErrorDialog" class="btn btn-primary">OK</button>
@@ -158,85 +115,50 @@ import { get, post, put } from '@/utils/api';
 const router = useRouter();
 const route = useRoute();
 
-// State for related data
 const sensorTypes = ref([]);
 const detectors = ref([]);
 
-// State for the sensor
 const sensor = ref({
-  serial: '',
-  sensor_type: '',
-  status: '',
-  detector: null,
-  order_date: '',
-  receive_date: '',
-  warranty_date: '',
-  expiry_date: '',
-  install_date: '',
-  remove_date: ''
+  serial: '', sensor_type: '', status: '', detector: null,
+  order_date: '', receive_date: '', warranty_date: '',
+  expiry_date: '', install_date: '', remove_date: ''
 });
 
-// State for tracking if form has been modified
 const isDirty = ref(false);
 const originalSensor = ref({});
-
-// State for success dialog
 const showSuccessDialog = ref(false);
-
-// State for error dialog
 const showErrorDialog = ref(false);
 const errorMessages = ref([]);
-
-// State for saving
 const isSaving = ref(false);
 
-// Check if we're creating a new sensor or editing an existing one
 const isNewSensor = computed(() => route.params.id === 'new');
 
-// Fetch sensor types from the API
 const fetchSensorTypes = async () => {
   try {
     const result = await get('/api/inventory/sensortypes/');
     if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`);
     sensorTypes.value = result.data.results || result.data;
-  } catch (error) {
-    console.error('Error fetching sensor types:', error);
-  }
+  } catch (error) { console.error('Error fetching sensor types:', error); }
 };
 
-// Fetch detectors from the API
 const fetchDetectors = async () => {
   try {
     const result = await get('/api/inventory/detectors/');
-    if (result.ok) {
-      detectors.value = result.data.results || result.data;
-    }
-  } catch (error) {
-    console.error('Error fetching detectors:', error);
-  }
+    if (result.ok) detectors.value = result.data.results || result.data;
+  } catch (error) { console.error('Error fetching detectors:', error); }
 };
 
-// Fetch sensor data if editing existing sensor
 const fetchSensor = async () => {
   try {
     const result = await get(`/api/inventory/sensors/${route.params.id}/`);
     if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`);
-    
     const data = result.data;
-    sensor.value = {
-      ...data,
-      sensor_type: data.sensor_type || null,
-      detector: data.detector || null
-    };
-
+    sensor.value = { ...data, sensor_type: data.sensor_type || null, detector: data.detector || null };
     originalSensor.value = { ...sensor.value };
     isDirty.value = false;
-  } catch (error) {
-    console.error('Error fetching sensor:', error);
-  }
+  } catch (error) { console.error('Error fetching sensor:', error); }
 };
 
-// Helper functions to get related object labels
 const sensorGasLabels = {
   CO: 'CO', HS: 'H2S', LE: 'LEL', O2: 'O2', VO: 'VOC', HC: 'HCN',
   CL: 'Cl2', PH: 'PH3', SO: 'SO2', NO: 'NO2', C2: 'CO2', NH: 'NH3',
@@ -254,29 +176,15 @@ const getSensorTypeLabel = (sensorTypeId) => {
 };
 
 const closeDialog = () => { showSuccessDialog.value = false; };
-const closeErrorDialog = () => {
-  showErrorDialog.value = false;
-  errorMessages.value = [];
-};
+const closeErrorDialog = () => { showErrorDialog.value = false; errorMessages.value = []; };
 
-// Save sensor function
 const saveSensor = async () => {
   isSaving.value = true;
-
   try {
-    // Client-side validation
-    if (!sensor.value.sensor_type) {
-      alert('Sensor Type is required.');
-      isSaving.value = false;
-      return;
-    }
-    if (!sensor.value.status) {
-      alert('Status is required.');
-      isSaving.value = false;
-      return;
-    }
+    if (!sensor.value.sensor_type) { alert('Sensor Type is required.'); isSaving.value = false; return; }
+    if (!sensor.value.status) { alert('Status is required.'); isSaving.value = false; return; }
 
-    // --- Check for duplicate (detector, gas, status) on frontend ---
+    // Frontend duplicate check: (detector, sensorgas, status) must be unique
     if (sensor.value.detector && sensor.value.sensor_type && sensor.value.status) {
       const selectedType = sensorTypes.value.find(st => st.id === parseInt(sensor.value.sensor_type));
       if (selectedType) {
@@ -285,11 +193,10 @@ const saveSensor = async () => {
         if (result.ok) {
           const existingSensors = result.data.results || result.data;
           const duplicate = existingSensors.find(s => {
-            if (route.params.id && s.id === parseInt(route.params.id)) return false; // Ignore current sensor
+            if (route.params.id && s.id === parseInt(route.params.id)) return false;
             const sType = sensorTypes.value.find(st => st.id === s.sensor_type);
             return sType && sType.sensorgas === gas;
           });
-
           if (duplicate) {
             errorMessages.value = [`A sensor with gas '${gas}' and status '${sensor.value.status}' is already assigned to this detector.`];
             showErrorDialog.value = true;
@@ -299,9 +206,7 @@ const saveSensor = async () => {
         }
       }
     }
-    // ----------------------------------------------------------------
 
-    let result;
     let sensorData = {
       ...sensor.value,
       sensor_type: sensor.value.sensor_type ? parseInt(sensor.value.sensor_type) : null,
@@ -314,6 +219,7 @@ const saveSensor = async () => {
       remove_date: sensor.value.remove_date || null
     };
 
+    let result;
     if (isNewSensor.value) {
       result = await post('/api/inventory/sensors/', sensorData);
     } else {
@@ -351,19 +257,12 @@ const closeDialogAndReturn = () => {
 };
 
 onMounted(async () => {
-  await Promise.all([
-    fetchSensorTypes(),
-    fetchDetectors()
-  ]);
-
-  if (!isNewSensor.value) {
-    await fetchSensor();
-  }
+  await Promise.all([fetchSensorTypes(), fetchDetectors()]);
+  if (!isNewSensor.value) await fetchSensor();
 });
 </script>
 
 <style scoped>
-/* ... [Keep your existing styles exactly as they are] ... */
 .sensor-details-page { min-height: 100vh; display: flex; flex-direction: column; }
 .page-container { max-width: 1200px; margin: 1rem auto; padding: 0 2rem; flex: 1; }
 h1 { color: #2c3e50; margin-bottom: 1rem; }
@@ -394,8 +293,8 @@ h1 { color: #2c3e50; margin-bottom: 1rem; }
 .error-list { max-height: 200px; overflow-y: auto; margin: 1rem 0; padding: 0.5rem; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; }
 .error-item { margin: 0.25rem 0; color: #721c24; font-weight: 500; }
 @media (max-width: 768px) {
-  .form-grid { grid-template-columns: 1fr; gap: 1rem; }
-  .page-container { padding: 0 1rem; margin: 1rem auto; }
+  .form-grid { grid-template-columns: 1fr; }
+  .page-container { padding: 0 1rem; }
   .form-container { padding: 1rem; }
 }
 </style>
