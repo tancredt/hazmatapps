@@ -1,417 +1,410 @@
 <template>
-<div class="detector-details-page">
-<div class="page-container">
-<div class="layout-container">
-  <!-- Detector Details Box (Left) -->
-  <div class="fixed-box left">
-    <h2>Detector Information</h2>
-    <div class="form-container">
-      <form @submit.prevent="saveDetector" class="detector-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="label">Label *</label>
-            <input type="text" id="label" v-model="detector.label" required :disabled="!isNewDetector" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="serial">Serial *</label>
-            <input type="text" id="serial" v-model="detector.serial" required class="form-control" />
+  <div class="detector-details-page">
+    <div class="page-container">
+      <div class="layout-container">
+        <!-- Detector Details Box (Left) -->
+        <div class="fixed-box left">
+          <h2>Detector Information</h2>
+          <div class="form-container">
+            <form @submit.prevent="saveDetector" class="detector-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="label">Label *</label>
+                  <input type="text" id="label" v-model="detector.label" required :disabled="!isNewDetector" class="form-control" />
+                </div>
+                <div class="form-group">
+                  <label for="serial">Serial *</label>
+                  <input type="text" id="serial" v-model="detector.serial" required class="form-control" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="detector_model">Model *</label>
+                  <select id="detector_model" v-model="detector.detector_model" required class="form-control">
+                    <option value="">Select Model</option>
+                    <option v-for="model in detectorModels" :key="model.id" :value="model.id">{{ getModelName(model.id) }}</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="status">Status *</label>
+                  <select id="status" v-model="detector.status" required class="form-control">
+                    <option value="">Select Status</option>
+                    <option value="OP">Operational</option>
+                    <option value="IS">In Stock</option>
+                    <option value="OO">On Order</option>
+                    <option value="OF">Offline Repair</option>
+                    <option value="DC">Decommissioned</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="configuration">Configuration</label>
+                  <select id="configuration" v-model="detector.configuration" class="form-control">
+                    <option value="">Select Configuration</option>
+                    <option v-for="config in detectorModelConfigurations" :key="config.id" :value="config.id">{{ getConfigurationLabel(config.id) }}</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="location">Location *</label>
+                  <select id="location" v-model="detector.location" required class="form-control">
+                    <option value="">Select Location</option>
+                    <option v-for="location in locations" :key="location.id" :value="location.id">{{ getLocationLabel(location.id) }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="purchase_date">Purchase Date</label>
+                  <input type="date" id="purchase_date" v-model="detector.purchase_date" class="form-control" />
+                </div>
+                <div class="form-group">
+                  <label for="purchase_cost">Purchase Cost ($)</label>
+                  <input type="number" id="purchase_cost" v-model.number="detector.purchase_cost" step="0.01" class="form-control" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firmware">Firmware</label>
+                  <input type="text" id="firmware" v-model="detector.firmware" maxlength="8" class="form-control" />
+                </div>
+                <div class="form-group">
+                  <label for="location_updated">Location Last Updated</label>
+                  <input type="text" id="location_updated" :value="detector.location_updated ? formatDate(detector.location_updated) : 'Never'" readonly class="form-control" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group full-width">
+                  <label for="notes">Notes</label>
+                  <textarea id="notes" v-model="detector.notes" rows="4" class="form-control" placeholder="Additional notes about the detector..."></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" :disabled="!isDirty">Save Detector</button>
+                <router-link to="/detectors" class="btn btn-secondary">Cancel</router-link>
+              </div>
+            </form>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="detector_model">Model *</label>
-            <select id="detector_model" v-model="detector.detector_model" required class="form-control">
-              <option value="">Select Model</option>
-              <option v-for="model in detectorModels" :key="model.id" :value="model.id">{{ getModelName(model.id) }}</option>
-            </select>
+
+        <!-- Tables Box (Right) -->
+        <div class="fixed-box right">
+          <!-- ==================== SENSORS ACCORDION ==================== -->
+          <div class="accordion">
+            <div class="accordion-header" @click="toggleAccordion('sensors')">
+              <h3>Sensors Attached</h3>
+              <span class="accordion-icon">{{ accordionStates.sensors ? '−' : '+' }}</span>
+            </div>
+            <div class="accordion-content" v-show="accordionStates.sensors">
+              <!-- GREEN: Configured Slots with Operational Sensors -->
+              <div class="sensor-section sensor-section-green">
+                <h4 class="sensor-section-title">Configured Sensor Slots</h4>
+                <div class="table-container">
+                  <table class="summary-table sensors-table">
+                    <thead>
+                      <tr>
+                        <th>Slot Gas</th>
+                        <th>Sensor Serial</th>
+                        <th>Warranty</th>
+                        <th>Expiry</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="slot in matchedSlots" :key="'slot-' + slot.id">
+                        <td>
+                          <!-- UPDATED: CLICKABLE GAS LINK -->
+                          <a href="#" @click.prevent="handleGasLinkClick(slot)" class="sensor-slot-link">
+                            {{ getSensorGasDisplay(slot.sensorgas) }}
+                          </a>
+                        </td>
+                        <td v-if="slot.matchedSensor">
+                          <router-link :to="`/sensors/${slot.matchedSensor.id}`" class="sensor-slot-link">
+                            {{ slot.matchedSensor.serial || 'N/A' }}
+                          </router-link>
+                        </td>
+                        <td v-else class="no-sensor-cell">No sensor assigned</td>
+                        <td :class="getDateStatus(slot.matchedSensor?.warranty_date)">
+                          {{ slot.matchedSensor?.warranty_date || 'N/A' }}
+                        </td>
+                        <td :class="getDateStatus(slot.matchedSensor?.expiry_date)">
+                          {{ slot.matchedSensor?.expiry_date || 'N/A' }}
+                        </td>
+                      </tr>
+                      <tr v-if="matchedSlots.length === 0">
+                        <td colspan="4">No sensor slots configured</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!-- ORANGE: Leftover Operational Sensors (no matching slot) -->
+              <div class="sensor-section sensor-section-orange" v-if="leftoverOperationalSensors.length > 0">
+                <h4 class="sensor-section-title">Unassigned Operational Sensors</h4>
+                <div class="table-container">
+                  <table class="summary-table sensors-table">
+                    <thead>
+                      <tr>
+                        <th>Gas</th>
+                        <th>Sensor Serial</th>
+                        <th>Warranty</th>
+                        <th>Expiry</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="sensor in leftoverOperationalSensors" :key="'leftover-' + sensor.id">
+                        <td>{{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}</td>
+                        <td>
+                          <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
+                            {{ sensor.serial || 'N/A' }}
+                          </router-link>
+                        </td>
+                        <td :class="getDateStatus(sensor.warranty_date)">
+                          {{ sensor.warranty_date || 'N/A' }}
+                        </td>
+                        <td :class="getDateStatus(sensor.expiry_date)">
+                          {{ sensor.expiry_date || 'N/A' }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!-- RED: Decommissioned Sensors -->
+              <div class="sensor-section sensor-section-red" v-if="decommissionedSensors.length > 0">
+                <h4 class="sensor-section-title">Decommissioned Sensors</h4>
+                <div class="table-container">
+                  <table class="summary-table sensors-table">
+                    <thead>
+                      <tr>
+                        <th>Gas</th>
+                        <th>Sensor Serial</th>
+                        <th>Warranty</th>
+                        <th>Expiry</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="sensor in decommissionedSensors" :key="'decom-' + sensor.id">
+                        <td>{{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}</td>
+                        <td>
+                          <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
+                            {{ sensor.serial || 'N/A' }}
+                          </router-link>
+                        </td>
+                        <td :class="getDateStatus(sensor.warranty_date)">
+                          {{ sensor.warranty_date || 'N/A' }}
+                        </td>
+                        <td :class="getDateStatus(sensor.expiry_date)">
+                          {{ sensor.expiry_date || 'N/A' }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="status">Status *</label>
-            <select id="status" v-model="detector.status" required class="form-control">
-              <option value="">Select Status</option>
-              <option value="OP">Operational</option>
-              <option value="IS">In Stock</option>
-              <option value="OO">On Order</option>
-              <option value="OF">Offline Repair</option>
-              <option value="DC">Decommissioned</option>
-            </select>
+
+          <!-- Fault Reports Accordion -->
+          <div class="accordion">
+            <div class="accordion-header" @click="toggleAccordion('faults')">
+              <h3>Fault Reports</h3>
+              <span class="accordion-icon">{{ accordionStates.faults ? '−' : '+' }}</span>
+            </div>
+            <div class="accordion-content" v-show="accordionStates.faults">
+              <div class="table-container">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Date Reported</th>
+                      <th>Fault Type</th>
+                      <th>Report Location</th>
+                      <th>Resolve Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="fault in paginatedFaultReports" :key="fault.id">
+                      <td>
+                        <router-link :to="{ name: 'FaultReportDetails', params: { detectorId: route.params.id, faultId: fault.id } }" class="fault-report-link">
+                          {{ formatDateYYYYMMDD(fault.report_dt) }}
+                        </router-link>
+                      </td>
+                      <td>{{ getFaultTypeDisplay(fault.fault_type) }}</td>
+                      <td>{{ getLocationLabel(fault.report_location) }}</td>
+                      <td>{{ fault.resolve_dt ? formatDateYYYYMMDD(fault.resolve_dt) : 'N/A' }}</td>
+                      <td :class="fault.resolve_dt ? 'status-resolved' : 'status-open'">
+                        {{ fault.resolve_dt ? 'Resolved' : 'Open' }}
+                      </td>
+                    </tr>
+                    <tr v-if="detectorFaults.length === 0">
+                      <td colspan="5">No fault reports</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="detectorFaults.length > faultsPerPage" class="pagination-controls">
+                  <button @click="prevFaultPage" :disabled="faultReportsPage <= 1" class="btn btn-pagination">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <span class="page-info">Page {{ faultReportsPage }} of {{ Math.ceil(detectorFaults.length / faultsPerPage) }}</span>
+                  <button @click="nextFaultPage" :disabled="faultReportsPage >= Math.ceil(detectorFaults.length / faultsPerPage)" class="btn btn-pagination">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+                <div class="add-fault-button">
+                  <router-link :to="{ name: 'FaultReportDetails', params: { detectorId: route.params.id } }" class="btn btn-primary">Add New Fault Report</router-link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Maintenance Accordion -->
+          <div class="accordion">
+            <div class="accordion-header" @click="toggleAccordion('maintenance')">
+              <h3>Maintenance</h3>
+              <span class="accordion-icon">{{ accordionStates.maintenance ? '−' : '+' }}</span>
+            </div>
+            <div class="accordion-content" v-show="accordionStates.maintenance">
+              <div class="table-container">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Maintenance Type</th>
+                      <th>Status</th>
+                      <th>Date Due</th>
+                      <th>Date Performed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="maintenance in paginatedMaintenance" :key="maintenance.id">
+                      <td>
+                        <router-link :to="{ name: 'MaintenanceDetails', params: { detectorId: route.params.id, maintenanceId: maintenance.id } }" class="maintenance-link">
+                          {{ getMaintenanceTypeDisplay(maintenance.maintenance_type) }}
+                        </router-link>
+                      </td>
+                      <td>{{ getMaintenanceStatusDisplay(maintenance.status) }}</td>
+                      <td :class="getDateDueStatus(maintenance.date_due, maintenance.date_performed)">
+                        {{ formatDate(maintenance.date_due) }}
+                      </td>
+                      <td>{{ maintenance.date_performed || 'N/A' }}</td>
+                    </tr>
+                    <tr v-if="detectorMaintenance.length === 0">
+                      <td colspan="4">No maintenance records</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="detectorMaintenance.length > maintenancePerPage" class="pagination-controls">
+                  <button @click="prevMaintenancePage" :disabled="maintenancePage <= 1" class="btn btn-pagination">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <span class="page-info">Page {{ maintenancePage }} of {{ Math.ceil(detectorMaintenance.length / maintenancePerPage) }}</span>
+                  <button @click="nextMaintenancePage" :disabled="maintenancePage >= Math.ceil(detectorMaintenance.length / maintenancePerPage)" class="btn btn-pagination">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+                <div class="add-maintenance-button">
+                  <router-link :to="{ name: 'MaintenanceDetails', params: { detectorId: route.params.id } }" class="btn btn-primary">Add New Maintenance</router-link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Location History Accordion -->
+          <div class="accordion">
+            <div class="accordion-header" @click="toggleAccordion('locationHistory')">
+              <h3>Location History</h3>
+              <span class="accordion-icon">{{ accordionStates.locationHistory ? '−' : '+' }}</span>
+            </div>
+            <div class="accordion-content" v-show="accordionStates.locationHistory">
+              <div class="table-container">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>From</th>
+                      <th>To</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="log in paginatedLocationHistory" :key="log.id">
+                      <td>{{ log.old_location_label || 'N/A' }}</td>
+                      <td>{{ log.new_location_label }}</td>
+                      <td>{{ formatDate(log.updated) }}</td>
+                    </tr>
+                    <tr v-if="locationHistory.length === 0">
+                      <td colspan="3">No location history</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="locationHistory.length > locationHistoryPerPage" class="pagination-controls">
+                  <button @click="prevLocationHistoryPage" :disabled="locationHistoryPage <= 1" class="btn btn-pagination">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <span class="page-info">Page {{ locationHistoryPage }} of {{ Math.ceil(locationHistory.length / locationHistoryPerPage) }}</span>
+                  <button @click="nextLocationHistoryPage" :disabled="locationHistoryPage >= Math.ceil(locationHistory.length / locationHistoryPerPage)" class="btn btn-pagination">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="configuration">Configuration</label>
-            <select id="configuration" v-model="detector.configuration" class="form-control">
-              <option value="">Select Configuration</option>
-              <option v-for="config in detectorModelConfigurations" :key="config.id" :value="config.id">{{ getConfigurationLabel(config.id) }}</option>
-            </select>
+      </div>
+    </div>
+
+    <!-- Success Dialog -->
+    <div v-if="showSuccessDialog" class="dialog-overlay" @click="closeDialog">
+      <div class="dialog-box" @click.stop>
+        <h3>Success!</h3>
+        <p>Detector details have been saved successfully.</p>
+        <div class="dialog-actions">
+          <button @click="closeDialog" class="btn btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Dialog -->
+    <div v-if="showErrorDialog" class="dialog-overlay" @click="closeErrorDialog">
+      <div class="dialog-box" @click.stop>
+        <h3>Validation Errors</h3>
+        <div class="error-list">
+          <p v-for="(error, index) in errorMessages" :key="index" class="error-item">{{ error }}</p>
+        </div>
+        <div class="dialog-actions">
+          <button @click="closeErrorDialog" class="btn btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SENSOR SELECT DIALOG -->
+    <div v-if="showSensorSelectDialog" class="dialog-overlay" @click="showSensorSelectDialog = false">
+      <div class="dialog-box sensor-select-dialog" @click.stop>
+        <h3>Select Sensor for {{ getSensorGasDisplay(selectedSlotGas) }}</h3>
+        <p class="dialog-subtitle">Choose an In-Stock sensor compatible with this detector.</p>
+        <div class="sensor-list-container">
+          <div v-if="availableSensorsForSlot.length === 0" class="no-sensors-msg">
+            No compatible In-Stock sensors found for this gas.
           </div>
-          <div class="form-group">
-            <label for="location">Location *</label>
-            <select id="location" v-model="detector.location" required class="form-control">
-              <option value="">Select Location</option>
-              <option v-for="location in locations" :key="location.id" :value="location.id">{{ getLocationLabel(location.id) }}</option>
-            </select>
+          <div
+            v-for="sensor in availableSensorsForSlot"
+            :key="sensor.id"
+            @click="selectedSensorForSlot = sensor.id"
+            class="sensor-option"
+            :class="{ selected: selectedSensorForSlot === sensor.id }"
+          >
+            <div class="sensor-option-serial">{{ sensor.serial || 'No Serial' }}</div>
+            <div class="sensor-option-type">{{ getSensorTypeLabelForDialog(sensor.sensor_type) }}</div>
+            <div class="sensor-option-dates">
+              <span>Exp: {{ sensor.expiry_date || 'N/A' }}</span>
+            </div>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="purchase_date">Purchase Date</label>
-            <input type="date" id="purchase_date" v-model="detector.purchase_date" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="purchase_cost">Purchase Cost ($)</label>
-            <input type="number" id="purchase_cost" v-model.number="detector.purchase_cost" step="0.01" class="form-control" />
-          </div>
+        <div class="dialog-actions">
+          <button @click="showSensorSelectDialog = false" class="btn btn-secondary">Cancel</button>
+          <button @click="confirmSensorSelection" :disabled="!selectedSensorForSlot" class="btn btn-primary">Select Sensor</button>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="firmware">Firmware</label>
-            <input type="text" id="firmware" v-model="detector.firmware" maxlength="8" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="location_updated">Location Last Updated</label>
-            <input type="text" id="location_updated" :value="detector.location_updated ? formatDate(detector.location_updated) : 'Never'" readonly class="form-control" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label for="notes">Notes</label>
-            <textarea id="notes" v-model="detector.notes" rows="4" class="form-control" placeholder="Additional notes about the detector..."></textarea>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="!isDirty">Save Detector</button>
-          <router-link to="/detectors" class="btn btn-secondary">Cancel</router-link>
-        </div>
-      </form>
+      </div>
     </div>
   </div>
-
-  <!-- Tables Box (Right) -->
-  <div class="fixed-box right">
-
-    <!-- ==================== SENSORS ACCORDION ==================== -->
-    <div class="accordion">
-      <div class="accordion-header" @click="toggleAccordion('sensors')">
-        <h3>Sensors Attached</h3>
-        <span class="accordion-icon">{{ accordionStates.sensors ? '−' : '+' }}</span>
-      </div>
-      <div class="accordion-content" v-show="accordionStates.sensors">
-
-        <!-- GREEN: Configured Slots with Operational Sensors -->
-        <div class="sensor-section sensor-section-green">
-          <h4 class="sensor-section-title">Configured Sensor Slots</h4>
-          <div class="table-container">
-            <table class="summary-table sensors-table">
-              <thead>
-                <tr>
-                  <th>Slot Gas</th>
-                  <th>Sensor Serial</th>
-                  <th>Warranty</th>
-                  <th>Expiry</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="slot in matchedSlots" :key="'slot-' + slot.id">
-                  <td>
-                    <!-- CLICKABLE GAS LINK -->
-                    <a href="#" @click.prevent="openSensorSelectDialog(slot.sensorgas)" class="sensor-slot-link">
-                      {{ getSensorGasDisplay(slot.sensorgas) }}
-                    </a>
-                  </td>
-                  <td v-if="slot.matchedSensor">
-                    <router-link :to="`/sensors/${slot.matchedSensor.id}`" class="sensor-slot-link">
-                      {{ slot.matchedSensor.serial || 'N/A' }}
-                    </router-link>
-                  </td>
-                  <td v-else class="no-sensor-cell">No sensor assigned</td>
-                  <td :class="getDateStatus(slot.matchedSensor?.warranty_date)">
-                    {{ slot.matchedSensor?.warranty_date || 'N/A' }}
-                  </td>
-                  <td :class="getDateStatus(slot.matchedSensor?.expiry_date)">
-                    {{ slot.matchedSensor?.expiry_date || 'N/A' }}
-                  </td>
-                </tr>
-                <tr v-if="matchedSlots.length === 0">
-                  <td colspan="4">No sensor slots configured</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ORANGE: Leftover Operational Sensors (no matching slot) -->
-        <div class="sensor-section sensor-section-orange" v-if="leftoverOperationalSensors.length > 0">
-          <h4 class="sensor-section-title">Unassigned Operational Sensors</h4>
-          <div class="table-container">
-            <table class="summary-table sensors-table">
-              <thead>
-                <tr>
-                  <th>Gas</th>
-                  <th>Sensor Serial</th>
-                  <th>Warranty</th>
-                  <th>Expiry</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="sensor in leftoverOperationalSensors" :key="'leftover-' + sensor.id">
-                  <td>{{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}</td>
-                  <td>
-                    <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
-                      {{ sensor.serial || 'N/A' }}
-                    </router-link>
-                  </td>
-                  <td :class="getDateStatus(sensor.warranty_date)">
-                    {{ sensor.warranty_date || 'N/A' }}
-                  </td>
-                  <td :class="getDateStatus(sensor.expiry_date)">
-                    {{ sensor.expiry_date || 'N/A' }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- RED: Decommissioned Sensors -->
-        <div class="sensor-section sensor-section-red" v-if="decommissionedSensors.length > 0">
-          <h4 class="sensor-section-title">Decommissioned Sensors</h4>
-          <div class="table-container">
-            <table class="summary-table sensors-table">
-              <thead>
-                <tr>
-                  <th>Gas</th>
-                  <th>Sensor Serial</th>
-                  <th>Warranty</th>
-                  <th>Expiry</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="sensor in decommissionedSensors" :key="'decom-' + sensor.id">
-                  <td>{{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}</td>
-                  <td>
-                    <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
-                      {{ sensor.serial || 'N/A' }}
-                    </router-link>
-                  </td>
-                  <td :class="getDateStatus(sensor.warranty_date)">
-                    {{ sensor.warranty_date || 'N/A' }}
-                  </td>
-                  <td :class="getDateStatus(sensor.expiry_date)">
-                    {{ sensor.expiry_date || 'N/A' }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Fault Reports Accordion -->
-    <div class="accordion">
-      <div class="accordion-header" @click="toggleAccordion('faults')">
-        <h3>Fault Reports</h3>
-        <span class="accordion-icon">{{ accordionStates.faults ? '−' : '+' }}</span>
-      </div>
-      <div class="accordion-content" v-show="accordionStates.faults">
-        <div class="table-container">
-          <table class="summary-table">
-            <thead>
-              <tr>
-                <th>Date Reported</th>
-                <th>Fault Type</th>
-                <th>Report Location</th>
-                <th>Resolve Date</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="fault in paginatedFaultReports" :key="fault.id">
-                <td>
-                  <router-link :to="{ name: 'FaultReportDetails', params: { detectorId: route.params.id, faultId: fault.id } }" class="fault-report-link">
-                    {{ formatDateYYYYMMDD(fault.report_dt) }}
-                  </router-link>
-                </td>
-                <td>{{ getFaultTypeDisplay(fault.fault_type) }}</td>
-                <td>{{ getLocationLabel(fault.report_location) }}</td>
-                <td>{{ fault.resolve_dt ? formatDateYYYYMMDD(fault.resolve_dt) : 'N/A' }}</td>
-                <td :class="fault.resolve_dt ? 'status-resolved' : 'status-open'">
-                  {{ fault.resolve_dt ? 'Resolved' : 'Open' }}
-                </td>
-              </tr>
-              <tr v-if="detectorFaults.length === 0">
-                <td colspan="5">No fault reports</td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="detectorFaults.length > faultsPerPage" class="pagination-controls">
-            <button @click="prevFaultPage" :disabled="faultReportsPage <= 1" class="btn btn-pagination">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <span class="page-info">Page {{ faultReportsPage }} of {{ Math.ceil(detectorFaults.length / faultsPerPage) }}</span>
-            <button @click="nextFaultPage" :disabled="faultReportsPage >= Math.ceil(detectorFaults.length / faultsPerPage)" class="btn btn-pagination">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
-          </div>
-          <div class="add-fault-button">
-            <router-link :to="{ name: 'FaultReportDetails', params: { detectorId: route.params.id } }" class="btn btn-primary">Add New Fault Report</router-link>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Maintenance Accordion -->
-    <div class="accordion">
-      <div class="accordion-header" @click="toggleAccordion('maintenance')">
-        <h3>Maintenance</h3>
-        <span class="accordion-icon">{{ accordionStates.maintenance ? '−' : '+' }}</span>
-      </div>
-      <div class="accordion-content" v-show="accordionStates.maintenance">
-        <div class="table-container">
-          <table class="summary-table">
-            <thead>
-              <tr>
-                <th>Maintenance Type</th>
-                <th>Status</th>
-                <th>Date Due</th>
-                <th>Date Performed</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="maintenance in paginatedMaintenance" :key="maintenance.id">
-                <td>
-                  <router-link :to="{ name: 'MaintenanceDetails', params: { detectorId: route.params.id, maintenanceId: maintenance.id } }" class="maintenance-link">
-                    {{ getMaintenanceTypeDisplay(maintenance.maintenance_type) }}
-                  </router-link>
-                </td>
-                <td>{{ getMaintenanceStatusDisplay(maintenance.status) }}</td>
-                <td :class="getDateDueStatus(maintenance.date_due, maintenance.date_performed)">
-                  {{ formatDate(maintenance.date_due) }}
-                </td>
-                <td>{{ maintenance.date_performed || 'N/A' }}</td>
-              </tr>
-              <tr v-if="detectorMaintenance.length === 0">
-                <td colspan="4">No maintenance records</td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="detectorMaintenance.length > maintenancePerPage" class="pagination-controls">
-            <button @click="prevMaintenancePage" :disabled="maintenancePage <= 1" class="btn btn-pagination">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <span class="page-info">Page {{ maintenancePage }} of {{ Math.ceil(detectorMaintenance.length / maintenancePerPage) }}</span>
-            <button @click="nextMaintenancePage" :disabled="maintenancePage >= Math.ceil(detectorMaintenance.length / maintenancePerPage)" class="btn btn-pagination">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
-          </div>
-          <div class="add-maintenance-button">
-            <router-link :to="{ name: 'MaintenanceDetails', params: { detectorId: route.params.id } }" class="btn btn-primary">Add New Maintenance</router-link>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Location History Accordion -->
-    <div class="accordion">
-      <div class="accordion-header" @click="toggleAccordion('locationHistory')">
-        <h3>Location History</h3>
-        <span class="accordion-icon">{{ accordionStates.locationHistory ? '−' : '+' }}</span>
-      </div>
-      <div class="accordion-content" v-show="accordionStates.locationHistory">
-        <div class="table-container">
-          <table class="summary-table">
-            <thead>
-              <tr>
-                <th>From</th>
-                <th>To</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="log in paginatedLocationHistory" :key="log.id">
-                <td>{{ log.old_location_label || 'N/A' }}</td>
-                <td>{{ log.new_location_label }}</td>
-                <td>{{ formatDate(log.updated) }}</td>
-              </tr>
-              <tr v-if="locationHistory.length === 0">
-                <td colspan="3">No location history</td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="locationHistory.length > locationHistoryPerPage" class="pagination-controls">
-            <button @click="prevLocationHistoryPage" :disabled="locationHistoryPage <= 1" class="btn btn-pagination">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <span class="page-info">Page {{ locationHistoryPage }} of {{ Math.ceil(locationHistory.length / locationHistoryPerPage) }}</span>
-            <button @click="nextLocationHistoryPage" :disabled="locationHistoryPage >= Math.ceil(locationHistory.length / locationHistoryPerPage)" class="btn btn-pagination">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-</div>
-
-<!-- Success Dialog -->
-<div v-if="showSuccessDialog" class="dialog-overlay" @click="closeDialog">
-  <div class="dialog-box" @click.stop>
-    <h3>Success!</h3>
-    <p>Detector details have been saved successfully.</p>
-    <div class="dialog-actions">
-      <button @click="closeDialog" class="btn btn-primary">OK</button>
-    </div>
-  </div>
-</div>
-
-<!-- Error Dialog -->
-<div v-if="showErrorDialog" class="dialog-overlay" @click="closeErrorDialog">
-  <div class="dialog-box" @click.stop>
-    <h3>Validation Errors</h3>
-    <div class="error-list">
-      <p v-for="(error, index) in errorMessages" :key="index" class="error-item">{{ error }}</p>
-    </div>
-    <div class="dialog-actions">
-      <button @click="closeErrorDialog" class="btn btn-primary">OK</button>
-    </div>
-  </div>
-</div>
-
-<!-- SENSOR SELECT DIALOG -->
-<div v-if="showSensorSelectDialog" class="dialog-overlay" @click="showSensorSelectDialog = false">
-  <div class="dialog-box sensor-select-dialog" @click.stop>
-    <h3>Select Sensor for {{ getSensorGasDisplay(selectedSlotGas) }}</h3>
-    <p class="dialog-subtitle">Choose an In-Stock sensor compatible with this detector.</p>
-    <div class="sensor-list-container">
-      <div v-if="availableSensorsForSlot.length === 0" class="no-sensors-msg">
-        No compatible In-Stock sensors found for this gas.
-      </div>
-      <div
-        v-for="sensor in availableSensorsForSlot"
-        :key="sensor.id"
-        @click="selectedSensorForSlot = sensor.id"
-        class="sensor-option"
-        :class="{ selected: selectedSensorForSlot === sensor.id }"
-      >
-        <div class="sensor-option-serial">{{ sensor.serial || 'No Serial' }}</div>
-        <div class="sensor-option-type">{{ getSensorTypeLabelForDialog(sensor.sensor_type) }}</div>
-        <div class="sensor-option-dates">
-          <span>Exp: {{ sensor.expiry_date || 'N/A' }}</span>
-        </div>
-      </div>
-    </div>
-    <div class="dialog-actions">
-      <button @click="showSensorSelectDialog = false" class="btn btn-secondary">Cancel</button>
-      <button @click="confirmSensorSelection" :disabled="!selectedSensorForSlot" class="btn btn-primary">Select Sensor</button>
-    </div>
-  </div>
-</div>
-
-</div>
 </template>
 
 <script setup>
@@ -450,7 +443,7 @@ const locationHistory = ref([]);
 
 // Sensor Select Dialog State
 const showSensorSelectDialog = ref(false);
-const selectedSlotGas = ref('');
+const selectedSlotGas = ref(''); 
 const availableSensorsForSlot = ref([]);
 const selectedSensorForSlot = ref(null);
 
@@ -608,6 +601,17 @@ const closeDialog = () => { showSuccessDialog.value = false; };
 const closeErrorDialog = () => { showErrorDialog.value = false; errorMessages.value = []; };
 
 // ==================== SENSOR SELECT DIALOG LOGIC ====================
+const handleGasLinkClick = (slot) => {
+  if (slot.matchedSensor) {
+    // If an operational sensor is already assigned to this slot, 
+    // navigate directly to its details page.
+    router.push(`/sensors/${slot.matchedSensor.id}`);
+  } else {
+    // If the slot is empty, open the dialog to select an In-Stock sensor.
+    openSensorSelectDialog(slot.sensorgas);
+  }
+};
+
 const openSensorSelectDialog = async (gas) => {
   selectedSlotGas.value = gas;
   selectedSensorForSlot.value = null;
@@ -629,7 +633,7 @@ const openSensorSelectDialog = async (gas) => {
         if (!validTypeIds.includes(s.sensor_type)) return false;
         const sType = sensorTypes.value.find(st => st.id === s.sensor_type);
         if (!sType) return false;
-        
+
         const compat = sType.compatible_detectormodels || '';
         if (compat === '' || compat.includes(currentModelId) || compat.includes(currentModelLabel)) {
           return true;
@@ -675,7 +679,7 @@ const saveDetector = async () => {
     if (isNewDetector.value) {
       result = await post('/api/inventory/detectors/', detectorData);
     } else {
-      result = await put(`/api/inventory/detectors/${route.params.id}/`, detectorData);
+      result = await put(`/api/inventory/detectors/${route.params.id}/`, detectorData); 
     }
 
     if (!result.ok) {
