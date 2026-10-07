@@ -307,7 +307,7 @@ const getStatusDisplay = (statusValue) => {
 };
 
 const getLocationLabel = (id) => locations.value.find(l => l.id === id)?.label || 'Unknown';
-const getDetectorLabel = (id) => detectors.value.find(d => d.id === id)?.label || 'Unknown';
+const getDetectorLabel = (id) => detectors.value.find(d => d.id === id)?.label || 'N/A';
 
 const performSortingAndPagination = () => {
   let result = [...cylinders.value];
