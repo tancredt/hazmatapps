@@ -349,6 +349,30 @@ class SensorSerializer(serializers.ModelSerializer):
         model = Sensor
         fields = "__all__"
 
+    def validate(self, attrs):
+        instance = getattr(self, 'instance', None)
+        detector = attrs.get('detector')
+        sensor_type = attrs.get('sensor_type')
+        status_val = attrs.get('status')
+
+        # Enforce unique constraint: (detector, sensorgas, status)
+        if detector and sensor_type and status_val:
+            gas = sensor_type.sensorgas
+            qs = Sensor.objects.filter(
+                detector=detector,
+                sensor_type__sensorgas=gas,
+                status=status_val
+            )
+            if instance:
+                qs = qs.exclude(pk=instance.pk)
+                
+            if qs.exists():
+                raise serializers.ValidationError({
+                    'detector': [f"A sensor with gas '{gas}' and status '{status_val}' is already assigned to this detector."]
+                })
+
+        return attrs
+
 
 class SensorSlotSerializer(serializers.ModelSerializer):
     class Meta:
