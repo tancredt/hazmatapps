@@ -18,15 +18,38 @@
              </option>
            </select>
          </div>
+         
+         <!-- SEARCHABLE DETECTOR DROPDOWN -->
          <div class="form-group">
-           <label for="detector">Assigned Detector</label>
-           <select id="detector" v-model="sensor.detector" class="form-control">
-             <option :value="null">Not Assigned</option>
-             <option v-for="det in detectors" :key="det.id" :value="det.id">
-               {{ det.label }} ({{ det.serial }})
-             </option>
-           </select>
+           <label>Assigned Detector</label>
+           <div class="searchable-select-wrapper">
+             <div class="searchable-select" ref="detectorDropdownRef">
+               <input
+                 type="text"
+                 v-model="detectorSearch"
+                 @focus="showDetectorDropdown = true"
+                 placeholder="Search detector..."
+                 class="form-control"
+                 autocomplete="off"
+               />
+               <div v-if="showDetectorDropdown" class="searchable-select-options">
+                 <div
+                   v-for="det in filteredDetectorsForSelect"
+                   :key="det.id"
+                   @mousedown.prevent="selectDetector(det)"
+                   class="searchable-select-option"
+                 >
+                   {{ det.label }} ({{ det.serial || 'No Serial' }})
+                 </div>
+                 <div v-if="filteredDetectorsForSelect.length === 0" class="searchable-select-option no-results">
+                   No detectors found
+                 </div>
+               </div>
+             </div>
+             <button type="button" @click="clearDetector" class="btn-clear" v-if="sensor.detector">✕</button>
+           </div>
          </div>
+
          <div class="form-group">
            <label for="status">Status *</label>
            <select id="status" v-model="sensor.status" required class="form-control">
@@ -108,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { get, post, put } from '@/utils/api';
 
@@ -117,6 +140,11 @@ const route = useRoute();
 
 const sensorTypes = ref([]);
 const detectors = ref([]);
+
+// Searchable Detector State
+const detectorSearch = ref('');
+const showDetectorDropdown = ref(false);
+const detectorDropdownRef = ref(null);
 
 const sensor = ref({
   serial: '', sensor_type: '', status: '', detector: null,
@@ -132,6 +160,32 @@ const errorMessages = ref([]);
 const isSaving = ref(false);
 
 const isNewSensor = computed(() => route.params.id === 'new');
+
+const filteredDetectorsForSelect = computed(() => {
+  if (!detectorSearch.value) return detectors.value;
+  const term = detectorSearch.value.toLowerCase();
+  return detectors.value.filter(d => 
+    d.label.toLowerCase().includes(term) || 
+    (d.serial && d.serial.toLowerCase().includes(term))
+  );
+});
+
+const selectDetector = (det) => {
+  sensor.value.detector = det.id;
+  detectorSearch.value = `${det.label} (${det.serial || 'No Serial'})`;
+  showDetectorDropdown.value = false;
+};
+
+const clearDetector = () => {
+  sensor.value.detector = null;
+  detectorSearch.value = '';
+};
+
+const handleClickOutside = (event) => {
+  if (detectorDropdownRef.value && !detectorDropdownRef.value.contains(event.target)) {
+    showDetectorDropdown.value = false;
+  }
+};
 
 const fetchSensorTypes = async () => {
   try {
@@ -154,6 +208,13 @@ const fetchSensor = async () => {
     if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`);
     const data = result.data;
     sensor.value = { ...data, sensor_type: data.sensor_type || null, detector: data.detector || null };
+    
+    // Sync search input with loaded detector
+    if (data.detector) {
+      const det = detectors.value.find(d => d.id === data.detector);
+      if (det) detectorSearch.value = `${det.label} (${det.serial || 'No Serial'})`;
+    }
+
     originalSensor.value = { ...sensor.value };
     isDirty.value = false;
   } catch (error) { console.error('Error fetching sensor:', error); }
@@ -184,7 +245,6 @@ const saveSensor = async () => {
     if (!sensor.value.sensor_type) { alert('Sensor Type is required.'); isSaving.value = false; return; }
     if (!sensor.value.status) { alert('Status is required.'); isSaving.value = false; return; }
 
-    // Frontend duplicate check: (detector, sensorgas, status) must be unique
     if (sensor.value.detector && sensor.value.sensor_type && sensor.value.status) {
       const selectedType = sensorTypes.value.find(st => st.id === parseInt(sensor.value.sensor_type));
       if (selectedType) {
@@ -257,8 +317,26 @@ const closeDialogAndReturn = () => {
 };
 
 onMounted(async () => {
+  document.addEventListener('click', handleClickOutside);
   await Promise.all([fetchSensorTypes(), fetchDetectors()]);
-  if (!isNewSensor.value) await fetchSensor();
+  
+  if (!isNewSensor.value) {
+    await fetchSensor();
+  }
+  
+  // If opened from DetectorDetails dialog, pre-fill detector
+  if (route.query.detectorId) {
+    const targetDetId = parseInt(route.query.detectorId);
+    sensor.value.detector = targetDetId;
+    const det = detectors.value.find(d => d.id === targetDetId);
+    if (det) {
+      detectorSearch.value = `${det.label} (${det.serial || 'No Serial'})`;
+    }
+  }
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -292,6 +370,17 @@ h1 { color: #2c3e50; margin-bottom: 1rem; }
 .dialog-actions { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
 .error-list { max-height: 200px; overflow-y: auto; margin: 1rem 0; padding: 0.5rem; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; }
 .error-item { margin: 0.25rem 0; color: #721c24; font-weight: 500; }
+
+/* Searchable Select Styles */
+.searchable-select-wrapper { display: flex; align-items: center; gap: 0.5rem; }
+.searchable-select { flex: 1; position: relative; }
+.searchable-select-options { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.searchable-select-option { padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.9rem; }
+.searchable-select-option:hover { background-color: #f0f0f0; }
+.searchable-select-option.no-results { color: #888; cursor: default; font-style: italic; }
+.btn-clear { background: #dc3545; color: white; border: none; border-radius: 4px; padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.9rem; }
+.btn-clear:hover { background: #c82333; }
+
 @media (max-width: 768px) {
   .form-grid { grid-template-columns: 1fr; }
   .page-container { padding: 0 1rem; }

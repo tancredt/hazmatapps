@@ -113,7 +113,12 @@
               </thead>
               <tbody>
                 <tr v-for="slot in matchedSlots" :key="'slot-' + slot.id">
-                  <td>{{ getSensorGasDisplay(slot.sensorgas) }}</td>
+                  <td>
+                    <!-- CLICKABLE GAS LINK -->
+                    <a href="#" @click.prevent="openSensorSelectDialog(slot.sensorgas)" class="sensor-slot-link">
+                      {{ getSensorGasDisplay(slot.sensorgas) }}
+                    </a>
+                  </td>
                   <td v-if="slot.matchedSensor">
                     <router-link :to="`/sensors/${slot.matchedSensor.id}`" class="sensor-slot-link">
                       {{ slot.matchedSensor.serial || 'N/A' }}
@@ -375,6 +380,37 @@
     </div>
   </div>
 </div>
+
+<!-- SENSOR SELECT DIALOG -->
+<div v-if="showSensorSelectDialog" class="dialog-overlay" @click="showSensorSelectDialog = false">
+  <div class="dialog-box sensor-select-dialog" @click.stop>
+    <h3>Select Sensor for {{ getSensorGasDisplay(selectedSlotGas) }}</h3>
+    <p class="dialog-subtitle">Choose an In-Stock sensor compatible with this detector.</p>
+    <div class="sensor-list-container">
+      <div v-if="availableSensorsForSlot.length === 0" class="no-sensors-msg">
+        No compatible In-Stock sensors found for this gas.
+      </div>
+      <div
+        v-for="sensor in availableSensorsForSlot"
+        :key="sensor.id"
+        @click="selectedSensorForSlot = sensor.id"
+        class="sensor-option"
+        :class="{ selected: selectedSensorForSlot === sensor.id }"
+      >
+        <div class="sensor-option-serial">{{ sensor.serial || 'No Serial' }}</div>
+        <div class="sensor-option-type">{{ getSensorTypeLabelForDialog(sensor.sensor_type) }}</div>
+        <div class="sensor-option-dates">
+          <span>Exp: {{ sensor.expiry_date || 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button @click="showSensorSelectDialog = false" class="btn btn-secondary">Cancel</button>
+      <button @click="confirmSensorSelection" :disabled="!selectedSensorForSlot" class="btn btn-primary">Select Sensor</button>
+    </div>
+  </div>
+</div>
+
 </div>
 </template>
 
@@ -412,6 +448,12 @@ const detectorFaults = ref([]);
 const detectorMaintenance = ref([]);
 const locationHistory = ref([]);
 
+// Sensor Select Dialog State
+const showSensorSelectDialog = ref(false);
+const selectedSlotGas = ref('');
+const availableSensorsForSlot = ref([]);
+const selectedSensorForSlot = ref(null);
+
 // Pagination state
 const faultReportsPage = ref(1);
 const faultsPerPage = 5;
@@ -436,15 +478,12 @@ const paginatedLocationHistory = computed(() => {
 });
 
 // ==================== SENSOR GROUPING LOGIC ====================
-
-// Helper to get gas code from sensor type ID
 const getSensorGas = (sensorTypeId) => {
   if (!sensorTypeId) return '';
   const st = sensorTypes.value.find(s => s.id === sensorTypeId);
   return st ? st.sensorgas : '';
 };
 
-// GREEN: Slots matched with their operational sensor (if any)
 const matchedSlots = computed(() => {
   const operationalSensors = detectorSensors.value.filter(s => s.status === 'OP');
   const usedSensorIds = new Set();
@@ -459,12 +498,10 @@ const matchedSlots = computed(() => {
   });
 });
 
-// ORANGE: Operational sensors that don't fit into any slot
 const leftoverOperationalSensors = computed(() => {
   const operationalSensors = detectorSensors.value.filter(s => s.status === 'OP');
   const usedSensorIds = new Set();
 
-  // Mark sensors that are already matched to a slot
   for (const slot of detectorSensorSlots.value) {
     const match = operationalSensors.find(s => {
       if (usedSensorIds.has(s.id)) return false;
@@ -476,11 +513,9 @@ const leftoverOperationalSensors = computed(() => {
   return operationalSensors.filter(s => !usedSensorIds.has(s.id));
 });
 
-// RED: Decommissioned sensors
 const decommissionedSensors = computed(() => {
   return detectorSensors.value.filter(s => s.status === 'DC');
 });
-
 // ==================== END SENSOR GROUPING ====================
 
 const extractList = (data) => {
@@ -563,8 +598,60 @@ const getSensorGasDisplay = (sensorgas) => {
   return gasMap[sensorgas] || sensorgas;
 };
 
+const getSensorTypeLabelForDialog = (sensorTypeId) => {
+  if (!sensorTypeId) return 'Unknown';
+  const st = sensorTypes.value.find(s => s.id === sensorTypeId);
+  return st ? `${st.part_number} (${getSensorGasDisplay(st.sensorgas)})` : 'Unknown';
+};
+
 const closeDialog = () => { showSuccessDialog.value = false; };
 const closeErrorDialog = () => { showErrorDialog.value = false; errorMessages.value = []; };
+
+// ==================== SENSOR SELECT DIALOG LOGIC ====================
+const openSensorSelectDialog = async (gas) => {
+  selectedSlotGas.value = gas;
+  selectedSensorForSlot.value = null;
+  showSensorSelectDialog.value = true;
+  availableSensorsForSlot.value = [];
+
+  try {
+    const result = await get('/api/inventory/sensors/?status=IS');
+    if (result.ok) {
+      const allIS = extractList(result.data);
+      const validTypeIds = sensorTypes.value
+        .filter(st => st.sensorgas === gas)
+        .map(st => st.id);
+
+      const currentModelId = String(detector.value.detector_model);
+      const currentModelLabel = getModelName(detector.value.detector_model);
+
+      availableSensorsForSlot.value = allIS.filter(s => {
+        if (!validTypeIds.includes(s.sensor_type)) return false;
+        const sType = sensorTypes.value.find(st => st.id === s.sensor_type);
+        if (!sType) return false;
+        
+        const compat = sType.compatible_detectormodels || '';
+        if (compat === '' || compat.includes(currentModelId) || compat.includes(currentModelLabel)) {
+          return true;
+        }
+        return false;
+      });
+    }
+  } catch (e) {
+    console.error('Error fetching sensors for slot:', e);
+  }
+};
+
+const confirmSensorSelection = () => {
+  if (selectedSensorForSlot.value) {
+    router.push({
+      path: `/sensors/${selectedSensorForSlot.value}`,
+      query: { detectorId: route.params.id }
+    });
+    showSensorSelectDialog.value = false;
+  }
+};
+// ==================== END DIALOG LOGIC ====================
 
 const saveDetector = async () => {
   try {
@@ -640,17 +727,11 @@ const fetchRelatedData = async () => {
   try {
     if (isNewDetector.value) return;
 
-    // Fetch sensor slots for this detector (the configured gases)
     const slotsResult = await get(`/api/inventory/sensorslots/?detector=${route.params.id}`);
-    if (slotsResult.ok) {
-      detectorSensorSlots.value = extractList(slotsResult.data);
-    }
+    if (slotsResult.ok) detectorSensorSlots.value = extractList(slotsResult.data);
 
-    // Fetch all sensors assigned to this detector
     const sensorsResult = await get(`/api/inventory/sensors/?detector=${route.params.id}`);
-    if (sensorsResult.ok) {
-      detectorSensors.value = extractList(sensorsResult.data);
-    }
+    if (sensorsResult.ok) detectorSensors.value = extractList(sensorsResult.data);
 
     const faultsResult = await get(`/api/inventory/detectorfaults/?detector=${route.params.id}`);
     if (faultsResult.ok) detectorFaults.value = extractList(faultsResult.data);
@@ -792,61 +873,32 @@ h1 { color: #2c3e50; margin-bottom: 2rem; }
 .btn-pagination:hover:not(:disabled) { background-color: #5a6268; }
 .btn-pagination:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.6; }
 
-/* ==================== SENSOR SECTION COLOURS ==================== */
-.sensor-section {
-  border-radius: 6px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-.sensor-section:last-child {
-  margin-bottom: 0;
-}
-.sensor-section-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
+.sensor-section { border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem; }
+.sensor-section:last-child { margin-bottom: 0; }
+.sensor-section-title { margin: 0 0 0.5rem 0; font-size: 0.9rem; font-weight: 700; }
+.sensor-section-green { background-color: #d4edda; border: 1px solid #a3d9a5; }
+.sensor-section-green .sensor-section-title { color: #155724; }
+.sensor-section-green .summary-table th { background-color: #b7dfb9; }
+.sensor-section-orange { background-color: #fff3cd; border: 1px solid #ffc107; }
+.sensor-section-orange .sensor-section-title { color: #856404; }
+.sensor-section-orange .summary-table th { background-color: #ffe69c; }
+.sensor-section-red { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+.sensor-section-red .sensor-section-title { color: #721c24; }
+.sensor-section-red .summary-table th { background-color: #f1b0b7; }
+.no-sensor-cell { color: #888; font-style: italic; }
 
-/* GREEN — configured slots */
-.sensor-section-green {
-  background-color: #d4edda;
-  border: 1px solid #a3d9a5;
-}
-.sensor-section-green .sensor-section-title {
-  color: #155724;
-}
-.sensor-section-green .summary-table th {
-  background-color: #b7dfb9;
-}
-
-/* ORANGE — leftover operational */
-.sensor-section-orange {
-  background-color: #fff3cd;
-  border: 1px solid #ffc107;
-}
-.sensor-section-orange .sensor-section-title {
-  color: #856404;
-}
-.sensor-section-orange .summary-table th {
-  background-color: #ffe69c;
-}
-
-/* RED — decommissioned */
-.sensor-section-red {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-}
-.sensor-section-red .sensor-section-title {
-  color: #721c24;
-}
-.sensor-section-red .summary-table th {
-  background-color: #f1b0b7;
-}
-
-.no-sensor-cell {
-  color: #888;
-  font-style: italic;
-}
+/* Sensor Select Dialog Styles */
+.sensor-select-dialog { max-width: 600px; width: 90%; text-align: left; }
+.dialog-subtitle { color: #666; font-size: 0.9rem; margin-bottom: 1rem; }
+.sensor-list-container { max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 1rem; }
+.no-sensors-msg { padding: 1rem; text-align: center; color: #888; font-style: italic; }
+.sensor-option { padding: 0.75rem 1rem; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+.sensor-option:last-child { border-bottom: none; }
+.sensor-option:hover { background-color: #f8f9fa; }
+.sensor-option.selected { background-color: #d4edda; border-left: 4px solid #42b883; }
+.sensor-option-serial { font-weight: 600; color: #2c3e50; }
+.sensor-option-type { font-size: 0.85rem; color: #555; }
+.sensor-option-dates { font-size: 0.8rem; color: #888; }
 
 @media (max-width: 768px) {
   .page-container { padding: 0 1rem; margin-top: 1rem; }
