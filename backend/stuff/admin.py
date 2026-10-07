@@ -130,7 +130,12 @@ class SensorAdmin(admin.ModelAdmin):
 
 @admin.register(SensorSlot)
 class SensorSlotAdmin(admin.ModelAdmin):
-    list_display = ("id", "detector", "sensorgas", "sensor")
-    list_filter = ("sensorgas",)
-    search_fields = ("detector__label", "sensor__serial")
-    raw_id_fields = ("detector", "sensor")
+    raw_id_fields = ('detector',) 
+    
+    list_display = ('detector', 'sensorgas')
+    
+    list_filter = ('detector', 'sensorgas')
+    
+    search_fields = ('detector__label', 'detector__serial', 'sensorgas')
+    
+    ordering = ('detector', 'sensorgas')
