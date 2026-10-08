@@ -49,7 +49,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { apiFetch } from '@/utils/api'
-import HomeHeader from './HomeHeader.vue' // <-- Added Import
+import HomeHeader from './HomeHeader.vue'
 
 const props = defineProps({ district: String })
 
@@ -63,7 +63,7 @@ const selectedIds = ref([])
 const isLoading = ref(false)
 const error = ref(null)
 
-const is false)
+// REMOVED: The corrupted "const is false)" line was here
 
 const isProcessing = ref(false)
 const showConfirmModal = ref(false)
@@ -79,7 +79,9 @@ const fetchModels = async () => {
     models.value = data
     const microRae = data.find(m => m.label === 'MicroRAE')
     selectedModelId.value = microRae?.id || data[0]?.id
-  } catch (err) { console.error('Failed to fetch models:', err) }
+  } catch (err) { 
+    console.error('Failed to fetch models:', err) 
+  }
 }
 
 const resolveBurnley = async () => {
@@ -88,34 +90,59 @@ const resolveBurnley = async () => {
     const burnleyResults = await apiFetch(`/locations/?label=${encodeURIComponent('Burnley')}`)
     burnleyLocation.value = burnleyResults[0] || null
     if (!burnleyLocation.value) error.value = 'Burnley location not found.'
-  } catch (err) { error.value = 'Failed to resolve Burnley location.'; console.error(err) }
+  } catch (err) { 
+    error.value = 'Failed to resolve Burnley location.'
+    console.error(err) 
+  }
 }
 
 const fetchTRDetectors = async () => {
   if (!district.value || !selectedModelId.value) return
-  isLoading.value = true; error.value = null; selectedIds.value = []
+  isLoading.value = true
+  error.value = null
+  selectedIds.value = []
+  
   try {
     const data = await apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
     trDetectors.value = data
-  } catch (err) { error.value = 'Failed to fetch in-transit detectors.'; console.error(err) } 
-  finally { isLoading.value = false }
+  } catch (err) { 
+    error.value = 'Failed to fetch in-transit detectors.'
+    console.error(err) 
+  } finally { 
+    isLoading.value = false 
+  }
 }
 
 const toggleSelection = (id) => {
   const idx = selectedIds.value.indexOf(id)
-  if (idx > -1) selectedIds.value.splice(idx, 1)
-  else selectedIds.value.push(id)
+  if (idx > -1) {
+    selectedIds.value.splice(idx, 1)
+  } else {
+    selectedIds.value.push(id)
+  }
 }
 
 const executeReturn = async () => {
   isProcessing.value = true
   try {
     if (!burnleyLocation.value) throw new Error('Burnley location not found')
-    const payload = selectedIds.value.map(id => ({ detector_id: id, location_id: burnleyLocation.value.id, status: 'OF' }))
-    await apiFetch('/detectors/update-location-status/', { method: 'POST', body: JSON.stringify(payload) })
-    showConfirmModal.value = false; showSuccessModal.value = true
-  } catch (err) { console.error('Return failed:', err); alert('Failed to return detectors. Please try again.') } 
-  finally { isProcessing.value = false }
+    const payload = selectedIds.value.map(id => ({ 
+      detector_id: id, 
+      location_id: burnleyLocation.value.id, 
+      status: 'OF' 
+    }))
+    await apiFetch('/detectors/update-location-status/', { 
+      method: 'POST', 
+      body: JSON.stringify(payload) 
+    })
+    showConfirmModal.value = false
+    showSuccessModal.value = true
+  } catch (err) { 
+    console.error('Return failed:', err)
+    alert('Failed to return detectors. Please try again.') 
+  } finally { 
+    isProcessing.value = false 
+  }
 }
 
 const closeSuccessModal = () => {
