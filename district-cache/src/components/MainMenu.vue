@@ -11,11 +11,6 @@
         <h2>Detectors</h2>
         <p>Manage gas detectors</p>
       </router-link>
-      <!-- NEW DISTRICT OPERATIONS BUTTON -->
-      <router-link :to="{ name: 'DistrictMainMenu' }" class="menu-card">
-        <h2>District Operations</h2>
-        <p>Manage district cache & returns</p>
-      </router-link>
     </div>
   </div>
 </template>
@@ -24,7 +19,11 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
-const props = defineProps({ district: String, location_label: String })
+const props = defineProps({
+  district: String,
+  location_label: String
+})
+
 const route = useRoute()
 const district = computed(() => props.district || route.params.district)
 const location_label = computed(() => props.location_label || route.params.location_label)
