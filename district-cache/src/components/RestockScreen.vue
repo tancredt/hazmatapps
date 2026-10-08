@@ -33,10 +33,10 @@
           </div>
         </div>
       </div>
-
+      
       <!-- ================= SLOT GRID ================= -->
       <div v-if="slotCount > 0" class="location-section" style="margin-top: 20px;">
-        <h3>District Cache Slots</h3>
+        <h3>District Cache Slots (Current)</h3>
         <div class="slots-grid">
           <div
             v-for="i in slotCount"
@@ -72,7 +72,7 @@
 
       <!-- ================= BURNLEY SELECTION SECTION ================= -->
       <div v-if="availableSlots > 0" class="location-section" style="margin-top: 20px;">
-        <h3>Available at Burnley</h3>
+        <h3>Available at Burnley <span class="take-info">You can take {{ availableSlots }} detector{{ availableSlots !== 1 ? 's' : '' }}</span></h3>
         <p class="section-subtitle">Select detectors to add to the cache ({{ selectedCount }} selected)</p>
         <div v-if="burnleyDetectors.length > 0" class="overflow-list" style="margin-top: 15px;">
           <div 
@@ -87,9 +87,11 @@
         </div>
         <p v-else class="empty-text">No available detectors at Burnley.</p>
       </div>
+
       <div v-if="availableSlots <= 0" class="no-space-message" style="margin-top: 20px;">
         <p>No available slots in this district cache for the selected detector model.</p>
       </div>
+
       <div v-if="availableSlots > 0" class="action-bar">
         <button 
           class="btn-primary" 
@@ -100,6 +102,7 @@
         </button>
       </div>
     </div>
+
     <!-- Modals -->
     <div v-if="showWarningModal" class="modal-overlay">
       <div class="modal-content warning-modal">
@@ -111,6 +114,7 @@
         </div>
       </div>
     </div>
+
     <div v-if="showConfirmModal" class="modal-overlay" @click.self="showConfirmModal = false">
       <div class="modal-content">
         <h3>Confirm Restock</h3>
@@ -121,6 +125,7 @@
         </div>
       </div>
     </div>
+
     <div v-if="showSuccessModal" class="modal-overlay">
       <div class="modal-content">
         <h3>Success</h3>
@@ -227,7 +232,7 @@ const fetchBurnleyDetectors = async () => {
     burnleyDetectors.value = data || []
   } catch (err) { 
     console.error('Failed to fetch Burnley detectors:', err)
-    burnleyDetectors.value = [] 
+    burnleyDetectors.value = []  
   }
 }
 
@@ -297,3 +302,11 @@ onMounted(async () => {
 })
 </script>
 
+<style scoped>
+.take-info {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #42b883;
+  margin-left: 8px;
+}
+</style>
