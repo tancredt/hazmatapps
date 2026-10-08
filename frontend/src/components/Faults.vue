@@ -1,5 +1,5 @@
 <template>
-  <div class="faults-page">
+  <div class="inventory-list-page">
     <div class="filters-section">
       <button @click="toggleFilters" :aria-expanded="showFilters" class="filter-toggle-btn" :class="{ 'has-active-filters': hasActiveFilters }">
         {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
@@ -64,7 +64,7 @@
         </div>
       </div>
       <div class="table-container">
-        <table class="faults-table">
+        <table class="inventory-table inventory-table--faults">
           <thead>
             <tr>
               <th @click="sortBy('detector')" class="sortable">
@@ -90,13 +90,13 @@
           <tbody>
             <tr v-for="fault in filteredFaults" :key="fault.id">
               <td>
-                <router-link v-if="fault.detector" :to="`/detectors/${fault.detector}`" class="detector-link">
+                <router-link v-if="fault.detector" :to="`/detectors/${fault.detector}`" class="record-link">
                   {{ getDetectorLabel(fault.detector) }}
                 </router-link>
                 <span v-else>N/A</span>
               </td>
               <td>
-                <router-link :to="`/faultreports/${fault.detector}/${fault.id}?from=faults`" class="fault-link">
+                <router-link :to="`/faultreports/${fault.detector}/${fault.id}?from=faults`" class="record-link">
                   {{ getFaultTypeDisplay(fault.fault_type) }}
                 </router-link>
               </td>
@@ -432,60 +432,3 @@ const downloadPDF = () => {
 };
 </script>
 
-<style scoped>
-.faults-page { min-height: 100vh; display: flex; flex-direction: column; }
-.filters-section { margin-bottom: 0.5rem; position: relative; display: inline-block; }
-.filter-toggle-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background-color: #42b883; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-bottom: 1rem; transition: background-color 0.3s ease; }
-.filter-toggle-btn:hover { background-color: #36966d; }
-.filter-toggle-btn.has-active-filters { background-color: #e67e22; }
-.filter-toggle-btn.has-active-filters:hover { background-color: #d35400; }
-.toggle-icon { transition: transform 0.3s ease; }
-.filter-toggle-btn[aria-expanded="true"] .toggle-icon { transform: rotate(180deg); }
-.search-and-filters-popover { position: absolute; top: 100%; left: 0; width: 20%; min-width: 300px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 1rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 1000; display: flex; flex-direction: column; gap: 1rem; }
-.reset-btn-wrapper { align-self: flex-start; }
-.filter-select { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; min-width: 150px; }
-.reset-btn { padding: 0.5rem 1rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
-.reset-btn:hover { background-color: #c82333; }
-.page-container { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; height: calc(100vh - 70px); overflow: hidden; display: flex; flex-direction: column; }
-h1 { color: #2c3e50; margin-bottom: 0.5rem; flex-shrink: 0; }
-.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-shrink: 0; }
-.action-buttons { display: flex; gap: 1rem; }
-.btn { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
-.btn-primary { background-color: #42b883; color: white; }
-.btn-primary:hover:not(:disabled) { background-color: #36966d; }
-.table-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
-.faults-table { width: 100%; border-collapse: collapse; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; table-layout: fixed; margin-bottom: 0; }
-.faults-table thead th { position: sticky; top: 0; background-color: #f8f9fa; font-weight: 600; word-wrap: break-word; z-index: 10; border-bottom: 1px solid #ddd; }
-.faults-table tbody { display: block; max-height: calc(100vh - 280px); overflow-y: auto; }
-.faults-table thead, .faults-table tbody tr { display: table; width: 100%; table-layout: fixed; }
-.faults-table th, .faults-table td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #ddd; word-wrap: break-word; }
-.faults-table th:nth-child(1), .faults-table td:nth-child(1) { width: 16%; }
-.faults-table th:nth-child(2), .faults-table td:nth-child(2) { width: 20%; }
-.faults-table th:nth-child(3), .faults-table td:nth-child(3) { width: 13%; }
-.faults-table th:nth-child(4), .faults-table td:nth-child(4) { width: 16%; }
-.faults-table th:nth-child(5), .faults-table td:nth-child(5) { width: 18%; }
-.faults-table th:nth-child(6), .faults-table td:nth-child(6) { width: 9%; }
-.sortable { cursor: pointer; user-select: none; }
-.sortable:hover { background-color: #e9ecef; }
-.faults-table tbody tr:hover { background-color: #f8f9fa; }
-.fault-link { color: #42b883; text-decoration: none; font-weight: 500; }
-.fault-link:hover { text-decoration: underline; }
-.detector-link { color: #42b883; text-decoration: none; font-weight: 500; }
-.detector-link:hover { text-decoration: underline; }
-.date-closed { color: blue; font-weight: bold; }
-.date-recent { color: orange; font-weight: bold; }
-.date-overdue { color: red; font-weight: bold; }
-.loading, .no-data { text-align: center; padding: 2rem; font-style: italic; color: #666; }
-.date-filter-container { display: flex; flex-direction: column; gap: 0.25rem; }
-.date-label { font-size: 0.875rem; font-weight: 500; color: #495057; }
-.date-input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem; }
-.pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; padding: 0.5rem 0; }
-.pagination-info { color: #666; font-size: 0.9rem; }
-.pagination-controls { display: flex; align-items: center; gap: 1rem; }
-.pagination-controls .page-info { color: #666; font-size: 0.9rem; min-width: 120px; text-align: center; }
-.btn-pagination { background-color: #6c757d; color: white; border: none; border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s; }
-.btn-pagination:hover:not(:disabled) { background-color: #5a6268; }
-.btn-pagination:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.6; }
-.checkbox-container { display: flex; align-items: center; gap: 0.5rem; }
-.checkbox-label { display: flex; align-items: center; gap: 0.25rem; font-size: 0.875rem; color: #495057; }
-</style>
