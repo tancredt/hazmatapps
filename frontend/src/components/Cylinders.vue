@@ -121,10 +121,15 @@ const cylinders = ref([]);
 const loading = ref(true);
 
 const cylinderTypes = ref([]);
-const cylinderModels = ref([]); // Added to map Model -> Type
+const cylinderModels = ref([]); 
 const locations = ref([]);
 const detectors = ref([]);
 const cylinderStatusChoices = ref([]);
+
+// <--- ADDED: States for dynamic choices ---
+const suppliers = ref([]);
+const cylinderGases = ref([]);
+const cylinderUnits = ref([]);
 
 const sortKey = ref('label');
 const sortDirection = ref('asc');
@@ -145,17 +150,17 @@ const filteredCylindersResult = ref([]);
 const totalFilteredCylindersResult = ref(0);
 const totalPagesResult = ref(0);
 
-// --- Helper Mapping Functions ---
+// --- Helper Mapping Functions (Now Fully Dynamic) ---
 const getGasDisplay = (gasCode) => {
   if (!gasCode) return '';
-  const gases = { 'CO': 'CO', 'HS': 'H2S', 'CH': 'CH4', 'O2': 'O2', 'IB': 'Iso', 'HC': 'HCN', 'N2': 'N2', 'CL': 'Cl2', 'PH': 'PH3', 'SO': 'SO2', 'NO': 'NO2', 'C2': 'CO2', 'NH': 'NH3', 'ET': 'ETO' };
-  return gases[gasCode] || gasCode;
+  const found = cylinderGases.value.find(g => g.value === gasCode);
+  return found ? found.label.trim() : gasCode;
 };
 
 const getUnitDisplay = (unitCode) => {
   if (!unitCode) return '';
-  const units = { 'PM': 'ppm', 'PV': '%v/v', 'PL': '%LEL', 'ML': 'mg/L' };
-  return units[unitCode] || unitCode;
+  const found = cylinderUnits.value.find(u => u.value === unitCode);
+  return found ? found.label.trim() : unitCode;
 };
 
 const getCylinderTypeId = (cylinderModelId) => {
@@ -194,12 +199,14 @@ const getCylinderModelLabel = (modelId) => {
   return model ? model.part_number : 'Unknown Model';
 };
 
+// <--- UPDATED: Dynamically map supplier codes ---
 const getCylinderModelSupplier = (modelId) => {
   if (!modelId) return 'N/A';
   const model = cylinderModels.value.find(m => m.id === modelId);
-  if (!model) return 'Unknown Model';
-  const supplierMap = { 'AM': 'AirMet', 'AE': 'AES', 'MS': 'MSA', 'DR': 'Draeger' };
-  return supplierMap[model.supplier] || model.supplier;
+  if (!model || !model.supplier) return 'Unknown Model';
+  
+  const found = suppliers.value.find(s => s.value === model.supplier);
+  return found ? found.label.trim() : model.supplier;
 };
 
 // --- Standard Helpers ---
@@ -220,10 +227,13 @@ onMounted(async () => {
 
   await Promise.all([
     fetchCylinderTypes(),
-    fetchCylinderModels(), // Fetch models to map to types
+    fetchCylinderModels(), 
     fetchDetectors(),
     fetchLocations(),
-    fetchCylinderStatuses()
+    fetchCylinderStatuses(),
+    fetchSuppliers(),      // <--- ADDED
+    fetchCylinderGases(),  // <--- ADDED
+    fetchCylinderUnits()   // <--- ADDED
   ]);
   await fetchCylinders();
 });
@@ -250,6 +260,7 @@ watch([sortKey, sortDirection, searchTerm, filterStatus, filterLocation, filterD
   saveStateToLocalStorage();
 }, { deep: true });
 
+// --- Fetch Functions ---
 const fetchCylinderTypes = async () => {
   try { const result = await get('/api/inventory/cylindertypes/'); if (result.ok) cylinderTypes.value = result.data; } 
   catch (error) { console.error('Error fetching cylinder types:', error); }
@@ -275,6 +286,22 @@ const fetchCylinderStatuses = async () => {
   catch (error) { console.error('Error fetching cylinder statuses:', error); }
 };
 
+// <--- ADDED: Fetch Dynamic Choices ---
+const fetchSuppliers = async () => {
+  try { const result = await get('/api/inventory/suppliers/'); if (result.ok) suppliers.value = result.data; } 
+  catch (error) { console.error('Error fetching suppliers:', error); }
+};
+
+const fetchCylinderGases = async () => {
+  try { const result = await get('/api/inventory/cylinder-gas/'); if (result.ok) cylinderGases.value = result.data; } 
+  catch (error) { console.error('Error fetching cylinder gases:', error); }
+};
+
+const fetchCylinderUnits = async () => {
+  try { const result = await get('/api/inventory/cylinder-unit/'); if (result.ok) cylinderUnits.value = result.data; } 
+  catch (error) { console.error('Error fetching cylinder units:', error); }
+};
+
 const fetchCylinders = async () => {
   try {
     loading.value = true;
@@ -283,7 +310,6 @@ const fetchCylinders = async () => {
     if (filterStatus.value) params.append('status', filterStatus.value);
     if (filterLocation.value) params.append('location', filterLocation.value);
     if (filterDetector.value) params.append('detector', filterDetector.value);
-    // Filter by the nested Cylinder Type ID
     if (filterCylinderType.value) params.append('cylinder_model__cylinder_type', filterCylinderType.value);
     if (filterExpiresBefore.value) params.append('expiry_date_lte', filterExpiresBefore.value);
     if (!showEmptyCylinders.value) params.append('exclude_status', 'MT');
@@ -303,7 +329,7 @@ const fetchCylinders = async () => {
 const getStatusDisplay = (statusValue) => {
   if (!statusValue) return 'N/A';
   const choice = cylinderStatusChoices.value.find(c => c.value === statusValue);
-  return choice ? choice.label : statusValue;
+  return choice ? choice.label.trim() : statusValue;
 };
 
 const getLocationLabel = (id) => locations.value.find(l => l.id === id)?.label || 'Unknown';

@@ -1,5 +1,6 @@
 <template>
   <div class="district-status-screen">
+    <HomeHeader />
     <h2>FRV - District Status</h2>
     <h3>{{ district }}</h3>
     <div class="model-selector">
@@ -17,9 +18,9 @@
           <span class="hero-label">Slots Available</span>
         </div>
         <div class="summary-details">
-          <div class="summary-item"><span class="summary-value">{{ slotCount }}</span><span class="summary-label">Total detector slots</span></div>
-          <div class="summary-item"><span class="summary-value">{{ cacheDetectors.length }}</span><span class="summary-label">Detectors in cache</span></div>
-          <div class="summary-item"><span class="summary-value">{{ transitDetectors.length }}</span><span class="summary-label">Detectors in transit</span></div>
+          <div class="summary-item"> <span class="summary-value">{{ slotCount }}</span> <span class="summary-label">Total detector slots</span> </div>
+          <div class="summary-item"> <span class="summary-value">{{ cacheDetectors.length }}</span> <span class="summary-label">Detectors in cache</span> </div>
+          <div class="summary-item"> <span class="summary-value">{{ transitDetectors.length }}</span> <span class="summary-label">Detectors in transit</span> </div>
         </div>
       </div>
       <div class="location-section" style="margin-top: 20px;">
@@ -47,7 +48,7 @@
         <h3>Detector Movements (Last 2 Weeks)</h3>
         <div v-if="movementLogs.length > 0" class="table-container">
           <table class="movement-table">
-            <thead><tr><th>Detector</th><th>From</th><th>To</th><th>Date</th></tr></thead>
+            <thead> <tr> <th>Detector</th> <th>From</th> <th>To</th> <th>Date</th> </tr> </thead>
             <tbody>
               <tr v-for="log in movementLogs" :key="log.id">
                 <td class="detector-cell">{{ log.detector_label }}</td>
@@ -67,6 +68,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { apiFetch } from '@/utils/api'
+import HomeHeader from './HomeHeader.vue' // <-- Added Import
 
 const props = defineProps({ district: String })
 
@@ -132,7 +134,7 @@ const fetchCacheAndTransit = async () => {
   if (!diLocation.value || !selectedModelId.value || !district.value) return
   isLoading.value = true; error.value = null
   try {
-    const [cacheData, transitData] = await Promise.all([
+    const [cacheData, transitData] = await Promise.all([ 
       apiFetch(`/detector-labels/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`),
       apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
     ])
@@ -146,15 +148,15 @@ const fetchMovementLogs = async () => {
   try {
     const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
     const gteStr = twoWeeksAgo.toISOString()
-    
+
     const districtDetectors = await apiFetch(`/detectors/?detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
     const detectorIdSet = new Set(districtDetectors.map(d => d.id))
-    
+
     const transitDets = await apiFetch(`/detectors/?detector_model=${selectedModelId.value}&status=TR&location__district=${encodeURIComponent(district.value)}`)
     transitDets.forEach(d => detectorIdSet.add(d.id))
-    
+
     const logs = await apiFetch(`/locationdetectorlogs/?district=${encodeURIComponent(district.value)}&updated_gte=${encodeURIComponent(gteStr)}`)
-    
+
     movementLogs.value = logs.filter(l => detectorIdSet.has(l.detector)).sort((a, b) => new Date(b.updated) - new Date(a.updated))
   } catch (err) { console.error('Failed to fetch movement logs:', err); movementLogs.value = [] }
 }
@@ -172,4 +174,3 @@ onMounted(async () => {
   await fetchAll()
 })
 </script>
-

@@ -1,5 +1,6 @@
 <template>
   <div class="swap-screen">
+    <HomeHeader />
     <h2>FRV - Detector Return</h2>
     <h3>{{ district }}</h3>
     <div class="model-selector">
@@ -39,7 +40,7 @@
       <div class="modal-content">
         <h3>Success</h3>
         <p>Detectors have been successfully returned to Burnley.</p>
-        <div class="modal-actions"><button class="btn-confirm" @click="closeSuccessModal">OK</button></div>
+        <div class="modal-actions"> <button class="btn-confirm" @click="closeSuccessModal">OK</button> </div>
       </div>
     </div>
   </div>
@@ -48,6 +49,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { apiFetch } from '@/utils/api'
+import HomeHeader from './HomeHeader.vue' // <-- Added Import
 
 const props = defineProps({ district: String })
 
@@ -60,6 +62,8 @@ const trDetectors = ref([])
 const selectedIds = ref([])
 const isLoading = ref(false)
 const error = ref(null)
+
+const is false)
 
 const isProcessing = ref(false)
 const showConfirmModal = ref(false)
