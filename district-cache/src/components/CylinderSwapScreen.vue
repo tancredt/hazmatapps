@@ -35,7 +35,7 @@
             @keydown.enter="item.cylinder && selectStationCylinder(item.cylinder.id)"
           >
             <template v-if="item.cylinder">
-              <!-- NEW: Added Cylinder Type Label -->
+              <!-- Cylinder Type Label -->
               <span class="cylinder-type-label">{{ getCylinderTypeLabel(item.cylinderType) }}</span>
               <span class="cylinder-label">{{ item.cylinder.label }}</span>
               <span class="cylinder-expiry" :class="{ expired: isExpired(item.cylinder.expiry_date) }">
@@ -196,12 +196,24 @@ const getCylinderTypeLabel = (type) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleDateString('en-AU')
+  // Parse as local time to prevent UTC shifting for DateFields
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateString) 
+    ? new Date(dateString.replace(/-/g, '/')) 
+    : new Date(dateString);
+  return date.toLocaleDateString('en-AU')
 }
 
 const isExpired = (expiryDate) => {
   if (!expiryDate) return false
-  return new Date(expiryDate) < new Date()
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(expiryDate) 
+    ? new Date(expiryDate.replace(/-/g, '/')) 
+    : new Date(expiryDate);
+    
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  
+  return date < today;
 }
 
 // --- Computed Properties ---
@@ -286,7 +298,8 @@ const fetchData = async () => {
     const [slotsRes, stationCylsRes, burnleyCylsRes, modelsRes, typesRes] = await Promise.all([
       apiFetch(`/locationcylinderslots/?location=${stationLocation.value.id}`),
       apiFetch(`/cylinders/?location=${stationLocation.value.id}&exclude_status=MT`),
-      apiFetch(`/cylinders/?location=${burnleyLocation.value.id}&exclude_status=MT`),
+      // UPDATED: Only fetch cylinders at Burnley that are strictly "In Stock" (IS)
+      apiFetch(`/cylinders/?location=${burnleyLocation.value.id}&status=IS`),
       apiFetch('/cylindermodels/'),
       apiFetch('/cylindertypes/')
     ])
