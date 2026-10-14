@@ -35,6 +35,8 @@
             @keydown.enter="item.cylinder && selectStationCylinder(item.cylinder.id)"
           >
             <template v-if="item.cylinder">
+              <!-- NEW: Added Cylinder Type Label -->
+              <span class="cylinder-type-label">{{ getCylinderTypeLabel(item.cylinderType) }}</span>
               <span class="cylinder-label">{{ item.cylinder.label }}</span>
               <span class="cylinder-expiry" :class="{ expired: isExpired(item.cylinder.expiry_date) }">
                 Exp: {{ item.cylinder.expiry_date ? formatDate(item.cylinder.expiry_date) : 'N/A' }}
@@ -350,16 +352,27 @@ onMounted(async () => {
 
 <style scoped>
 /* Slot specific typography */
+.cylinder-type-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 2px;
+  line-height: 1.1;
+  word-break: break-word;
+  text-align: center;
+  display: block;
+  max-width: 100%;
+}
 .cylinder-label {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #2c3e50;
   display: block;
 }
 .cylinder-expiry {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #666;
-  margin-top: 4px;
+  margin-top: 2px;
   display: block;
 }
 .cylinder-expiry.expired {
@@ -373,11 +386,14 @@ onMounted(async () => {
   display: block;
 }
 .empty-slot-type {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: #888;
   margin-top: 4px;
   display: block;
   text-align: center;
+  word-break: break-word;
+  line-height: 1.1;
+  max-width: 100%;
 }
 .expiry-info {
   font-size: 0.75rem;
