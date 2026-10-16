@@ -427,7 +427,7 @@ def detectors_pdf(request):
         },
         **get_date_context()
     }
-    html_string = render_to_string('inventory/pdf/detectors.html', context)
+    html_string = render_to_string('stuff/pdf/detectors.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="detectors.pdf"'
@@ -490,7 +490,7 @@ def sensors_pdf(request):
         },
         **get_date_context()
     }
-    html_string = render_to_string('inventory/pdf/sensors.html', context)
+    html_string = render_to_string('stuff/pdf/sensors.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="sensors.pdf"'
@@ -560,7 +560,7 @@ def cylinders_pdf(request):
         },
         **get_date_context()
     }
-    html_string = render_to_string('inventory/pdf/cylinders.html', context)
+    html_string = render_to_string('stuff/pdf/cylinders.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="cylinders.pdf"'
@@ -619,7 +619,7 @@ def maintenance_pdf(request):
         },
         **get_date_context()
     }
-    html_string = render_to_string('inventory/pdf/maintenance.html', context)
+    html_string = render_to_string('stuff/pdf/maintenance.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="maintenance.pdf"'
@@ -673,7 +673,7 @@ def faults_pdf(request):
         },
         **get_date_context()
     }
-    html_string = render_to_string('inventory/pdf/faults.html', context)
+    html_string = render_to_string('stuff/pdf/faults.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="faults.pdf"'
@@ -704,7 +704,7 @@ def detector_detail_pdf(request, detector_id):
         **get_date_context()
     }
     
-    html_string = render_to_string('inventory/pdf/detector_detail.html', context)
+    html_string = render_to_string('stuff/pdf/detector_detail.html', context)
     pdf = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="detector_{detector.label}.pdf"'

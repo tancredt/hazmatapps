@@ -1,0 +1,38 @@
+{% extends "stuff/pdf/base.html" %}
+{% block title %}Maintenance Report - Hazmat Inventory{% endblock %}
+{% block report_title %}Maintenance Report{% endblock %}
+
+{% block content %}
+    <div class="filters">
+        {% if filters.status or filters.maintenance_type or filters.detector_model %}
+            Filters: 
+            {% if filters.status %}Status: {{ filters.status }}{% endif %}
+            {% if filters.maintenance_type %} | Type: {{ filters.maintenance_type }}{% endif %}
+            {% if filters.detector_model %} | Model: {{ filters.detector_model }}{% endif %}
+            {% if not filters.show_complete %} | Excluding Closed{% endif %}
+        {% endif %}
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th><th>Status</th><th>Detector</th><th>Detector Model</th>
+                <th>Date Due</th><th>Date Performed</th><th>Performed By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for maintenance in maintenances %}
+            <tr>
+                <td>{{ maintenance.get_maintenance_type_display }}</td>
+                <td>{{ maintenance.get_status_display }}</td>
+                <td>{{ maintenance.detector.label|default:"N/A" }}</td>
+                <td>{{ maintenance.detector.detector_model.label|default:"N/A" }}</td>
+                <td>{{ maintenance.date_due|date:"Y-m-d"|default:"N/A" }}</td>
+                <td>{{ maintenance.date_performed|date:"Y-m-d"|default:"N/A" }}</td>
+                <td>{{ maintenance.performed_by|default:"N/A" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="no-data">No maintenance records found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

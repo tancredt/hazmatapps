@@ -1,0 +1,40 @@
+{% extends "stuff/pdf/base.html" %}
+{% block title %}Sensors Report - Hazmat Inventory{% endblock %}
+{% block report_title %}Sensors Report{% endblock %}
+
+{% block content %}
+    <div class="filters">
+        {% if filters.search or filters.status or filters.sensor_type or filters.detector %}
+            Filters: 
+            {% if filters.search %}Search: {{ filters.search }}{% endif %}
+            {% if filters.status %} | Status: {{ filters.status }}{% endif %}
+            {% if filters.sensor_type %} | Type: {{ filters.sensor_type }}{% endif %}
+            {% if filters.detector %} | Detector: {{ filters.detector }}{% endif %}
+            {% if not filters.show_decommissioned %} | Excluding Decommissioned{% endif %}
+        {% endif %}
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Serial</th><th>Part Number</th><th>Gas</th><th>Detector</th>
+                <th>Status</th><th>Order Date</th><th>Receive Date</th><th>Expiry Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sensor in sensors %}
+            <tr>
+                <td>{{ sensor.serial|default:"N/A" }}</td>
+                <td>{{ sensor.sensor_type.part_number|default:"N/A" }}</td>
+                <td>{{ sensor.sensor_type.get_sensorgas_display|default:"N/A" }}</td>
+                <td>{{ sensor.detector.label|default:"N/A" }}</td>
+                <td>{{ sensor.get_status_display }}</td>
+                <td>{{ sensor.order_date|date:"Y-m-d"|default:"N/A" }}</td>
+                <td>{{ sensor.receive_date|date:"Y-m-d"|default:"N/A" }}</td>
+                <td>{{ sensor.expiry_date|date:"Y-m-d"|default:"N/A" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="no-data">No sensors found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

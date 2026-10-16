@@ -1,0 +1,39 @@
+{% extends "stuff/pdf/base.html" %}
+{% block title %}Fault Reports - Hazmat Inventory{% endblock %}
+{% block report_title %}Fault Reports{% endblock %}
+
+{% block content %}
+    <div class="filters">
+        {% if filters.status or filters.fault_type or filters.detector %}
+            Filters: 
+            {% if filters.status %}Status: {{ filters.status }}{% endif %}
+            {% if filters.fault_type %} | Fault Type: {{ filters.fault_type }}{% endif %}
+            {% if filters.detector %} | Detector: {{ filters.detector }}{% endif %}
+            {% if not filters.show_closed %} | Excluding Closed{% endif %}
+        {% endif %}
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Detector</th><th>Date Reported</th><th>Fault Type</th><th>Reported By</th>
+                <th>Location</th><th>Status</th><th>Resolved Date</th><th>Resolved By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fault in faults %}
+            <tr>
+                <td>{{ fault.detector.label|default:"N/A" }}</td>
+                <td>{{ fault.report_dt|date:"Y-m-d H:i"|default:"N/A" }}</td>
+                <td>{{ fault.get_fault_type_display }}</td>
+                <td>{{ fault.reported_by|default:"N/A" }}</td>
+                <td>{{ fault.report_location.label|default:"N/A" }}</td>
+                <td>{{ fault.get_status_display }}</td>
+                <td>{{ fault.resolve_dt|date:"Y-m-d"|default:"N/A" }}</td>
+                <td>{{ fault.resolved_by|default:"N/A" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="no-data">No fault records found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

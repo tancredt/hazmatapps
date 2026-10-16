@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Hazmat Inventory Report{% endblock %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #333; }
+        h1 { text-align: center; font-size: 18px; margin-bottom: 5px; }
+        h2 { text-align: center; font-size: 14px; margin-bottom: 20px; color: #555; }
+        h3 { font-size: 13px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 20px; }
+        .subtitle { text-align: center; font-size: 10px; color: #666; margin-bottom: 20px; }
+        .filters { font-size: 10px; color: #555; margin-bottom: 15px; text-align: center; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        th { background-color: #f4f4f4; font-weight: bold; }
+        .no-data { text-align: center; padding: 20px; font-style: italic; color: #777; }
+    </style>
+</head>
+<body>
+    <h1>{% block report_title %}Report{% endblock %}</h1>
+    <div class="subtitle">Generated on {% now "Y-m-d H:i:s" %} | Hazmat Inventory System</div>
+    {% block content %}{% endblock %}
+</body>
+</html>

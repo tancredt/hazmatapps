@@ -1,0 +1,41 @@
+{% extends "stuff/pdf/base.html" %}
+{% block title %}Detectors Report - Hazmat Inventory{% endblock %}
+{% block report_title %}Detectors Report{% endblock %}
+
+{% block content %}
+    <div class="filters">
+        {% if filters.search or filters.status or filters.detector_model or filters.location or filters.configuration %}
+            Filters: 
+            {% if filters.search %}Search: {{ filters.search }}{% endif %}
+            {% if filters.status %} | Status: {{ filters.status }}{% endif %}
+            {% if filters.detector_model %} | Model: {{ filters.detector_model }}{% endif %}
+            {% if filters.location %} | Location: {{ filters.location }}{% endif %}
+            {% if filters.configuration %} | Config: {{ filters.configuration }}{% endif %}
+            {% if not filters.show_decommissioned %} | Excluding Decommissioned{% endif %}
+        {% endif %}
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Label</th><th>Serial</th><th>Model</th><th>Type</th>
+                <th>Configuration</th><th>Location</th><th>Status</th><th>Firmware</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detector in detectors %}
+            <tr>
+                <td>{{ detector.label }}</td>
+                <td>{{ detector.serial|default:"N/A" }}</td>
+                <td>{{ detector.detector_model.label|default:"N/A" }}</td>
+                <td>{{ detector.detector_model.get_detector_type_display|default:"N/A" }}</td>
+                <td>{{ detector.configuration.label|default:"N/A" }}</td>
+                <td>{{ detector.location.label|default:"N/A" }}</td>
+                <td>{{ detector.get_status_display }}</td>
+                <td>{{ detector.firmware|default:"N/A" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="no-data">No detectors found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

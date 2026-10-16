@@ -1,0 +1,96 @@
+{% extends "stuff/pdf/base.html" %}
+{% block title %}Detector Details: {{ detector.label }} - Hazmat Inventory{% endblock %}
+{% block report_title %}Detector Details: {{ detector.label }}{% endblock %}
+
+{% block content %}
+    <h2>{{ detector.serial }}</h2>
+
+    <h3>Detector Information</h3>
+    <table style="width: 100%; margin-bottom: 20px;">
+        <tr><td style="width: 30%; font-weight: bold;">Label:</td><td>{{ detector.label }}</td></tr>
+        <tr><td style="font-weight: bold;">Serial:</td><td>{{ detector.serial }}</td></tr>
+        <tr><td style="font-weight: bold;">Model:</td><td>{{ detector.detector_model.label }} ({{ detector.detector_model.get_detector_type_display }})</td></tr>
+        <tr><td style="font-weight: bold;">Configuration:</td><td>{{ detector.configuration.label|default:"N/A" }}</td></tr>
+        <tr><td style="font-weight: bold;">Location:</td><td>{{ detector.location.label }}</td></tr>
+        <tr><td style="font-weight: bold;">Status:</td><td>{{ detector.get_status_display }}</td></tr>
+        <tr><td style="font-weight: bold;">Firmware:</td><td>{{ detector.firmware|default:"N/A" }}</td></tr>
+        <tr><td style="font-weight: bold;">Purchase Date:</td><td>{{ detector.purchase_date|date:"Y-m-d"|default:"N/A" }}</td></tr>
+        <tr><td style="font-weight: bold;">Purchase Cost:</td><td>${{ detector.purchase_cost|default:"0.00" }}</td></tr>
+        {% if detector.notes %}
+        <tr><td style="font-weight: bold;">Notes:</td><td>{{ detector.notes }}</td></tr>
+        {% endif %}
+    </table>
+
+    <h3>Sensors Attached</h3>
+    {% if sensors %}
+    <table>
+        <thead>
+            <tr>
+                <th>Gas Type</th><th>Sensor Serial</th><th>Part Number</th><th>Warranty Date</th><th>Expiry Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sensor in sensors %}
+            <tr>
+                <td>{{ sensor.sensor_type.get_sensorgas_display }}</td>
+                <td>{{ sensor.serial|default:"Not Installed" }}</td>
+                <td>{{ sensor.sensor_type.part_number|default:"N/A" }}</td>
+                <td>{{ sensor.warranty_date|date:"Y-m-d"|default:"N/A" }}</td>
+                <td>{{ sensor.expiry_date|date:"Y-m-d"|default:"N/A" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="no-data">No operational sensors attached to this detector.</p>
+    {% endif %}
+
+    <h3>Maintenance History</h3>
+    {% if maintenances %}
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th><th>Status</th><th>Date Due</th><th>Date Performed</th><th>Performed By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for maint in maintenances %}
+            <tr>
+                <td>{{ maint.get_maintenance_type_display }}</td>
+                <td>{{ maint.get_status_display }}</td>
+                <td>{{ maint.date_due|date:"Y-m-d" }}</td>
+                <td>{{ maint.date_performed|date:"Y-m-d"|default:"N/A" }}</td>
+                <td>{{ maint.performed_by|default:"N/A" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="no-data">No maintenance records for this detector.</p>
+    {% endif %}
+
+    <h3>Fault History</h3>
+    {% if faults %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date Reported</th><th>Fault Type</th><th>Location</th><th>Status</th><th>Resolved Date</th><th>Resolved By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fault in faults %}
+            <tr>
+                <td>{{ fault.report_dt|date:"Y-m-d" }}</td>
+                <td>{{ fault.get_fault_type_display }}</td>
+                <td>{{ fault.report_location.label|default:"N/A" }}</td>
+                <td>{{ fault.get_status_display }}</td>
+                <td>{{ fault.resolve_dt|date:"Y-m-d"|default:"N/A" }}</td>
+                <td>{{ fault.resolved_by|default:"N/A" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="no-data">No fault records for this detector.</p>
+    {% endif %}
+{% endblock %}
