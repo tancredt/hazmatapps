@@ -1,146 +1,153 @@
 <template>
- <div class="location-slots-page">
- <!-- Filters -->
- <div class="filters-section">
-   <button
-     @click="toggleFilters"
-     :aria-expanded="showFilters"
-     class="filter-toggle-btn"
-     :class="{ 'has-active-filters': hasActiveFilters }"
-   >
-     {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
-     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
-       <polyline points="6 9 12 15 18 9"></polyline>
-     </svg>
-   </button>
-   <div v-show="showFilters" class="search-and-filters-popover">
-     <select v-model="filterLocation" class="filter-select">
-       <option value="">All Locations</option>
-       <option v-for="loc in locations" :key="loc.id" :value="loc.id">
-         {{ loc.label }}
-       </option>
-     </select>
-     <select v-model="filterDistrict" class="filter-select">
-       <option value="">All Districts</option>
-       <option v-for="d in districts" :key="d.id" :value="d.id">
-         {{ d.label }}
-       </option>
-     </select>        
-     <select v-model="filterLocationType" class="filter-select">
-       <option value="">All Location Types</option>
-       <option v-for="type in locationTypeChoices" :key="type.value" :value="type.value">
-         {{ type.label }}
-       </option>
-     </select>
-     <select v-model="filterModel" class="filter-select">
-       <option value="">All Models</option>
-       <option v-for="model in detectorModels" :key="model.id" :value="model.id">
-         {{ model.label }}
-       </option>
-     </select>
-     <div class="reset-btn-wrapper">
-       <button @click="resetFilters" class="reset-btn">Reset Filters</button>
-     </div>
-   </div>
- </div>
- <div class="page-container">
-   <div class="header-actions">
-     <h1>Location Slots</h1>
-   </div>
-   <!-- Equipment display -->
-   <div class="equipment-display">
-     <div v-if="loading" class="loading">Loading equipment...</div>
-     <div v-else-if="locationGroups.length === 0" class="no-data">
-       {{ emptyMessage }}
-     </div>
-     <template v-else>
-       <div
-         v-for="locGroup in locationGroups"
-         :key="locGroup.location.id"
-         class="location-block"
-       >
-         <div class="location-header">
-           {{ locGroup.location.label }}
-           <span v-if="locGroup.location.district_label" class="district-tag">
-             {{ locGroup.location.district_label }}
-           </span>
-         </div>
-         <!-- Location with no slots/equipment -->
-         <div v-if="locGroup.groups.length === 0" class="location-empty">
-           No detector slots or equipment at this location.
-         </div>
-         <div v-else class="model-rows">
-           <div
-             v-for="group in locGroup.groups"
-             :key="group.modelId"
-             class="model-row"
-           >
-             <!-- Left: model label only -->
-             <div class="row-labels">
-               <span class="model-label">{{ getModelName(group.modelId) }}</span>
-             </div>
-             <!-- Right: slots, overflow, and unslotted -->
-             <div class="slots-and-extras">
-               <!-- Slot boxes (only if slots are configured) -->
-               <div class="slot-boxes" v-if="group.slotCount > 0">
-                 <div
-                   v-for="(det, i) in group.filledBoxes"
-                   :key="'filled-' + i"
-                   class="slot-box filled"
-                 >
-                   <router-link :to="`/detectors/${det.id}`" class="detector-link">
-                     {{ det.label }}
-                   </router-link>
-                   <!-- Configuration Label -->
-                   <span class="config-label" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
-                     {{ getConfigurationLabel(det.configuration) }}
-                   </span>
-                   <span class="updated-date">{{ formatDate(det.location_updated) }}</span>
-                 </div>
-                 <div
-                   v-for="n in group.emptyCount"
-                   :key="'empty-' + n"
-                   class="slot-box empty"
-                 >
-                   Empty
-                 </div>
-               </div>
-               <!-- Overflow detectors (only if slots exist but are exceeded) -->
-               <div v-if="group.overflow.length > 0" class="overflow-area">
-                 <span class="overflow-title">Overflow:</span>
-                 <div v-for="det in group.overflow" :key="det.id" class="detector-item-container">
-                   <router-link :to="`/detectors/${det.id}`" class="overflow-item">
-                     {{ det.label }}
-                   </router-link>
-                   <!-- Configuration Label -->
-                   <span class="item-config" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
-                     {{ getConfigurationLabel(det.configuration) }}
-                   </span>
-                   <span class="item-date">{{ formatDate(det.location_updated) }}</span>
-                 </div>
-               </div>
-               <!-- Unslotted detectors (only if NO slots are configured for this model) -->
-               <div v-if="group.unslotted.length > 0" class="unslotted-area">
-                 <span class="unslotted-title">No Slots Configured (Unslotted):</span>
-                 <div v-for="det in group.unslotted" :key="det.id" class="detector-item-container">
-                   <router-link :to="`/detectors/${det.id}`" class="unslotted-item">
-                     {{ det.label }}
-                   </router-link>
-                   <!-- Configuration Label -->
-                   <span class="item-config" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
-                     {{ getConfigurationLabel(det.configuration) }}
-                   </span>
-                   <span class="item-date">{{ formatDate(det.location_updated) }}</span>
-                 </div>
-               </div>
-             </div>
-           </div>
-         </div>
-       </div>
-     </template>
-   </div>
- </div>
-</div>
+  <div class="location-slots-page">
+    <!-- Filters -->
+    <div class="filters-section">
+      <button
+        @click="toggleFilters"
+        :aria-expanded="showFilters"
+        class="filter-toggle-btn"
+        :class="{ 'has-active-filters': hasActiveFilters }"
+      >
+        {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div v-show="showFilters" class="search-and-filters-popover">
+        <select v-model="filterLocation" class="filter-select">
+          <option value="">All Locations</option>
+          <option v-for="loc in locations" :key="loc.id" :value="loc.id">
+            {{ loc.label }}
+          </option>
+        </select>
+        <select v-model="filterDistrict" class="filter-select">
+          <option value="">All Districts</option>
+          <option v-for="d in districts" :key="d.id" :value="d.id">
+            {{ d.label }}
+          </option>
+        </select>        
+        <select v-model="filterLocationType" class="filter-select">
+          <option value="">All Location Types</option>
+          <option v-for="type in locationTypeChoices" :key="type.value" :value="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+        <select v-model="filterModel" class="filter-select">
+          <option value="">All Models</option>
+          <option v-for="model in detectorModels" :key="model.id" :value="model.id">
+            {{ model.label }}
+          </option>
+        </select>
+        <div class="reset-btn-wrapper">
+          <button @click="resetFilters" class="reset-btn">Reset Filters</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-container">
+      <div class="header-actions">
+        <h1>Location Slots</h1>
+      </div>
+      
+      <!-- Equipment display (This is now the scrollable container) -->
+      <div class="equipment-display">
+        <div v-if="loading" class="loading">Loading equipment...</div>
+        <div v-else-if="locationGroups.length === 0" class="no-data">
+          {{ emptyMessage }}
+        </div>
+        <template v-else>
+          <div
+            v-for="locGroup in locationGroups"
+            :key="locGroup.location.id"
+            class="location-block"
+          >
+            <div class="location-header">
+              {{ locGroup.location.label }}
+              <span v-if="locGroup.location.district_label" class="district-tag">
+                {{ locGroup.location.district_label }}
+              </span>
+            </div>
+            
+            <!-- Location with no slots/equipment -->
+            <div v-if="locGroup.groups.length === 0" class="location-empty">
+              No detector slots or equipment at this location.
+            </div>
+            
+            <div v-else class="model-rows">
+              <div
+                v-for="group in locGroup.groups"
+                :key="group.modelId"
+                class="model-row"
+              >
+                <!-- Left: model label only -->
+                <div class="row-labels">
+                  <span class="model-label">{{ getModelName(group.modelId) }}</span>
+                </div>
+                
+                <!-- Right: slots, overflow, and unslotted -->
+                <div class="slots-and-extras">
+                  <!-- Slot boxes (only if slots are configured) -->
+                  <div class="slot-boxes" v-if="group.slotCount > 0">
+                    <div
+                      v-for="(det, i) in group.filledBoxes"
+                      :key="'filled-' + i"
+                      class="slot-box filled"
+                    >
+                      <router-link :to="`/detectors/${det.id}`" class="detector-link">
+                        {{ det.label }}
+                      </router-link>
+                      <!-- Configuration Label -->
+                      <span class="config-label" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
+                        {{ getConfigurationLabel(det.configuration) }}
+                      </span>
+                      <span class="updated-date">{{ formatDate(det.location_updated) }}</span>
+                    </div>
+                    <div
+                      v-for="n in group.emptyCount"
+                      :key="'empty-' + n"
+                      class="slot-box empty"
+                    >
+                      Empty
+                    </div>
+                  </div>
+                  
+                  <!-- Overflow detectors (only if slots exist but are exceeded) -->
+                  <div v-if="group.overflow.length > 0" class="overflow-area">
+                    <span class="overflow-title">Overflow:</span>
+                    <div v-for="det in group.overflow" :key="det.id" class="detector-item-container">
+                      <router-link :to="`/detectors/${det.id}`" class="overflow-item">
+                        {{ det.label }}
+                      </router-link>
+                      <!-- Configuration Label -->
+                      <span class="item-config" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
+                        {{ getConfigurationLabel(det.configuration) }}
+                      </span>
+                      <span class="item-date">{{ formatDate(det.location_updated) }}</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Unslotted detectors (only if NO slots are configured for this model) -->
+                  <div v-if="group.unslotted.length > 0" class="unslotted-area">
+                    <span class="unslotted-title">No Slots Configured (Unslotted):</span>
+                    <div v-for="det in group.unslotted" :key="det.id" class="detector-item-container">
+                      <router-link :to="`/detectors/${det.id}`" class="unslotted-item">
+                        {{ det.label }}
+                      </router-link>
+                      <!-- Configuration Label -->
+                      <span class="item-config" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
+                        {{ getConfigurationLabel(det.configuration) }}
+                      </span>
+                      <span class="item-date">{{ formatDate(det.location_updated) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -303,7 +310,7 @@ const fetchAllData = async () => {
       slotsResult,
       detectorsResult,
       locationTypesResult,
-      configsResult // Fetching configurations
+      configsResult
     ] = await Promise.all([
       get('/api/inventory/locations/'),
       get('/api/inventory/districts/'),
@@ -311,7 +318,7 @@ const fetchAllData = async () => {
       get('/api/inventory/locationdetectorslots/'),
       get('/api/inventory/detectors/?exclude_status=DC'),
       get('/api/inventory/location-types/'),
-      get('/api/inventory/detectormodelconfigurations/') // Fetching configurations
+      get('/api/inventory/detectormodelconfigurations/')
     ]);
 
     if (!locationsResult.ok) throw new Error(`HTTP error! status: ${locationsResult.status}`);
@@ -328,7 +335,7 @@ const fetchAllData = async () => {
     allSlots.value = slotsResult.data;
     allDetectors.value = detectorsResult.data;
     locationTypeChoices.value = locationTypesResult.data;
-    detectorModelConfigurations.value = configsResult.data; // Assigning configurations
+    detectorModelConfigurations.value = configsResult.data;
   } catch (error) {
     console.error('Error loading data:', error);
   } finally {
@@ -359,11 +366,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* NOTE: Do NOT add overflow-y here. App.vue's <main> tag handles page scrolling. */
+/* 1. Remove min-height: 100vh so it doesn't force the parent to expand */
 .location-slots-page {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .filters-section {
@@ -371,6 +378,7 @@ onMounted(async () => {
   position: relative;
   display: inline-block;
   padding: 0.5rem 1rem 0;
+  flex-shrink: 0; /* Prevent filters from shrinking */
 }
 
 .filter-toggle-btn {
@@ -448,28 +456,34 @@ onMounted(async () => {
   min-width: 150px;
 }
 
+/* 2. Constrain the page container and make it a flex column */
 .page-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0.5rem 2rem 2rem;
   width: 100%;
   box-sizing: border-box;
-}
-
-h1 {
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-  font-size: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden; /* Crucial: prevents this container from expanding infinitely */
+  min-height: 0;    /* Crucial for flexbox scrolling */
 }
 
 .header-actions {
   margin-bottom: 0.75rem;
+  flex-shrink: 0;
 }
 
+/* 3. Make the equipment display the dedicated scrollable area */
 .equipment-display {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  overflow-y: auto; /* This is the scrollable container */
+  flex: 1;          /* Takes up remaining vertical space */
+  min-height: 0;    /* Allows it to shrink and trigger scrolling */
+  padding-right: 0.5rem; /* Space for the scrollbar so it doesn't overlap content */
 }
 
 .loading,
@@ -566,7 +580,7 @@ h1 {
 .slot-box {
   flex: 0 1 calc((100% - 2.5rem) / 6);
   min-width: 110px;
-  min-height: 80px; /* Increased slightly to fit config text */
+  min-height: 80px; 
   border-radius: 6px;
   display: flex;
   flex-direction: column;
