@@ -296,54 +296,346 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Copy the exact <style scoped> block from LocationSlots.vue here */
-.location-cylinder-slots-page { min-height: 100vh; display: flex; flex-direction: column; }
-.filters-section { margin-bottom: 0.25rem; position: relative; display: inline-block; padding: 0.5rem 1rem 0; }
-.filter-toggle-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; background-color: #42b883; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; transition: background-color 0.3s ease; }
-.filter-toggle-btn:hover { background-color: #36966d; }
-.filter-toggle-btn.has-active-filters { background-color: #e67e22; }
-.filter-toggle-btn.has-active-filters:hover { background-color: #d35400; }
-.toggle-icon { transition: transform 0.3s ease; }
-.filter-toggle-btn[aria-expanded="true"] .toggle-icon { transform: rotate(180deg); }
-.search-and-filters-popover { position: absolute; top: 100%; left: 1rem; min-width: 300px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 0.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; }
-.reset-btn-wrapper { align-self: flex-start; }
-.reset-btn { padding: 0.4rem 0.75rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
-.reset-btn:hover { background-color: #c82333; }
-.filter-select { padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; min-width: 150px; }
-.page-container { max-width: 1400px; margin: 0 auto; padding: 0.5rem 2rem 2rem; width: 100%; box-sizing: border-box; }
-h1 { color: #2c3e50; margin-bottom: 0.5rem; font-size: 1.4rem; }
-.header-actions { margin-bottom: 0.75rem; }
-.equipment-display { display: flex; flex-direction: column; gap: 1.25rem; }
-.loading, .no-data { text-align: center; padding: 2rem; font-style: italic; color: #666; }
-.location-block { background: white; border-radius: 8px; padding: 1rem 1.25rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
-.location-header { font-size: 1.1rem; font-weight: 700; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 0.5rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
-.district-tag { font-size: 0.75rem; font-weight: 600; color: #6c757d; background-color: #f1f3f5; border-radius: 12px; padding: 0.15rem 0.6rem; }
-.location-empty { font-style: italic; color: #999; padding: 0.5rem 0; font-size: 0.9rem; }
-.model-rows { display: flex; flex-direction: column; gap: 0.75rem; }
-.model-row { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; border-top: 1px solid #f1f1f1; padding-top: 0.75rem; }
-.model-row:first-child { border-top: none; padding-top: 0; }
-.row-labels { display: flex; flex-direction: column; justify-content: center; min-width: 180px; max-width: 200px; }
-.model-label { color: #495057; font-size: 0.9rem; font-weight: 600; word-break: break-word; }
-.slots-and-extras { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
-.slot-boxes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.slot-box { flex: 0 1 calc((100% - 2.5rem) / 6); min-width: 110px; min-height: 64px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600; box-sizing: border-box; padding: 0.5rem; text-align: center; }
-.slot-box.filled { background-color: #eafaf2; border: 2px solid #42b883; color: #2c3e50; }
-.slot-box.empty { background-color: #fdecea; border: 2px solid #dc3545; color: #dc3545; }
-.updated-date { font-size: 0.7rem; font-weight: 400; color: #6c757d; margin-top: 0.25rem; display: block; line-height: 1; }
-.cylinder-link { color: #2c3e50; text-decoration: none; }
-.cylinder-link:hover { text-decoration: underline; color: #42b883; }
-.unslotted-area, .overflow-area { display: flex; flex-wrap: wrap; gap: 0.75rem; width: 100%; padding-top: 0.75rem; border-top: 1px dashed #e9ecef; align-items: flex-start; }
-.unslotted-title, .overflow-title { font-size: 0.8rem; font-weight: 700; color: #6c757d; text-transform: uppercase; width: 100%; margin-bottom: -0.25rem; }
-.overflow-title { color: #dc3545; }
-.cylinder-item-container { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
-.item-date { font-size: 0.7rem; font-weight: 400; color: #6c757d; }
-.unslotted-item { background-color: #f8f9fa; border: 2px solid #6c757d; color: #495057; border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
-.unslotted-item:hover { background-color: #e9ecef; color: #007bff; }
-.overflow-item { background-color: #fdecea; border: 2px solid #dc3545; color: #dc3545; border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
-.overflow-item:hover { background-color: #f8d7da; }
+/* 1. Remove min-height: 100vh so it doesn't force the parent to expand */
+.location-cylinder-slots-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.filters-section {
+  margin-bottom: 0.25rem;
+  position: relative;
+  display: inline-block;
+  padding: 0.5rem 1rem 0;
+  flex-shrink: 0; /* Prevent filters from shrinking */
+}
+
+.filter-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background-color: #42b883;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+}
+
+.filter-toggle-btn:hover {
+  background-color: #36966d;
+}
+
+.filter-toggle-btn.has-active-filters {
+  background-color: #e67e22;
+}
+
+.filter-toggle-btn.has-active-filters:hover {
+  background-color: #d35400;
+}
+
+.toggle-icon {
+  transition: transform 0.3s ease;
+}
+
+.filter-toggle-btn[aria-expanded="true"] .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.search-and-filters-popover {
+  position: absolute;
+  top: 100%;
+  left: 1rem;
+  min-width: 300px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reset-btn-wrapper {
+  align-self: flex-start;
+}
+
+.reset-btn {
+  padding: 0.4rem 0.75rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.reset-btn:hover {
+  background-color: #c82333;
+}
+
+.filter-select {
+  padding: 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 150px;
+}
+
+/* 2. Constrain the page container and make it a flex column */
+.page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.5rem 2rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden; /* Crucial: prevents this container from expanding infinitely */
+  min-height: 0;    /* Crucial for flexbox scrolling */
+}
+
+.header-actions {
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* 3. Make the equipment display the dedicated scrollable area */
+.equipment-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  overflow-y: auto; /* This is the scrollable container */
+  flex: 1;          /* Takes up remaining vertical space */
+  min-height: 0;    /* Allows it to shrink and trigger scrolling */
+  padding-right: 0.5rem; /* Space for the scrollbar so it doesn't overlap content */
+}
+
+.loading,
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  font-style: italic;
+  color: #666;
+}
+
+.location-block {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.location-header {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #007bff;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.district-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6c757d;
+  background-color: #f1f3f5;
+  border-radius: 12px;
+  padding: 0.15rem 0.6rem;
+}
+
+.location-empty {
+  font-style: italic;
+  color: #999;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.model-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.model-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-top: 1px solid #f1f1f1;
+  padding-top: 0.75rem;
+}
+
+.model-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.row-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 180px;
+  max-width: 200px;
+}
+
+.model-label {
+  color: #495057;
+  font-size: 0.9rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.slots-and-extras {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.slot-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.slot-box {
+  flex: 0 1 calc((100% - 2.5rem) / 6);
+  min-width: 110px;
+  min-height: 64px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.slot-box.filled {
+  background-color: #eafaf2;
+  border: 2px solid #42b883;
+  color: #2c3e50;
+}
+
+.slot-box.empty {
+  background-color: #fdecea;
+  border: 2px solid #dc3545;
+  color: #dc3545;
+}
+
+.updated-date {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #6c757d;
+  margin-top: 0.25rem;
+  display: block;
+  line-height: 1;
+}
+
+.cylinder-link {
+  color: #2c3e50;
+  text-decoration: none;
+}
+
+.cylinder-link:hover {
+  text-decoration: underline;
+  color: #42b883;
+}
+
+.unslotted-area,
+.overflow-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #e9ecef;
+  align-items: flex-start;
+}
+
+.unslotted-title,
+.overflow-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6c757d;
+  text-transform: uppercase;
+  width: 100%;
+  margin-bottom: -0.25rem;
+}
+
+.overflow-title {
+  color: #dc3545;
+}
+
+.cylinder-item-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.item-date {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #6c757d;
+}
+
+.unslotted-item {
+  background-color: #f8f9fa;
+  border: 2px solid #6c757d;
+  color: #495057;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.unslotted-item:hover {
+  background-color: #e9ecef;
+  color: #007bff;
+}
+
+.overflow-item {
+  background-color: #fdecea;
+  border: 2px solid #dc3545;
+  color: #dc3545;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.overflow-item:hover {
+  background-color: #f8d7da;
+}
+
 @media (max-width: 768px) {
-  .page-container { padding: 0.5rem 1rem 2rem; }
-  .model-row { flex-direction: column; align-items: flex-start; }
-  .row-labels { max-width: 100%; }
+  .page-container {
+    padding: 0.5rem 1rem 2rem;
+  }
+
+  .model-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .row-labels {
+    max-width: 100%;
+  }
 }
 </style>
