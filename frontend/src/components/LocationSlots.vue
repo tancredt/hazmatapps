@@ -1,144 +1,145 @@
 <template>
-  <div class="location-slots-page">
-    <!-- Filters -->
-    <div class="filters-section">
-      <button
-        @click="toggleFilters"
-        :aria-expanded="showFilters"
-        class="filter-toggle-btn"
-        :class="{ 'has-active-filters': hasActiveFilters }"
-      >
-        {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-      <div v-show="showFilters" class="search-and-filters-popover">
-        <select v-model="filterLocation" class="filter-select">
-          <option value="">All Locations</option>
-          <option v-for="loc in locations" :key="loc.id" :value="loc.id">
-            {{ loc.label }}
-          </option>
-        </select>
-        <select v-model="filterDistrict" class="filter-select">
-          <option value="">All Districts</option>
-          <option v-for="d in districts" :key="d.id" :value="d.id">
-            {{ d.label }}
-          </option>
-        </select>        
-        
-        <!-- UPDATED: Location Type Filter using string representations -->
-        <select v-model="filterLocationType" class="filter-select">
-          <option value="">All Location Types</option>
-          <option v-for="type in locationTypeChoices" :key="type.value" :value="type.value">
-            {{ type.label }}
-          </option>
-        </select>
-
-        <select v-model="filterModel" class="filter-select">
-          <option value="">All Models</option>
-          <option v-for="model in detectorModels" :key="model.id" :value="model.id">
-            {{ model.label }}
-          </option>
-        </select>
-        <div class="reset-btn-wrapper">
-          <button @click="resetFilters" class="reset-btn">Reset Filters</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="page-container">
-      <div class="header-actions">
-        <h1>Location Slots</h1>
-      </div>
-
-      <!-- Equipment display -->
-      <div class="equipment-display">
-        <div v-if="loading" class="loading">Loading equipment...</div>
-        <div v-else-if="locationGroups.length === 0" class="no-data">
-          {{ emptyMessage }}
-        </div>
-        <template v-else>
-          <div
-            v-for="locGroup in locationGroups"
-            :key="locGroup.location.id"
-            class="location-block"
-          >
-            <div class="location-header">
-              {{ locGroup.location.label }}
-              <span v-if="locGroup.location.district_label" class="district-tag">
-                {{ locGroup.location.district_label }}
-              </span>
-            </div>
-
-            <!-- Location with no slots/equipment -->
-            <div v-if="locGroup.groups.length === 0" class="location-empty">
-              No detector slots or equipment at this location.
-            </div>
-
-            <div v-else class="model-rows">
-              <div
-                v-for="group in locGroup.groups"
-                :key="group.modelId"
-                class="model-row"
-              >
-                <!-- Left: model label only -->
-                <div class="row-labels">
-                  <span class="model-label">{{ getModelName(group.modelId) }}</span>
-                </div>
-
-                <!-- Right: slots, overflow, and unslotted -->
-                <div class="slots-and-extras">
-                  <!-- Slot boxes (only if slots are configured) -->
-                  <div class="slot-boxes" v-if="group.slotCount > 0">
-                    <div
-                      v-for="(det, i) in group.filledBoxes"
-                      :key="'filled-' + i"
-                      class="slot-box filled"
-                    >
-                      <router-link :to="`/detectors/${det.id}`" class="detector-link">
-                        {{ det.label }}
-                      </router-link>
-                      <span class="updated-date">{{ formatDate(det.location_updated) }}</span>
-                    </div>
-                    <div
-                      v-for="n in group.emptyCount"
-                      :key="'empty-' + n"
-                      class="slot-box empty"
-                    >
-                      Empty
-                    </div>
-                  </div>
-
-                  <!-- Overflow detectors (only if slots exist but are exceeded) -->
-                  <div v-if="group.overflow.length > 0" class="overflow-area">
-                    <span class="overflow-title">Overflow:</span>
-                    <div v-for="det in group.overflow" :key="det.id" class="detector-item-container">
-                      <router-link :to="`/detectors/${det.id}`" class="overflow-item">
-                        {{ det.label }}
-                      </router-link>
-                      <span class="item-date">{{ formatDate(det.location_updated) }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Unslotted detectors (only if NO slots are configured for this model) -->
-                  <div v-if="group.unslotted.length > 0" class="unslotted-area">
-                    <span class="unslotted-title">No Slots Configured (Unslotted):</span>
-                    <div v-for="det in group.unslotted" :key="det.id" class="detector-item-container">
-                      <router-link :to="`/detectors/${det.id}`" class="unslotted-item">
-                        {{ det.label }}
-                      </router-link>
-                      <span class="item-date">{{ formatDate(det.location_updated) }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-  </div>
+ <div class="location-slots-page">
+ <!-- Filters -->
+ <div class="filters-section">
+   <button
+     @click="toggleFilters"
+     :aria-expanded="showFilters"
+     class="filter-toggle-btn"
+     :class="{ 'has-active-filters': hasActiveFilters }"
+   >
+     {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
+       <polyline points="6 9 12 15 18 9"></polyline>
+     </svg>
+   </button>
+   <div v-show="showFilters" class="search-and-filters-popover">
+     <select v-model="filterLocation" class="filter-select">
+       <option value="">All Locations</option>
+       <option v-for="loc in locations" :key="loc.id" :value="loc.id">
+         {{ loc.label }}
+       </option>
+     </select>
+     <select v-model="filterDistrict" class="filter-select">
+       <option value="">All Districts</option>
+       <option v-for="d in districts" :key="d.id" :value="d.id">
+         {{ d.label }}
+       </option>
+     </select>        
+     <select v-model="filterLocationType" class="filter-select">
+       <option value="">All Location Types</option>
+       <option v-for="type in locationTypeChoices" :key="type.value" :value="type.value">
+         {{ type.label }}
+       </option>
+     </select>
+     <select v-model="filterModel" class="filter-select">
+       <option value="">All Models</option>
+       <option v-for="model in detectorModels" :key="model.id" :value="model.id">
+         {{ model.label }}
+       </option>
+     </select>
+     <div class="reset-btn-wrapper">
+       <button @click="resetFilters" class="reset-btn">Reset Filters</button>
+     </div>
+   </div>
+ </div>
+ <div class="page-container">
+   <div class="header-actions">
+     <h1>Location Slots</h1>
+   </div>
+   <!-- Equipment display -->
+   <div class="equipment-display">
+     <div v-if="loading" class="loading">Loading equipment...</div>
+     <div v-else-if="locationGroups.length === 0" class="no-data">
+       {{ emptyMessage }}
+     </div>
+     <template v-else>
+       <div
+         v-for="locGroup in locationGroups"
+         :key="locGroup.location.id"
+         class="location-block"
+       >
+         <div class="location-header">
+           {{ locGroup.location.label }}
+           <span v-if="locGroup.location.district_label" class="district-tag">
+             {{ locGroup.location.district_label }}
+           </span>
+         </div>
+         <!-- Location with no slots/equipment -->
+         <div v-if="locGroup.groups.length === 0" class="location-empty">
+           No detector slots or equipment at this location.
+         </div>
+         <div v-else class="model-rows">
+           <div
+             v-for="group in locGroup.groups"
+             :key="group.modelId"
+             class="model-row"
+           >
+             <!-- Left: model label only -->
+             <div class="row-labels">
+               <span class="model-label">{{ getModelName(group.modelId) }}</span>
+             </div>
+             <!-- Right: slots, overflow, and unslotted -->
+             <div class="slots-and-extras">
+               <!-- Slot boxes (only if slots are configured) -->
+               <div class="slot-boxes" v-if="group.slotCount > 0">
+                 <div
+                   v-for="(det, i) in group.filledBoxes"
+                   :key="'filled-' + i"
+                   class="slot-box filled"
+                 >
+                   <router-link :to="`/detectors/${det.id}`" class="detector-link">
+                     {{ det.label }}
+                   </router-link>
+                   <span class="config-label" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
+                     {{ getConfigurationLabel(det.configuration) }}
+                   </span>
+                   <span class="updated-date">{{ formatDate(det.location_updated) }}</span>
+                 </div>
+                 <div
+                   v-for="n in group.emptyCount"
+                   :key="'empty-' + n"
+                   class="slot-box empty"
+                 >
+                   Empty
+                 </div>
+               </div>
+               <!-- Overflow detectors (only if slots exist but are exceeded) -->
+               <div v-if="group.overflow.length > 0" class="overflow-area">
+                 <span class="overflow-title">Overflow:</span>
+                 <div v-for="det in group.overflow" :key="det.id" class="detector-item-container">
+                   <router-link :to="`/detectors/${det.id}`" class="overflow-item">
+                     {{ det.label }}
+                   </router-link>
+                   <!-- NEW: Configuration Label -->
+                   <span class="item-config" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
+                     {{ getConfigurationLabel(det.configuration) }}
+                   </span>
+                   <span class="item-date">{{ formatDate(det.location_updated) }}</span>
+                 </div>
+               </div>
+               <!-- Unslotted detectors (only if NO slots are configured for this model) -->
+               <div v-if="group.unslotted.length > 0" class="unslotted-area">
+                 <span class="unslotted-title">No Slots Configured (Unslotted):</span>
+                 <div v-for="det in group.unslotted" :key="det.id" class="detector-item-container">
+                   <router-link :to="`/detectors/${det.id}`" class="unslotted-item">
+                     {{ det.label }}
+                   </router-link>
+                   <!-- NEW: Configuration Label -->
+                   <span class="item-config" v-if="getConfigurationLabel(det.configuration)" :title="getConfigurationLabel(det.configuration)">
+                     {{ getConfigurationLabel(det.configuration) }}
+                   </span>
+                   <span class="item-date">{{ formatDate(det.location_updated) }}</span>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       </div>
+     </template>
+   </div>
+ </div>
+</div>
 </template>
 
 <script setup>
@@ -151,9 +152,10 @@ const loading = ref(false);
 const locations = ref([]);
 const districts = ref([]);
 const detectorModels = ref([]);
-const locationTypeChoices = ref([]); // Stores the {value, label} choices from the API
+const locationTypeChoices = ref([]);
 const allSlots = ref([]);
 const allDetectors = ref([]);
+const detectorModelConfigurations = ref([]); // <--- ADDED: State for configurations
 
 // Filters (all client-side)
 const showFilters = ref(false);
@@ -169,12 +171,18 @@ const getModelName = (modelId) => {
   return model ? model.label : 'Unknown Model';
 };
 
+// <--- ADDED: Helper to get configuration label
+const getConfigurationLabel = (configId) => {
+  if (!configId) return '';
+  const config = detectorModelConfigurations.value.find(c => c.id === configId);
+  return config ? config.label : '';
+};
+
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A';
   return dateStr.split('T')[0];
 };
 
-// Gets the raw location type code (e.g., 'ST', 'AP') from the location object
 const getLocationType = (loc) => loc.location_type || '';
 
 const toggleFilters = () => {
@@ -216,23 +224,20 @@ const saveStateToLocalStorage = () => {
 const locationGroups = computed(() => {
   const result = [];
 
-  // 1. Narrow down which locations to show based on location/district/type filters
   const matchingLocations = locations.value.filter(loc => {
     if (filterLocation.value !== '' && loc.id !== filterLocation.value) return false;
     if (filterDistrict.value !== '' && loc.district !== filterDistrict.value) return false;
-    // Compare the raw location type code against the selected choice value
     if (filterLocationType.value !== '' && getLocationType(loc) !== filterLocationType.value) return false;
     return true;
   });
 
-  // 2. Build slot/detector groups for each location
   for (const loc of matchingLocations) {
     const slotsByModel = {};
     for (const slot of allSlots.value) {
       if (slot.location !== loc.id) continue;
       if (filterModel.value !== '' && slot.detector_model !== filterModel.value) continue;
       if (!slotsByModel[slot.detector_model]) slotsByModel[slot.detector_model] = [];
-      slotsByModel[slot.detector_model].push(slot);
+      slotsByModel[slot.detector_model].push(slot); 
     }
 
     const detsByModel = {};
@@ -261,19 +266,16 @@ const locationGroups = computed(() => {
       let unslotted = [];
 
       if (slotCount > 0) {
-        // Slots exist: fill them, put the rest in overflow
         filledBoxes = detectors.slice(0, slotCount);
         overflow = detectors.slice(slotCount);
         emptyCount = Math.max(0, slotCount - filledBoxes.length);
       } else {
-        // No slots exist: all detectors are unslotted
         unslotted = detectors;
       }
 
       groups.push({ modelId, slotCount, filledBoxes, emptyCount, overflow, unslotted });
     }
 
-    // Models with configured slots appear first; unslotted models at the bottom
     groups.sort((a, b) => {
       const aHasSlots = a.slotCount > 0 ? 0 : 1;
       const bHasSlots = b.slotCount > 0 ? 0 : 1;
@@ -281,7 +283,6 @@ const locationGroups = computed(() => {
       return getModelName(a.modelId).localeCompare(getModelName(b.modelId));
     });
 
-    // When a model filter is active, hide locations with nothing matching that model
     if (groups.length === 0 && filterModel.value !== '') continue;
 
     result.push({ location: loc, groups });
@@ -290,7 +291,7 @@ const locationGroups = computed(() => {
   return result;
 });
 
-// ----- Data fetching (everything once; filtering is client-side) -----
+// ----- Data fetching -----
 const fetchAllData = async () => {
   loading.value = true;
   try {
@@ -300,14 +301,16 @@ const fetchAllData = async () => {
       modelsResult,
       slotsResult,
       detectorsResult,
-      locationTypesResult // Fetching the choice representations
+      locationTypesResult,
+      configsResult // <--- ADDED
     ] = await Promise.all([
       get('/api/inventory/locations/'),
       get('/api/inventory/districts/'),
       get('/api/inventory/detectormodels/'),
       get('/api/inventory/locationdetectorslots/'),
       get('/api/inventory/detectors/?exclude_status=DC'),
-      get('/api/inventory/location-types/') // Endpoint returning {value, label}
+      get('/api/inventory/location-types/'),
+      get('/api/inventory/detectormodelconfigurations/') // <--- ADDED
     ]);
 
     if (!locationsResult.ok) throw new Error(`HTTP error! status: ${locationsResult.status}`);
@@ -316,6 +319,7 @@ const fetchAllData = async () => {
     if (!slotsResult.ok) throw new Error(`HTTP error! status: ${slotsResult.status}`);
     if (!detectorsResult.ok) throw new Error(`HTTP error! status: ${detectorsResult.status}`);
     if (!locationTypesResult.ok) throw new Error(`HTTP error! status: ${locationTypesResult.status}`);
+    if (!configsResult.ok) throw new Error(`HTTP error! status: ${configsResult.status}`);
 
     locations.value = locationsResult.data;
     districts.value = districtsResult.data;
@@ -323,6 +327,7 @@ const fetchAllData = async () => {
     allSlots.value = slotsResult.data;
     allDetectors.value = detectorsResult.data;
     locationTypeChoices.value = locationTypesResult.data;
+    detectorModelConfigurations.value = configsResult.data; // <--- ADDED
   } catch (error) {
     console.error('Error loading data:', error);
   } finally {
@@ -330,13 +335,11 @@ const fetchAllData = async () => {
   }
 };
 
-// Save filter state whenever it changes
 watch([filterLocation, filterDistrict, filterLocationType, filterModel], () => {
   saveStateToLocalStorage();
 });
 
 onMounted(async () => {
-  // 1. Restore saved filter state
   const savedState = localStorage.getItem('locationSlotsFilterState');
   if (savedState) {
     try {
@@ -350,7 +353,6 @@ onMounted(async () => {
     }
   }
 
-  // 2. Fetch all data
   await fetchAllData();
 });
 </script>
@@ -545,7 +547,6 @@ h1 {
   font-weight: 600;
 }
 
-/* Wrapper for the right side content */
 .slots-and-extras {
   flex: 1;
   display: flex;
@@ -563,7 +564,7 @@ h1 {
 .slot-box {
   flex: 0 1 calc((100% - 2.5rem) / 6);
   min-width: 110px;
-  min-height: 64px;
+  min-height: 80px; /* Increased slightly to fit config text */
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -607,7 +608,34 @@ h1 {
   color: #42b883;
 }
 
-/* Overflow & Unslotted Areas */
+/* NEW: Configuration Label Styles */
+.config-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #0056b3;
+  margin-top: 0.15rem;
+  display: block;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.item-config {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #0056b3;
+  margin-top: 0.1rem;
+  display: block;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
 .unslotted-area,
 .overflow-area {
   display: flex;
