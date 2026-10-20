@@ -355,14 +355,12 @@ onMounted(async () => {
 
   await fetchAllData();
 });
-</script>
-
 <style scoped>
 .location-slots-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* <-- ADDED: Allows the page to scroll when content overflows */
+  /* REMOVED: overflow-y: auto; (The parent <main> in App.vue handles the scrolling) */
 }
 
 .filters-section {
@@ -565,7 +563,7 @@ h1 {
 .slot-box {
   flex: 0 1 calc((100% - 2.5rem) / 6);
   min-width: 110px;
-  min-height: 80px; /* Increased slightly to fit config text */
+  min-height: 80px; 
   border-radius: 6px;
   display: flex;
   flex-direction: column;
