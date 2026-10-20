@@ -362,6 +362,7 @@ onMounted(async () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* <-- ADDED: Allows the page to scroll when content overflows */
 }
 
 .filters-section {
@@ -608,7 +609,7 @@ h1 {
   color: #42b883;
 }
 
-/* NEW: Configuration Label Styles */
+/* Configuration Label Styles */
 .config-label {
   font-size: 0.7rem;
   font-weight: 500;

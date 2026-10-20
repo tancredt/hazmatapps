@@ -14,7 +14,7 @@
         <div class="dropdown-content">
           <router-link to="/detectors" class="dropdown-item" @click="closeDropdown">List</router-link>
           <router-link to="/faults" class="dropdown-item" @click="closeDropdown">Faults</router-link>
-          <router-link to="/location-slots" class="dropdown-item" @click="closeDropdown">Detector Slots</router-link>
+          <router-link to="/location-slots" class="dropdown-item" @click="closeDropdown">Location Slots</router-link>
           <!-- Added Link -->
           <router-link to="/location-detector-logs" class="dropdown-item" @click="closeDropdown">Location Logs</router-link>
         </div>
