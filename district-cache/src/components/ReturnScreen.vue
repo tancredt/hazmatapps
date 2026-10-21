@@ -96,14 +96,16 @@ const resolveBurnley = async () => {
   }
 }
 
+// Inside ReturnScreen.vue
 const fetchTRDetectors = async () => {
   if (!district.value || !selectedModelId.value) return
   isLoading.value = true
   error.value = null
   selectedIds.value = []
-  
+
   try {
-    const data = await apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
+    // 👇 Strictly fetch Status TR at Location Type TR
+    const data = await apiFetch(`/detector-labels/?status=TR&location__location_type=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
     trDetectors.value = data
   } catch (err) { 
     error.value = 'Failed to fetch in-transit detectors.'

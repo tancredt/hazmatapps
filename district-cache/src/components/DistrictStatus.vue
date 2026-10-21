@@ -130,13 +130,16 @@ const fetchSlotCount = async () => {
   } catch (err) { console.error('Failed to fetch slot count:', err); slotCount.value = 0 }
 }
 
+// Inside DistrictStatus.vue
 const fetchCacheAndTransit = async () => {
   if (!diLocation.value || !selectedModelId.value || !district.value) return
   isLoading.value = true; error.value = null
   try {
-    const [cacheData, transitData] = await Promise.all([ 
-      apiFetch(`/detector-labels/?location=${diLocation.value.id}&detector_model=${selectedModelId.value}`),
-      apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
+    const [cacheData, transitData] = await Promise.all([  
+      // 👇 Detectors in Cache: Status IS, Location Type DI, District = URL District
+      apiFetch(`/detector-labels/?status=IS&location__location_type=DI&location__district=${encodeURIComponent(district.value)}&detector_model=${selectedModelId.value}`),
+      // 👇 Detectors in Transit: Status TR, Location Type TR, District = URL District
+      apiFetch(`/detector-labels/?status=TR&location__location_type=TR&location__district=${encodeURIComponent(district.value)}&detector_model=${selectedModelId.value}`)
     ])
     cacheDetectors.value = cacheData; transitDetectors.value = transitData
   } catch (err) { error.value = 'Failed to fetch detectors.'; console.error(err) } 

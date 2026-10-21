@@ -206,14 +206,17 @@ const fetchSlotCount = async () => {
   }
 }
 
+// Inside RestockScreen.vue
 const fetchCacheAndTransit = async () => {
   if (!district.value || !selectedModelId.value) return
   isLoading.value = true
   error.value = null
   try {
     const [cacheData, transitData] = await Promise.all([
-      apiFetch(`/detector-labels/?location__location_type=DI&location__district=${encodeURIComponent(district.value)}&detector_model=${selectedModelId.value}`),
-      apiFetch(`/detector-labels/?status=TR&detector_model=${selectedModelId.value}&location__district=${encodeURIComponent(district.value)}`)
+      // 👇 Detectors in Cache: Status IS, Location Type DI
+      apiFetch(`/detector-labels/?status=IS&location__location_type=DI&location__district=${encodeURIComponent(district.value)}&detector_model=${selectedModelId.value}`),
+      // 👇 Detectors in Transit: Status TR, Location Type TR
+      apiFetch(`/detector-labels/?status=TR&location__location_type=TR&location__district=${encodeURIComponent(district.value)}&detector_model=${selectedModelId.value}`)
     ])
     cacheDetectors.value = cacheData || []
     transitDetectors.value = transitData || []

@@ -218,6 +218,7 @@ const fetchSlotCounts = async () => {
   }
 }
 
+// Inside SwapScreen.vue
 const fetchDetectors = async () => {
   if (!stationLocation.value || !districtLocation.value || !selectedModelId.value) return
   isLoading.value = true
@@ -226,12 +227,13 @@ const fetchDetectors = async () => {
     await fetchSlotCounts()
     const [stationData, districtData] = await Promise.all([
       apiFetch(`/detector-labels/?location=${stationLocation.value.id}&detector_model=${selectedModelId.value}`),
-      apiFetch(`/detector-labels/?location=${districtLocation.value.id}&detector_model=${selectedModelId.value}`)
+      // 👇 Only fetch In Stock (IS) detectors from the District Cache location
+      apiFetch(`/detector-labels/?status=IS&location=${districtLocation.value.id}&detector_model=${selectedModelId.value}`)
     ])
     stationDetectors.value = stationData
     districtDetectors.value = districtData
   } catch (err) {
-    error.value = 'Failed to fetch detectors.'
+    error.value = 'Failed to fetch detectors.' 
     console.error(err)
   } finally {
     isLoading.value = false
