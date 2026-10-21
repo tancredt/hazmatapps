@@ -294,36 +294,3 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
-.fault-report-edit-page { min-height: 100vh; display: flex; flex-direction: column; }
-.page-container { max-width: 1200px; margin: 1rem auto; padding: 0 2rem; flex: 1; }
-h1 { color: #2c3e50; margin-bottom: 1rem; }
-.form-container { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.fault-report-form { display: flex; flex-direction: column; }
-.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; padding-right: 1rem; }
-.form-group { margin-bottom: 0.5rem; min-width: 0; }
-.form-group.full-width { grid-column: span 2; }
-.divider { grid-column: span 2; height: 1px; background-color: #ccc; margin: 1rem 0; }
-.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333; }
-.form-control { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box; }
-.form-control.readonly { background-color: #f8f9fa; cursor: not-allowed; }
-.form-control:focus { outline: none; border-color: #42b883; box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2); }
-textarea.form-control { resize: vertical; min-height: 80px; }
-.form-actions { display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee; }
-.btn { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
-.btn-primary { background-color: #42b883; color: white; }
-.btn-primary:hover:not(:disabled) { background-color: #36966d; }
-.btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn-secondary { background-color: #6c757d; color: white; }
-.btn-secondary:hover { background-color: #5a6268; }
-.dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.dialog-box { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); text-align: center; max-width: 400px; width: 90%; z-index: 1001; }
-.dialog-box h3 { margin-top: 0; color: #2c3e50; }
-.dialog-actions { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
-@media (max-width: 768px) {
-  .form-grid { grid-template-columns: 1fr; gap: 1rem; }
-  .form-group.full-width { grid-column: span 1; }
-  .page-container { padding: 0 1rem; margin: 1rem auto; }
-  .form-container { padding: 1rem; }
-}
-</style>

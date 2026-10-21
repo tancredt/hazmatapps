@@ -1,20 +1,41 @@
 /* =========================================
-   Global Inventory List Styles
+   1. GLOBAL PAGE LAYOUTS
    ========================================= */
-
-/* --- Page Layout --- */
-.inventory-list-page {
+.inventory-list-page,
+.location-slots-page,
+.location-cylinder-slots-page,
+.faults-page,
+.logs-page,
+.detector-details-page,
+.cylinder-details-page,
+.sensor-details-page,
+.maintenance-edit-page,
+.fault-report-edit-page,
+.sensorslot-edit-page,
+.add-multiple-detectors-page,
+.add-multiple-cylinders-page,
+.add-multiple-sensors-page,
+.update-multiple-cylinders-page,
+.update-multiple-sensors-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.inventory-list-page,
+.faults-page,
+.logs-page {
   background-color: #f4f7f6;
 }
 
+/* =========================================
+   2. PAGE CONTAINERS & HEADERS
+   ========================================= */
 .page-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 1rem 2rem;
-  height: calc(100vh - 70px); /* Adjust if your navbar height differs */
+  height: calc(100vh - 70px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -40,7 +61,9 @@ h1 {
   gap: 0.75rem;
 }
 
-/* --- Buttons --- */
+/* =========================================
+   3. BUTTONS
+   ========================================= */
 .btn {
   padding: 0.5rem 1rem;
   border: none;
@@ -54,20 +77,22 @@ h1 {
   gap: 0.4rem;
   transition: background-color 0.2s ease, opacity 0.2s ease;
 }
-
 .btn-primary { background-color: #42b883; color: white; }
 .btn-primary:hover:not(:disabled) { background-color: #36966d; }
 .btn-secondary { background-color: #6c757d; color: white; }
 .btn-secondary:hover:not(:disabled) { background-color: #5a6268; }
+.btn-danger { background-color: #dc3545; color: white; }
+.btn-danger:hover:not(:disabled) { background-color: #c82333; }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* --- Filters Section --- */
+/* =========================================
+   4. FILTERS SECTION
+   ========================================= */
 .filters-section {
   margin-bottom: 0.5rem;
   position: relative;
   display: inline-block;
 }
-
 .filter-toggle-btn {
   display: flex;
   align-items: center;
@@ -81,11 +106,9 @@ h1 {
   font-size: 0.9rem;
   transition: background-color 0.3s ease;
 }
-
 .filter-toggle-btn:hover { background-color: #36966d; }
 .filter-toggle-btn.has-active-filters { background-color: #e67e22; }
 .filter-toggle-btn.has-active-filters:hover { background-color: #d35400; }
-
 .toggle-icon { transition: transform 0.3s ease; }
 .filter-toggle-btn[aria-expanded="true"] .toggle-icon { transform: rotate(180deg); }
 
@@ -105,7 +128,6 @@ h1 {
   gap: 0.75rem;
   margin-top: 0.25rem;
 }
-
 .search-input, .filter-select, .date-input {
   padding: 0.5rem;
   border: 1px solid #ddd;
@@ -114,19 +136,16 @@ h1 {
   width: 100%;
   box-sizing: border-box;
 }
-
 .search-input:focus, .filter-select:focus, .date-input:focus {
   outline: none;
   border-color: #42b883;
   box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
 }
-
 .date-filter-container { display: flex; flex-direction: column; gap: 0.25rem; }
 .date-label { font-size: 0.85rem; font-weight: 500; color: #495057; }
 .checkbox-container { display: flex; align-items: center; gap: 0.5rem; }
 .checkbox-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: #495057; cursor: pointer; }
 .reset-btn-wrapper { align-self: flex-start; margin-top: 0.5rem; }
-
 .reset-btn {
   padding: 0.5rem 1rem;
   background-color: #dc3545;
@@ -139,7 +158,9 @@ h1 {
 }
 .reset-btn:hover { background-color: #c82333; }
 
-/* --- Table Container --- */
+/* =========================================
+   5. TABLES & DATA GRIDS
+   ========================================= */
 .table-container {
   display: flex;
   flex-direction: column;
@@ -150,15 +171,13 @@ h1 {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-
-.inventory-table {
+.inventory-table, .logs-table, .faults-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
   margin-bottom: 0;
 }
-
-.inventory-table thead th {
+.inventory-table thead th, .logs-table thead th, .faults-table thead th {
   position: sticky;
   top: 0;
   background-color: #f8f9fa;
@@ -173,20 +192,21 @@ h1 {
   padding: 0.75rem 0.5rem;
   text-align: left;
 }
-
-.inventory-table tbody {
+.inventory-table tbody, .logs-table tbody, .faults-table tbody {
   display: block;
   max-height: calc(100vh - 280px);
   overflow-y: auto;
 }
-
-.inventory-table thead, .inventory-table tbody tr {
+.inventory-table thead, .inventory-table tbody tr,
+.logs-table thead, .logs-table tbody tr,
+.faults-table thead, .faults-table tbody tr {
   display: table;
   width: 100%;
   table-layout: fixed;
 }
-
-.inventory-table th, .inventory-table td {
+.inventory-table th, .inventory-table td,
+.logs-table th, .logs-table td,
+.faults-table th, .faults-table td {
   padding: 0.6rem 0.5rem;
   text-align: left;
   border-bottom: 1px solid #eee;
@@ -194,26 +214,26 @@ h1 {
   font-size: 0.9rem;
   vertical-align: middle;
 }
-
-.inventory-table tbody tr:hover { background-color: #f8f9fa; }
+.inventory-table tbody tr:hover, .logs-table tbody tr:hover, .faults-table tbody tr:hover { background-color: #f8f9fa; }
 .inventory-table tbody tr:last-child td { border-bottom: none; }
-
-/* Checkbox column alignment */
 .inventory-table th:first-child, .inventory-table td:first-child {
   text-align: center;
   width: 40px;
 }
-
 .sortable { cursor: pointer; user-select: none; }
 .sortable:hover { background-color: #e9ecef; }
 
 /* --- Links --- */
-.record-link {
+.record-link, .item-link, .cylinder-link, .detector-link, .fault-link, .sensor-slot-link, .maintenance-link, .fault-report-link {
   color: #42b883;
   text-decoration: none;
   font-weight: 500;
 }
-.record-link:hover { text-decoration: underline; color: #36966d; }
+.record-link:hover, .item-link:hover, .cylinder-link:hover, .detector-link:hover, 
+.fault-link:hover, .sensor-slot-link:hover, .maintenance-link:hover, .fault-report-link:hover { 
+  text-decoration: underline; 
+  color: #36966d; 
+}
 
 /* --- Status & Empty States --- */
 .loading, .no-data {
@@ -246,11 +266,9 @@ h1 {
   background-color: #fcfcfc;
   flex-shrink: 0;
 }
-
 .pagination-info { color: #666; font-size: 0.85rem; }
 .pagination-controls { display: flex; align-items: center; gap: 0.75rem; }
 .pagination-controls .page-info { color: #666; font-size: 0.85rem; min-width: 100px; text-align: center; }
-
 .btn-pagination {
   background-color: #6c757d;
   color: white;
@@ -267,10 +285,7 @@ h1 {
 .btn-pagination:hover:not(:disabled) { background-color: #5a6268; }
 .btn-pagination:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.6; }
 
-/* =========================================
-   Specific Table Column Widths
-   ========================================= */
-
+/* --- Specific Table Column Widths --- */
 /* Detectors (10 cols) */
 .inventory-table--detectors th:nth-child(1), .inventory-table--detectors td:nth-child(1) { width: 12%; }
 .inventory-table--detectors th:nth-child(2), .inventory-table--detectors td:nth-child(2) { width: 14%; }
@@ -326,12 +341,338 @@ h1 {
 .inventory-table--faults th:nth-child(6), .inventory-table--faults td:nth-child(6) { width: 18%; }
 
 /* =========================================
-   Responsive Adjustments
+   6. FORMS & EDIT PAGES
+   ========================================= */
+.form-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.form-group {
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+.form-group.full-width { grid-column: span 2; }
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.form-control:focus {
+  outline: none;
+  border-color: #42b883;
+  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
+}
+.form-control.readonly, .form-control:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+textarea.form-control { resize: vertical; min-height: 80px; }
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+/* Form specific helpers */
+.date-pair { grid-column: span 2; }
+.date-row { display: flex; gap: 1rem; width: 100%; }
+.date-field { flex: 1; display: flex; flex-direction: column; }
+.date-field label { margin-bottom: 0.5rem; font-weight: 600; color: #333; }
+.date-field input { flex: 1; }
+.divider { grid-column: span 2; height: 1px; background-color: #ccc; margin: 1rem 0; }
+.form-hint { display: block; margin-top: 0.25rem; color: #6c757d; font-size: 0.875rem; }
+.info-message { margin-bottom: 1.5rem; padding: 0.75rem; background-color: #e7f3ff; border: 1px solid #b8daff; border-radius: 4px; }
+.info-message p { margin: 0; color: #004085; }
+
+/* =========================================
+   7. DIALOGS & MODALS
+   ========================================= */
+.dialog-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.dialog-box {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  z-index: 1001;
+}
+.dialog-box h3 { margin-top: 0; color: #2c3e50; }
+.dialog-actions { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
+
+.error-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  text-align: left;
+}
+.error-item { margin: 0.25rem 0; color: #721c24; font-weight: 500; }
+
+/* =========================================
+   8. LOCATION SLOTS DISPLAY
+   ========================================= */
+.equipment-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 0.5rem;
+}
+.location-block {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.location-header {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #007bff;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.district-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6c757d;
+  background-color: #f1f3f5;
+  border-radius: 12px;
+  padding: 0.15rem 0.6rem;
+}
+.location-empty { font-style: italic; color: #999; padding: 0.5rem 0; font-size: 0.9rem; }
+
+.model-rows { display: flex; flex-direction: column; gap: 0.75rem; }
+.model-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-top: 1px solid #f1f1f1;
+  padding-top: 0.75rem;
+}
+.model-row:first-child { border-top: none; padding-top: 0; }
+
+.row-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 180px;
+  max-width: 200px;
+}
+.model-label { color: #495057; font-size: 0.9rem; font-weight: 600; word-break: break-word; }
+
+.slots-and-extras { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.slot-boxes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.slot-box {
+  flex: 0 1 calc((100% - 2.5rem) / 6);
+  min-width: 110px;
+  min-height: 64px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  text-align: center;
+}
+.slot-box.filled { background-color: #eafaf2; border: 2px solid #42b883; color: #2c3e50; }
+.slot-box.empty { background-color: #fdecea; border: 2px solid #dc3545; color: #dc3545; }
+
+.updated-date, .item-date {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #6c757d;
+  margin-top: 0.25rem;
+  display: block;
+  line-height: 1;
+}
+
+.overflow-area, .unslotted-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #e9ecef;
+  align-items: flex-start;
+}
+.overflow-title, .unslotted-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  width: 100%;
+  margin-bottom: -0.25rem;
+}
+.unslotted-title { color: #6c757d; }
+.overflow-title { color: #dc3545; }
+
+.item-container { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+
+.unslotted-item {
+  background-color: #f8f9fa;
+  border: 2px solid #6c757d;
+  color: #495057;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.unslotted-item:hover { background-color: #e9ecef; color: #007bff; }
+
+.overflow-item {
+  background-color: #fdecea;
+  border: 2px solid #dc3545;
+  color: #dc3545;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.overflow-item:hover { background-color: #f8d7da; }
+
+/* Configuration Labels (Detectors) */
+.config-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #0056b3;
+  margin-top: 0.15rem;
+  display: block;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.item-config {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #0056b3;
+  margin-top: 0.1rem;
+  display: block;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* =========================================
+   9. SPECIALIZED COMPONENTS
+   ========================================= */
+/* Accordions (Detector Details) */
+.accordion { border: 1px solid #ddd; border-radius: 4px; overflow: hidden; margin-bottom: 1rem; }
+.accordion-header { background-color: #f8f9fa; padding: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.accordion-header h3 { margin: 0; font-size: 1rem; color: #2c3e50; }
+.accordion-icon { font-size: 1.2rem; font-weight: bold; }
+.accordion-content { padding: 1rem; background-color: white; }
+
+/* Summary Tables (Inside Accordions) */
+.summary-table { width: 100%; border-collapse: collapse; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: 8px; overflow: hidden; margin-top: 0.5rem; }
+.summary-table th, .summary-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; font-size: 0.9rem; }
+.summary-table th { background-color: #f8f9fa; font-weight: 600; position: sticky; top: 0; }
+.summary-table tbody tr:hover { background-color: rgba(0,0,0,0.03); }
+
+/* Sensor Sections (Green/Orange/Red) */
+.sensor-section { border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem; }
+.sensor-section:last-child { margin-bottom: 0; }
+.sensor-section-title { margin: 0 0 0.5rem 0; font-size: 0.9rem; font-weight: 700; }
+.sensor-section-green { background-color: #d4edda; border: 1px solid #a3d9a5; }
+.sensor-section-green .sensor-section-title { color: #155724; }
+.sensor-section-green .summary-table th { background-color: #b7dfb9; }
+.sensor-section-orange { background-color: #fff3cd; border: 1px solid #ffc107; }
+.sensor-section-orange .sensor-section-title { color: #856404; }
+.sensor-section-orange .summary-table th { background-color: #ffe69c; }
+.sensor-section-red { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+.sensor-section-red .sensor-section-title { color: #721c24; }
+.sensor-section-red .summary-table th { background-color: #f1b0b7; }
+.no-sensor-cell { color: #888; font-style: italic; }
+
+/* Multi-Select Dropdown (Maintenance) */
+.multi-select-dropdown { position: relative; width: 100%; }
+.multi-select-input { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer; min-height: 44px; }
+.multi-select-input.active { border-color: #42b883; box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2); }
+.multi-select-input .placeholder { color: #999; font-style: italic; }
+.multi-select-input .selected-tasks { color: #333; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi-select-options { position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background-color: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 100; padding: 0.5rem 0; }
+.checkbox-option { display: flex; align-items: center; padding: 0.5rem 1rem; cursor: pointer; }
+.checkbox-option:hover { background-color: #f5f5f5; }
+.checkbox-option input[type="checkbox"] { margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; }
+.checkbox-option span { flex: 1; color: #333; }
+
+/* Searchable Select (Sensor Details) */
+.searchable-select-wrapper { display: flex; align-items: center; gap: 0.5rem; }
+.searchable-select { flex: 1; position: relative; }
+.searchable-select-options { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.searchable-select-option { padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.9rem; }
+.searchable-select-option:hover { background-color: #f0f0f0; }
+.searchable-select-option.no-results { color: #888; cursor: default; font-style: italic; }
+.clear-detector-option { color: #dc3545; border-bottom: 1px solid #eee; font-style: italic; }
+.clear-detector-option:hover { background-color: #f8d7da; }
+
+/* Progress Bar (Add Multiple) */
+.progress-bar { width: 100%; height: 20px; background-color: #e9ecef; border-radius: 10px; overflow: hidden; margin: 1rem 0; }
+.progress-fill { height: 100%; background-color: #42b883; transition: width 0.3s ease; }
+
+/* =========================================
+   10. RESPONSIVE ADJUSTMENTS
    ========================================= */
 @media (max-width: 768px) {
   .page-container { padding: 0 1rem; margin-top: 1rem; height: auto; overflow: visible; }
   .header-actions { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
   .action-buttons { width: 100%; flex-wrap: wrap; }
   .search-and-filters-popover { width: 100%; min-width: unset; }
-  .inventory-table tbody { max-height: unset; overflow-y: visible; }
+  .inventory-table tbody, .logs-table tbody, .faults-table tbody { max-height: unset; overflow-y: visible; }
+  
+  .form-grid { grid-template-columns: 1fr; }
+  .form-container { padding: 1rem; }
+  
+  .model-row { flex-direction: column; align-items: flex-start; }
+  .row-labels { max-width: 100%; }
 }
