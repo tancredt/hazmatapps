@@ -737,6 +737,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  width: 100%;
 }
 
 .fixed-box {
@@ -747,20 +748,50 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
+/* LEFT SIDE: Strictly fixed pixel width */
 .fixed-box.left {
-  flex: 0 0 450px;
+  flex: 0 0 450px; 
+  min-width: 450px;
+  max-width: 450px;
   overflow-y: auto;
 }
 
+/* RIGHT SIDE: Locked to remaining space, prevents content from expanding it */
 .fixed-box.right {
-  flex: 1;
+  flex: 1 1 0; 
+  min-width: 0; 
+  width: 0; /* Crucial: forces the flex item to not grow based on content */
   overflow-y: auto;
+  overflow-x: hidden; 
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  min-width: 0; 
+}
+
+/* Prevent inner elements from breaking the fixed widths */
+.fixed-box.right .accordion {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.fixed-box.right .accordion-content {
+  overflow-x: hidden;
+}
+
+.fixed-box.right .table-container {
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto; /* Adds horizontal scroll to tables if they exceed the fixed width */
+}
+
+.fixed-box.right .summary-table {
+  width: 100%;
+  table-layout: fixed; /* Forces table columns to respect the container width */
+  word-wrap: break-word;
 }
 
 /* Form Rows (Side-by-side fields) */
