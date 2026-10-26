@@ -754,16 +754,18 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 /* LEFT SIDE: Strictly fixed pixel width */
 .fixed-box.left {
   flex: 0 0 450px; 
+  width: 450px;
   min-width: 450px;
   max-width: 450px;
   overflow-y: auto;
 }
 
-/* RIGHT SIDE: Locked to remaining space, prevents content from expanding it */
+/* RIGHT SIDE: Strictly fixed pixel width (850px perfectly fits the remaining space in the 1400px container) */
 .fixed-box.right {
-  flex: 1 1 0; 
-  min-width: 0; 
-  width: 0; /* Crucial: forces the flex item to not grow based on content */
+  flex: 0 0 850px; 
+  width: 850px;
+  min-width: 850px;
+  max-width: 850px;
   overflow-y: auto;
   overflow-x: hidden; 
   display: flex;
@@ -785,12 +787,12 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .fixed-box.right .table-container {
   width: 100%;
   box-sizing: border-box;
-  overflow-x: auto; /* Adds horizontal scroll to tables if they exceed the fixed width */
+  overflow-x: auto; /* Adds horizontal scroll to tables if they exceed the 850px width */
 }
 
 .fixed-box.right .summary-table {
   width: 100%;
-  table-layout: fixed; /* Forces table columns to respect the container width */
+  table-layout: fixed; /* Forces table columns to respect the 850px container width */
   word-wrap: break-word;
 }
 
