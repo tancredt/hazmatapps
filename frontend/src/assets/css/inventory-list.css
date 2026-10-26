@@ -389,7 +389,20 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   padding-top: 1rem;
   border-top: 1px solid #eee;
 }
+/* =========================================
+FORM ROWS (SIDE-BY-SIDE FIELDS)
+========================================= */
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
 
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0; /* Remove default bottom margin since the row handles it */
+  min-width: 0; /* Prevents input overflow in flex containers */
+}
 /* Form specific helpers */
 .date-pair { grid-column: span 2; }
 .date-row { display: flex; gap: 1rem; width: 100%; }
