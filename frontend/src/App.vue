@@ -23,17 +23,24 @@ onMounted(async () => {
 </script>
 
 <style>
+/* Lock the viewport to prevent window-level scrolling */
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; 
+}
+
 .app-container {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 main {
   flex: 1;
-  padding-top: 50px;
-  padding-bottom: 0.25rem;
-  overflow: auto;
-  max-height: calc(100vh - 50px);
+  padding-top: 50px; /* Space for the fixed Navbar */
+  overflow-y: auto; /* Allows scrolling inside the main area if content overflows */
+  box-sizing: border-box;
 }
 </style>
