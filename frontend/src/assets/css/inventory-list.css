@@ -1,6 +1,6 @@
 /* =========================================
-   1. GLOBAL PAGE LAYOUTS
-   ========================================= */
+1. GLOBAL PAGE LAYOUTS
+========================================= */
 .inventory-list-page,
 .location-slots-page,
 .location-cylinder-slots-page,
@@ -29,18 +29,16 @@
 }
 
 /* =========================================
-   2. PAGE CONTAINERS & HEADERS
-   ========================================= */
+2. PAGE CONTAINERS & HEADERS
+========================================= */
 .page-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 1rem 2rem;
-  /* Removed: height: calc(100vh - 70px); */
-  /* Removed: overflow: hidden; */
+  height: calc(100vh - 70px);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  flex: 1; /* Allows it to grow and fill the available space in main */
-  min-height: 0; /* Crucial for flex children to allow inner scrolling */
 }
 
 h1 {
@@ -64,8 +62,8 @@ h1 {
 }
 
 /* =========================================
-   3. BUTTONS
-   ========================================= */
+3. BUTTONS
+========================================= */
 .btn {
   padding: 0.5rem 1rem;
   border: none;
@@ -79,6 +77,7 @@ h1 {
   gap: 0.4rem;
   transition: background-color 0.2s ease, opacity 0.2s ease;
 }
+
 .btn-primary { background-color: #42b883; color: white; }
 .btn-primary:hover:not(:disabled) { background-color: #36966d; }
 .btn-secondary { background-color: #6c757d; color: white; }
@@ -88,13 +87,14 @@ h1 {
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* =========================================
-   4. FILTERS SECTION
-   ========================================= */
+4. FILTERS SECTION
+========================================= */
 .filters-section {
   margin-bottom: 0.5rem;
   position: relative;
   display: inline-block;
 }
+
 .filter-toggle-btn {
   display: flex;
   align-items: center;
@@ -108,6 +108,7 @@ h1 {
   font-size: 0.9rem;
   transition: background-color 0.3s ease;
 }
+
 .filter-toggle-btn:hover { background-color: #36966d; }
 .filter-toggle-btn.has-active-filters { background-color: #e67e22; }
 .filter-toggle-btn.has-active-filters:hover { background-color: #d35400; }
@@ -130,6 +131,7 @@ h1 {
   gap: 0.75rem;
   margin-top: 0.25rem;
 }
+
 .search-input, .filter-select, .date-input {
   padding: 0.5rem;
   border: 1px solid #ddd;
@@ -138,16 +140,19 @@ h1 {
   width: 100%;
   box-sizing: border-box;
 }
+
 .search-input:focus, .filter-select:focus, .date-input:focus {
   outline: none;
   border-color: #42b883;
   box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
 }
+
 .date-filter-container { display: flex; flex-direction: column; gap: 0.25rem; }
 .date-label { font-size: 0.85rem; font-weight: 500; color: #495057; }
 .checkbox-container { display: flex; align-items: center; gap: 0.5rem; }
 .checkbox-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: #495057; cursor: pointer; }
 .reset-btn-wrapper { align-self: flex-start; margin-top: 0.5rem; }
+
 .reset-btn {
   padding: 0.5rem 1rem;
   background-color: #dc3545;
@@ -158,11 +163,12 @@ h1 {
   font-size: 0.85rem;
   transition: background-color 0.2s;
 }
+
 .reset-btn:hover { background-color: #c82333; }
 
 /* =========================================
-   5. TABLES & DATA GRIDS
-   ========================================= */
+5. TABLES & DATA GRIDS
+========================================= */
 .table-container {
   display: flex;
   flex-direction: column;
@@ -179,18 +185,28 @@ h1 {
   border-collapse: collapse;
   table-layout: fixed;
   margin-bottom: 0;
-  flex: 1; /* Take remaining space in .table-container */
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+}
+
+.inventory-table thead th, .logs-table thead th, .faults-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  word-wrap: break-word;
+  z-index: 10;
+  border-bottom: 2px solid #dee2e6;
+  padding: 0.75rem 0.5rem;
+  text-align: left;
 }
 
 .inventory-table tbody, .logs-table tbody, .faults-table tbody {
   display: block;
-  flex: 1; /* Fill remaining space */
-  overflow-y: auto; /* Scroll only the table body */
-  min-height: 0;
-  /* Removed: max-height: calc(100vh - 280px); */
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
 }
 
 .inventory-table thead, .inventory-table tbody tr,
@@ -200,6 +216,7 @@ h1 {
   width: 100%;
   table-layout: fixed;
 }
+
 .inventory-table th, .inventory-table td,
 .logs-table th, .logs-table td,
 .faults-table th, .faults-table td {
@@ -210,12 +227,15 @@ h1 {
   font-size: 0.9rem;
   vertical-align: middle;
 }
+
 .inventory-table tbody tr:hover, .logs-table tbody tr:hover, .faults-table tbody tr:hover { background-color: #f8f9fa; }
 .inventory-table tbody tr:last-child td { border-bottom: none; }
+
 .inventory-table th:first-child, .inventory-table td:first-child {
   text-align: center;
   width: 40px;
 }
+
 .sortable { cursor: pointer; user-select: none; }
 .sortable:hover { background-color: #e9ecef; }
 
@@ -225,10 +245,11 @@ h1 {
   text-decoration: none;
   font-weight: 500;
 }
-.record-link:hover, .item-link:hover, .cylinder-link:hover, .detector-link:hover, 
-.fault-link:hover, .sensor-slot-link:hover, .maintenance-link:hover, .fault-report-link:hover { 
-  text-decoration: underline; 
-  color: #36966d; 
+
+.record-link:hover, .item-link:hover, .cylinder-link:hover, .detector-link:hover,
+.fault-link:hover, .sensor-slot-link:hover, .maintenance-link:hover, .fault-report-link:hover {
+  text-decoration: underline;
+  color: #36966d;
 }
 
 /* --- Status & Empty States --- */
@@ -262,9 +283,11 @@ h1 {
   background-color: #fcfcfc;
   flex-shrink: 0;
 }
+
 .pagination-info { color: #666; font-size: 0.85rem; }
 .pagination-controls { display: flex; align-items: center; gap: 0.75rem; }
 .pagination-controls .page-info { color: #666; font-size: 0.85rem; min-width: 100px; text-align: center; }
+
 .btn-pagination {
   background-color: #6c757d;
   color: white;
@@ -278,21 +301,22 @@ h1 {
   justify-content: center;
   transition: background-color 0.2s;
 }
+
 .btn-pagination:hover:not(:disabled) { background-color: #5a6268; }
 .btn-pagination:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.6; }
 
 /* --- Specific Table Column Widths --- */
 /* Detectors (10 cols) */
 .inventory-table--detectors th:nth-child(1), .inventory-table--detectors td:nth-child(1) { width: 12%; } /* Label */
-.inventory-table--detectors th:nth-child(2), .inventory-table--detectors td:nth-child(2) { width: 10%; } /* Serial (Narrower) */
-.inventory-table--detectors th:nth-child(3), .inventory-table--detectors td:nth-child(3) { width: 10%; } /* Model (Narrower) */
-.inventory-table--detectors th:nth-child(4), .inventory-table--detectors td:nth-child(4) { width: 10%; } /* Location (Narrower) */
+.inventory-table--detectors th:nth-child(2), .inventory-table--detectors td:nth-child(2) { width: 10%; } /* Serial */
+.inventory-table--detectors th:nth-child(3), .inventory-table--detectors td:nth-child(3) { width: 10%; } /* Model */
+.inventory-table--detectors th:nth-child(4), .inventory-table--detectors td:nth-child(4) { width: 10%; } /* Location */
 .inventory-table--detectors th:nth-child(5), .inventory-table--detectors td:nth-child(5) { width: 10%; } /* District */
 .inventory-table--detectors th:nth-child(6), .inventory-table--detectors td:nth-child(6) { width: 9%; }  /* Status */
 .inventory-table--detectors th:nth-child(7), .inventory-table--detectors td:nth-child(7) { width: 12%; } /* Configuration */
-.inventory-table--detectors th:nth-child(8), .inventory-table--detectors td:nth-child(8) { width: 5%; }  /* Firmware (Narrower) */
+.inventory-table--detectors th:nth-child(8), .inventory-table--detectors td:nth-child(8) { width: 5%; }  /* Firmware */
 .inventory-table--detectors th:nth-child(9), .inventory-table--detectors td:nth-child(9) { width: 8%; }  /* Purchase Date */
-.inventory-table--detectors th:nth-child(10), .inventory-table--detectors td:nth-child(10) { width: 14%; } /* Loc. Updated (Wider) */
+.inventory-table--detectors th:nth-child(10), .inventory-table--detectors td:nth-child(10) { width: 14%; } /* Loc. Updated */
 
 /* Cylinders (12 cols) */
 .inventory-table--cylinders th:nth-child(1), .inventory-table--cylinders td:nth-child(1) { width: 3%; }
@@ -337,31 +361,36 @@ h1 {
 .inventory-table--faults th:nth-child(6), .inventory-table--faults td:nth-child(6) { width: 18%; }
 
 /* =========================================
-   6. FORMS & EDIT PAGES
-   ========================================= */
+6. FORMS & EDIT PAGES
+========================================= */
 .form-container {
   background: white;
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+
 .form-group {
   margin-bottom: 1rem;
   min-width: 0;
 }
+
 .form-group.full-width { grid-column: span 2; }
+
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
   color: #333;
 }
+
 .form-control {
   width: 100%;
   padding: 0.75rem;
@@ -370,16 +399,19 @@ h1 {
   font-size: 1rem;
   box-sizing: border-box;
 }
+
 .form-control:focus {
   outline: none;
   border-color: #42b883;
   box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
 }
+
 .form-control.readonly, .form-control:disabled {
   background-color: #f8f9fa;
   cursor: not-allowed;
   opacity: 0.7;
 }
+
 textarea.form-control { resize: vertical; min-height: 80px; }
 
 .form-actions {
@@ -389,20 +421,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   padding-top: 1rem;
   border-top: 1px solid #eee;
 }
-/* =========================================
-FORM ROWS (SIDE-BY-SIDE FIELDS)
-========================================= */
-.form-row {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
 
-.form-row .form-group {
-  flex: 1;
-  margin-bottom: 0; /* Remove default bottom margin since the row handles it */
-  min-width: 0; /* Prevents input overflow in flex containers */
-}
 /* Form specific helpers */
 .date-pair { grid-column: span 2; }
 .date-row { display: flex; gap: 1rem; width: 100%; }
@@ -415,8 +434,8 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
 .info-message p { margin: 0; color: #004085; }
 
 /* =========================================
-   7. DIALOGS & MODALS
-   ========================================= */
+7. DIALOGS & MODALS
+========================================= */
 .dialog-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -427,6 +446,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   align-items: center;
   z-index: 1000;
 }
+
 .dialog-box {
   background: white;
   padding: 2rem;
@@ -437,6 +457,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   width: 90%;
   z-index: 1001;
 }
+
 .dialog-box h3 { margin-top: 0; color: #2c3e50; }
 .dialog-actions { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
 
@@ -450,11 +471,12 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   border-radius: 4px;
   text-align: left;
 }
+
 .error-item { margin: 0.25rem 0; color: #721c24; font-weight: 500; }
 
 /* =========================================
-   8. LOCATION SLOTS DISPLAY
-   ========================================= */
+8. LOCATION SLOTS DISPLAY
+========================================= */
 .equipment-display {
   display: flex;
   flex-direction: column;
@@ -464,12 +486,14 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   min-height: 0;
   padding-right: 0.5rem;
 }
+
 .location-block {
   background: white;
   border-radius: 8px;
   padding: 1rem 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
 .location-header {
   font-size: 1.1rem;
   font-weight: 700;
@@ -481,6 +505,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   align-items: center;
   gap: 0.5rem;
 }
+
 .district-tag {
   font-size: 0.75rem;
   font-weight: 600;
@@ -489,9 +514,10 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   border-radius: 12px;
   padding: 0.15rem 0.6rem;
 }
-.location-empty { font-style: italic; color: #999; padding: 0.5rem 0; font-size: 0.9rem; }
 
+.location-empty { font-style: italic; color: #999; padding: 0.5rem 0; font-size: 0.9rem; }
 .model-rows { display: flex; flex-direction: column; gap: 0.75rem; }
+
 .model-row {
   display: flex;
   align-items: flex-start;
@@ -500,6 +526,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   border-top: 1px solid #f1f1f1;
   padding-top: 0.75rem;
 }
+
 .model-row:first-child { border-top: none; padding-top: 0; }
 
 .row-labels {
@@ -509,10 +536,11 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   min-width: 180px;
   max-width: 200px;
 }
-.model-label { color: #495057; font-size: 0.9rem; font-weight: 600; word-break: break-word; }
 
+.model-label { color: #495057; font-size: 0.9rem; font-weight: 600; word-break: break-word; }
 .slots-and-extras { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
 .slot-boxes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
 .slot-box {
   flex: 0 1 calc((100% - 2.5rem) / 6);
   min-width: 110px;
@@ -528,6 +556,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   padding: 0.5rem;
   text-align: center;
 }
+
 .slot-box.filled { background-color: #eafaf2; border: 2px solid #42b883; color: #2c3e50; }
 .slot-box.empty { background-color: #fdecea; border: 2px solid #dc3545; color: #dc3545; }
 
@@ -549,6 +578,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   border-top: 1px dashed #e9ecef;
   align-items: flex-start;
 }
+
 .overflow-title, .unslotted-title {
   font-size: 0.8rem;
   font-weight: 700;
@@ -556,10 +586,16 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   width: 100%;
   margin-bottom: -0.25rem;
 }
+
 .unslotted-title { color: #6c757d; }
 .overflow-title { color: #dc3545; }
 
-.item-container { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+.item-container, .detector-item-container, .cylinder-item-container { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 0.15rem; 
+}
 
 .unslotted-item {
   background-color: #f8f9fa;
@@ -571,6 +607,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   font-weight: 600;
   text-decoration: none;
 }
+
 .unslotted-item:hover { background-color: #e9ecef; color: #007bff; }
 
 .overflow-item {
@@ -583,6 +620,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   font-weight: 600;
   text-decoration: none;
 }
+
 .overflow-item:hover { background-color: #f8d7da; }
 
 /* Configuration Labels (Detectors) */
@@ -599,6 +637,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
   white-space: nowrap;
   text-align: center;
 }
+
 .item-config {
   font-size: 0.75rem;
   font-weight: 500;
@@ -613,8 +652,8 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
 }
 
 /* =========================================
-   9. SPECIALIZED COMPONENTS
-   ========================================= */
+9. SPECIALIZED COMPONENTS
+========================================= */
 /* Accordions (Detector Details) */
 .accordion { border: 1px solid #ddd; border-radius: 4px; overflow: hidden; margin-bottom: 1rem; }
 .accordion-header { background-color: #f8f9fa; padding: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
@@ -632,15 +671,19 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
 .sensor-section { border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem; }
 .sensor-section:last-child { margin-bottom: 0; }
 .sensor-section-title { margin: 0 0 0.5rem 0; font-size: 0.9rem; font-weight: 700; }
+
 .sensor-section-green { background-color: #d4edda; border: 1px solid #a3d9a5; }
 .sensor-section-green .sensor-section-title { color: #155724; }
 .sensor-section-green .summary-table th { background-color: #b7dfb9; }
+
 .sensor-section-orange { background-color: #fff3cd; border: 1px solid #ffc107; }
 .sensor-section-orange .sensor-section-title { color: #856404; }
 .sensor-section-orange .summary-table th { background-color: #ffe69c; }
+
 .sensor-section-red { background-color: #f8d7da; border: 1px solid #f5c6cb; }
 .sensor-section-red .sensor-section-title { color: #721c24; }
 .sensor-section-red .summary-table th { background-color: #f1b0b7; }
+
 .no-sensor-cell { color: #888; font-style: italic; }
 
 /* Multi-Select Dropdown (Maintenance) */
@@ -649,6 +692,7 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
 .multi-select-input.active { border-color: #42b883; box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2); }
 .multi-select-input .placeholder { color: #999; font-style: italic; }
 .multi-select-input .selected-tasks { color: #333; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .multi-select-options { position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background-color: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 100; padding: 0.5rem 0; }
 .checkbox-option { display: flex; align-items: center; padding: 0.5rem 1rem; cursor: pointer; }
 .checkbox-option:hover { background-color: #f5f5f5; }
@@ -670,23 +714,22 @@ FORM ROWS (SIDE-BY-SIDE FIELDS)
 .progress-fill { height: 100%; background-color: #42b883; transition: width 0.3s ease; }
 
 /* =========================================
-   10. RESPONSIVE ADJUSTMENTS
-   ========================================= */
+10. RESPONSIVE ADJUSTMENTS
+========================================= */
 @media (max-width: 768px) {
   .page-container { padding: 0 1rem; margin-top: 1rem; height: auto; overflow: visible; }
   .header-actions { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
   .action-buttons { width: 100%; flex-wrap: wrap; }
   .search-and-filters-popover { width: 100%; min-width: unset; }
   .inventory-table tbody, .logs-table tbody, .faults-table tbody { max-height: unset; overflow-y: visible; }
-  
   .form-grid { grid-template-columns: 1fr; }
   .form-container { padding: 1rem; }
-  
   .model-row { flex-direction: column; align-items: flex-start; }
   .row-labels { max-width: 100%; }
 }
+
 /* =========================================
-DETAIL PAGE LAYOUTS (e.g., Detector Details)
+11. DETAIL PAGE LAYOUTS (e.g., Detector Details)
 ========================================= */
 .layout-container {
   display: flex;
@@ -707,14 +750,158 @@ DETAIL PAGE LAYOUTS (e.g., Detector Details)
 }
 
 .fixed-box.left {
-  flex: 0 0 450px; /* Adjust width as needed */
-  overflow-y: auto; /* Scroll the form if it's too long */
+  flex: 0 0 450px;
+  overflow-y: auto;
 }
 
 .fixed-box.right {
   flex: 1;
-  overflow-y: auto; /* Scroll the accordions */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-width: 0; 
+}
+
+/* Form Rows (Side-by-side fields) */
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+/* Status Highlights */
+.status-resolved { color: #198754; font-weight: 600; }
+.status-open { color: #dc3545; font-weight: 600; }
+
+/* Add Buttons inside Accordions */
+.add-fault-button, .add-maintenance-button {
+  margin-top: 1rem;
+  text-align: right;
+}
+
+/* Sensor Select Dialog */
+.sensor-select-dialog {
+  max-width: 600px;
+  text-align: left;
+}
+.dialog-subtitle {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.sensor-list-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+.no-sensors-msg {
+  padding: 1rem;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+}
+.sensor-option {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.sensor-option:hover { background-color: #f8f9fa; }
+.sensor-option.selected {
+  background-color: #e7f3ff;
+  border-left: 4px solid #0d6efd;
+}
+.sensor-option-serial { font-weight: 600; color: #2c3e50; }
+.sensor-option-type { font-size: 0.85rem; color: #666; }
+.sensor-option-dates { font-size: 0.8rem; color: #888; margin-top: 0.25rem; }
+
+/* =========================================
+12. ADD MULTIPLE DETECTORS STYLES
+========================================= */
+.common-fields, .individual-detectors {
+  margin-bottom: 1.5rem;
+}
+.common-fields h2, .individual-detectors h2 {
+  font-size: 1.1rem;
+  color: #495057;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+.detector-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.detector-line {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+.detector-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.serial-with-remove {
+  display: flex;
+  flex-direction: column;
+}
+.serial-input-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.serial-input-container .form-control { flex: 1; }
+
+.remove-btn {
+  background: transparent;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  border-radius: 4px;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.remove-btn:hover {
+  background-color: #dc3545;
+  color: white;
+}
+.add-detector-button {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+/* =========================================
+13. MISC HELPERS & ALIASES
+========================================= */
+/* Empty grid cell spacer */
+.empty-grid-cell {
+  /* Intentionally empty, used to skip grid spaces */
+}
+
+/* Maintenance Dropdown Arrow */
+.dropdown-arrow {
+  transition: transform 0.2s;
+}
+.multi-select-input.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Form specific class hooks (ensures no weird overrides happen) */
+.sensor-form, .cylinder-form, .fault-report-form, 
+.sensorslot-form, .maintenance-form, .add-multiple-detectors-form {
+  width: 100%;
 }
