@@ -112,13 +112,13 @@
                     <tbody>
                       <tr v-for="slot in matchedSlots" :key="'slot-' + slot.id">
                         <td>
-                          <!-- UPDATED: CLICKABLE GAS LINK -->
-                          <a href="#" @click.prevent="handleGasLinkClick(slot)" class="sensor-slot-link">
+                          <!-- UPDATED: Replaced <a> with <router-link> -->
+                          <router-link to="#" @click.prevent="handleGasLinkClick(slot)" class="sensor-slot-link">
                             {{ getSensorGasDisplay(slot.sensorgas) }}
-                          </a>
+                          </router-link>
                         </td>
                         <td v-if="slot.matchedSensor">
-                          <router-link :to="`/sensors/${slot.matchedSensor.id}`" class="sensor-slot-link">
+                          <router-link :to="`/sensors/${slot.matchedSensor.id}?from=detector&detectorId=${route.params.id}`" class="sensor-slot-link">
                             {{ slot.matchedSensor.serial || 'N/A' }}
                           </router-link>
                         </td>
@@ -137,6 +137,7 @@
                   </table>
                 </div>
               </div>
+
               <!-- ORANGE: Leftover Operational Sensors (no matching slot) -->
               <div class="sensor-section sensor-section-orange" v-if="leftoverOperationalSensors.length > 0">
                 <h4 class="sensor-section-title">Unassigned Operational Sensors</h4>
@@ -154,7 +155,7 @@
                       <tr v-for="sensor in leftoverOperationalSensors" :key="'leftover-' + sensor.id">
                         <td>{{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}</td>
                         <td>
-                          <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
+                          <router-link :to="`/sensors/${sensor.id}?from=detector&detectorId=${route.params.id}`" class="sensor-slot-link">
                             {{ sensor.serial || 'N/A' }}
                           </router-link>
                         </td>
@@ -169,6 +170,7 @@
                   </table>
                 </div>
               </div>
+
               <!-- RED: Decommissioned Sensors -->
               <div class="sensor-section sensor-section-red" v-if="decommissionedSensors.length > 0">
                 <h4 class="sensor-section-title">Decommissioned Sensors</h4>
@@ -186,7 +188,7 @@
                       <tr v-for="sensor in decommissionedSensors" :key="'decom-' + sensor.id">
                         <td>{{ getSensorGasDisplay(getSensorGas(sensor.sensor_type)) }}</td>
                         <td>
-                          <router-link :to="`/sensors/${sensor.id}`" class="sensor-slot-link">
+                          <router-link :to="`/sensors/${sensor.id}?from=detector&detectorId=${route.params.id}`" class="sensor-slot-link">
                             {{ sensor.serial || 'N/A' }}
                           </router-link>
                         </td>
@@ -443,7 +445,7 @@ const locationHistory = ref([]);
 
 // Sensor Select Dialog State
 const showSensorSelectDialog = ref(false);
-const selectedSlotGas = ref(''); 
+const selectedSlotGas = ref('');  
 const availableSensorsForSlot = ref([]);
 const selectedSensorForSlot = ref(null);
 
@@ -604,8 +606,8 @@ const closeErrorDialog = () => { showErrorDialog.value = false; errorMessages.va
 const handleGasLinkClick = (slot) => {
   if (slot.matchedSensor) {
     // If an operational sensor is already assigned to this slot, 
-    // navigate directly to its details page.
-    router.push(`/sensors/${slot.matchedSensor.id}`);
+    // navigate directly to its details page (with smart return params).
+    router.push(`/sensors/${slot.matchedSensor.id}?from=detector&detectorId=${route.params.id}`);
   } else {
     // If the slot is empty, open the dialog to select an In-Stock sensor.
     openSensorSelectDialog(slot.sensorgas);
@@ -650,7 +652,7 @@ const confirmSensorSelection = () => {
   if (selectedSensorForSlot.value) {
     router.push({
       path: `/sensors/${selectedSensorForSlot.value}`,
-      query: { detectorId: route.params.id }
+      query: { detectorId: route.params.id, from: 'detector' }
     });
     showSensorSelectDialog.value = false;
   }
@@ -679,7 +681,7 @@ const saveDetector = async () => {
     if (isNewDetector.value) {
       result = await post('/api/inventory/detectors/', detectorData);
     } else {
-      result = await put(`/api/inventory/detectors/${route.params.id}/`, detectorData); 
+      result = await put(`/api/inventory/detectors/${route.params.id}/`, detectorData);  
     }
 
     if (!result.ok) {
@@ -824,4 +826,3 @@ const fetchDetectorModelConfigurations = async () => {
   } catch (error) { console.error('Error fetching detector model configurations:', error); }
 };
 </script>
-
