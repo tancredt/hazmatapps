@@ -751,12 +751,12 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   box-sizing: border-box;
 }
 
-/* LEFT SIDE: Strictly fixed pixel width */
+/* LEFT SIDE: Strictly fixed pixel width (Increased from 450px to 500px) */
 .fixed-box.left {
-  flex: 0 0 450px; 
-  width: 450px;
-  min-width: 450px;
-  max-width: 450px;
+  flex: 0 0 500px; 
+  width: 500px;
+  min-width: 500px;
+  max-width: 500px;
   overflow-y: auto;
 }
 

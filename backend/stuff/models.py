@@ -233,10 +233,10 @@ class DetectorModel(models.Model):
     part_number = models.CharField(max_length=32, blank=True)
 
     class Meta:
-        ordering = ["detector_type"]
+        ordering = ["label"]
 
     def __str__(self):
-        return f"{self.get_manufacturer_display()} {self.label} ({self.get_detector_type_display()})"
+        return f"{self.label}"
 
 
 class DetectorModelConfiguration(models.Model):
