@@ -178,22 +178,29 @@ h1 {
   flex-direction: column;
   flex: 1;
   overflow: hidden;
-  min-height: 0;           /* CRITICAL: Allows flex children to shrink below content size */
+  min-height: 0;           /* CRITICAL */
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+/* CRITICAL: The table itself must act as a flex container */
 .inventory-table, .logs-table, .faults-table {
   width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+  border-collapse: separate; /* Required for flexbox tables */
+  border-spacing: 0;
   margin-bottom: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.inventory-table thead th, .logs-table thead th, .faults-table thead th {
-  position: sticky;
-  top: 0;
+.inventory-table thead, .logs-table thead, .faults-table thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  flex-shrink: 0; /* Prevents header from shrinking */
   background-color: #f8f9fa;
   font-weight: 600;
   font-size: 0.85rem;
@@ -203,20 +210,25 @@ h1 {
   word-wrap: break-word;
   z-index: 10;
   border-bottom: 2px solid #dee2e6;
+}
+
+.inventory-table thead th, .logs-table thead th, .faults-table thead th {
   padding: 0.75rem 0.5rem;
   text-align: left;
 }
 
+/* CRITICAL: tbody becomes a block to enable scrolling, and flex: 1 to fill space */
 .inventory-table tbody, .logs-table tbody, .faults-table tbody {
   display: block;
-  flex: 1;                 /* Takes up all remaining vertical space */
+  flex: 1;
   overflow-y: auto;        /* ONLY the tbody scrolls */
   min-height: 0;
 }
 
-.inventory-table thead, .inventory-table tbody tr,
-.logs-table thead, .logs-table tbody tr,
-.faults-table thead, .faults-table tbody tr {
+/* CRITICAL: rows must remain display: table to keep column widths aligned */
+.inventory-table tbody tr,
+.logs-table tbody tr,
+.faults-table tbody tr {
   display: table;
   width: 100%;
   table-layout: fixed;
@@ -231,14 +243,6 @@ h1 {
   word-wrap: break-word;
   font-size: 0.9rem;
   vertical-align: middle;
-}
-
-.inventory-table tbody tr:hover, .logs-table tbody tr:hover, .faults-table tbody tr:hover { background-color: #f8f9fa; }
-.inventory-table tbody tr:last-child td { border-bottom: none; }
-
-.inventory-table th:first-child, .inventory-table td:first-child {
-  text-align: center;
-  width: 40px;
 }
 
 .sortable { cursor: pointer; user-select: none; }
