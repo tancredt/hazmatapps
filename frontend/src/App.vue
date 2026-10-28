@@ -40,7 +40,9 @@ html, body, #app {
 main {
   flex: 1;
   padding-top: 50px; /* Space for the fixed Navbar */
-  overflow-y: auto; /* Allows scrolling inside the main area if content overflows */
+  overflow: hidden; /* CRITICAL: Prevents the main area from scrolling */
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 </style>
