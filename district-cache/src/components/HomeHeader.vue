@@ -13,22 +13,22 @@
 <script setup>
 // Props retained for backward compatibility with existing call sites
 // (e.g. <HomeHeader :district="..." :location_label="..." />).
-// The Home button now always returns to the new landing page.
+// The Home button now always returns to the landing page.
 defineProps({ district: String, location_label: String })
 </script>
 
 <style scoped>
 .home-header-wrapper { margin-bottom: 10px; }
 .home-btn {
-  display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 8px 16px; box-sizing: border-box;
   background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;
   color: #495057; text-decoration: none; font-size: 0.9rem; font-weight: 500;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   transition: all 0.2s;
 }
 .home-btn:hover {
   background: #e9ecef; color: #42b883; border-color: #42b883; transform: translateX(-2px);
 }
-.home-btn:focus-visible {
-  outline: 2px solid #42b883; outline-offset: 2px;
-}
+.home-btn:focus-visible { outline: 2px solid #42b883; outline-offset: 2px; }
 </style>

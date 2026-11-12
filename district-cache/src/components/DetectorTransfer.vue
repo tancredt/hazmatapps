@@ -2,24 +2,29 @@
   <div class="swap-screen">
     <HomeHeader />
     <h2>Update Detector Location</h2>
-    
+
     <div class="form-container">
       <!-- Detector Label -->
       <div class="form-group">
-        <label>Detector Label (e.g. PGM123)</label>
-        <input 
-          type="text" 
-          v-model="detectorLabel" 
+        <label for="detector-label">Detector Label (e.g. PGM123)</label>
+        <input
+          id="detector-label"
+          type="text"
+          v-model="detectorLabel"
           class="form-input"
           placeholder="Enter detector label..."
+          autocomplete="off"
+          autocapitalize="characters"
+          autocorrect="off"
+          spellcheck="false"
           :disabled="isProcessing"
         />
       </div>
 
       <!-- Destination -->
       <div class="form-group">
-        <label>Select Destination</label>
-        <select v-model="destination" class="form-input" :disabled="isProcessing" @change="onDestinationChange">
+        <label for="destination">Select Destination</label>
+        <select id="destination" v-model="destination" class="form-input" :disabled="isProcessing" @change="onDestinationChange">
           <option value="">-- Select Destination --</option>
           <option value="BURNLEY">Burnley repair/calibration</option>
           <option value="DISTRICT_CACHE">District Cache</option>
@@ -29,8 +34,8 @@
 
       <!-- District (Conditional) -->
       <div v-if="destination === 'DISTRICT_CACHE' || destination === 'STATION'" class="form-group">
-        <label>Select District</label>
-        <select v-model="selectedDistrict" class="form-input" :disabled="isProcessing || isLoadingDistricts" @change="onDistrictChange">
+        <label for="district">Select District</label>
+        <select id="district" v-model="selectedDistrict" class="form-input" :disabled="isProcessing || isLoadingDistricts" @change="onDistrictChange">
           <option value="">-- Select District --</option>
           <option v-for="d in districts" :key="d.value" :value="d.value">{{ d.label }}</option>
         </select>
@@ -38,18 +43,18 @@
 
       <!-- Fire Station (Conditional) -->
       <div v-if="destination === 'STATION'" class="form-group">
-        <label>Select Fire Station</label>
-        <select v-model="selectedStation" class="form-input" :disabled="isProcessing || isLoadingStations || !selectedDistrict">
+        <label for="station">Select Fire Station</label>
+        <select id="station" v-model="selectedStation" class="form-input" :disabled="isProcessing || isLoadingStations || !selectedDistrict">
           <option value="">-- Select Fire Station --</option>
           <option v-for="s in stations" :key="s.id" :value="s.label">{{ s.label }}</option>
         </select>
-        <div v-if="isLoadingStations" class="loading-inline">Loading stations...</div>
+        <div v-if="isLoadingStations" class="loading-inline" aria-live="polite">Loading stations...</div>
       </div>
 
       <!-- Action Buttons -->
       <div class="action-bar">
-        <button class="btn-cancel" @click="handleCancel" :disabled="isProcessing">Cancel</button>
-        <button class="btn-primary" @click="handleSubmit" :disabled="isSubmitDisabled || isProcessing">
+        <button type="button" class="btn-cancel" @click="handleCancel" :disabled="isProcessing">Cancel</button>
+        <button type="button" class="btn-primary" @click="handleSubmit" :disabled="isSubmitDisabled || isProcessing">
           {{ isProcessing ? 'Processing...' : 'Submit' }}
         </button>
       </div>
@@ -57,22 +62,22 @@
 
     <!-- Error Modal -->
     <div v-if="showErrorModal" class="modal-overlay" @click.self="showErrorModal = false">
-      <div class="modal-content">
-        <h3>Detector Not Found</h3>
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="error-title">
+        <h3 id="error-title">Detector Not Found</h3>
         <p>{{ errorMessage }}</p>
         <div class="modal-actions">
-          <button class="btn-confirm" @click="showErrorModal = false">OK</button>
+          <button type="button" class="btn-confirm" @click="showErrorModal = false">OK</button>
         </div>
       </div>
     </div>
 
     <!-- Success Modal -->
     <div v-if="showSuccessModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Success</h3>
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="success-title">
+        <h3 id="success-title">Success</h3>
         <p>Detector location and status have been updated successfully.</p>
         <div class="modal-actions">
-          <button class="btn-confirm" @click="closeSuccessModal">OK</button>
+          <button type="button" class="btn-confirm" @click="closeSuccessModal">OK</button>
         </div>
       </div>
     </div>
@@ -159,7 +164,7 @@ const handleCancel = () => {
   selectedDistrict.value = ''
   selectedStation.value = ''
   stations.value = []
-  
+
   // Close any open modals just in case
   showErrorModal.value = false
   showSuccessModal.value = false
@@ -179,12 +184,12 @@ const handleSubmit = async () => {
     // 1. Check if detector exists (case-insensitive exact match)
     const inputLabel = detectorLabel.value.trim()
     const searchResults = await apiFetch(`/detector-labels/?label=${encodeURIComponent(inputLabel)}`)
-    
+
     // The backend uses icontains, so we filter for exact case-insensitive match on frontend
     const matchedDetector = searchResults.find(d => d.label.toUpperCase() === inputLabel.toUpperCase())
 
     if (!matchedDetector) {
-      errorMessage.value = "No record of this detector exists. Check the spelling and if it still fails, email the Hazmat Unit with the label and destination."
+      errorMessage.value = 'No record of this detector exists. Check the spelling and if it still fails, email the Hazmat Unit with the label and destination.'
       showErrorModal.value = true
       isProcessing.value = false
       return
@@ -199,14 +204,12 @@ const handleSubmit = async () => {
       const loc = findExactLocation(res, l => l.label.toUpperCase() === 'BURNLEY')
       targetLocationId = loc?.id
       targetStatus = 'OF' // OFFLINE
-    } 
-    else if (destination.value === 'DISTRICT_CACHE') {
+    } else if (destination.value === 'DISTRICT_CACHE') {
       const res = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(selectedDistrict.value)}`)
       const loc = findExactLocation(res, l => l.location_type === 'DI' && l.district?.toUpperCase() === selectedDistrict.value.toUpperCase())
       targetLocationId = loc?.id
       targetStatus = 'IS' // INSTOCK
-    } 
-    else if (destination.value === 'STATION') {
+    } else if (destination.value === 'STATION') {
       const res = await apiFetch(`/locations/?label=${encodeURIComponent(selectedStation.value)}&location_type=ST`)
       const loc = findExactLocation(res, l => l.label.toUpperCase() === selectedStation.value.toUpperCase() && l.location_type === 'ST')
       targetLocationId = loc?.id
@@ -214,7 +217,7 @@ const handleSubmit = async () => {
     }
 
     if (!targetLocationId) {
-      throw new Error("Could not resolve the destination location in the database.")
+      throw new Error('Could not resolve the destination location in the database.')
     }
 
     // 3. Execute Update
@@ -230,7 +233,6 @@ const handleSubmit = async () => {
     })
 
     showSuccessModal.value = true
-
   } catch (err) {
     console.error('Update failed:', err)
     errorMessage.value = err.message || 'An unexpected error occurred. Please try again.'
@@ -253,6 +255,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.swap-screen {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 16px calc(32px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.swap-screen h2 {
+  text-align: center;
+  font-size: clamp(1.3rem, 4.5vw, 1.7rem);
+  color: #212529;
+  margin: 12px 0 20px;
+}
+
 .form-container {
   max-width: 600px;
   margin: 0 auto;
@@ -261,10 +276,9 @@ onMounted(() => {
   border-radius: 12px;
   border: 1px solid #dee2e6;
   text-align: left;
+  box-sizing: border-box;
 }
-.form-group {
-  margin-bottom: 20px;
-}
+.form-group { margin-bottom: 20px; }
 .form-group label {
   display: block;
   font-weight: 600;
@@ -274,37 +288,111 @@ onMounted(() => {
 }
 .form-input {
   width: 100%;
+  min-height: 46px;
   padding: 10px 12px;
-  font-size: 1rem;
+  font-size: 1rem; /* 16px prevents iOS focus zoom */
+  font-family: inherit;
+  color: #212529;
   border-radius: 6px;
   border: 1px solid #ccc;
   background: #fff;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .form-input:focus {
   outline: none;
   border-color: #42b883;
-  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
+  box-shadow: 0 0 0 3px rgba(66, 184, 131, 0.18);
 }
-.form-input:disabled {
-  background: #e9ecef;
-  cursor: not-allowed;
-}
+.form-input:disabled { background: #e9ecef; cursor: not-allowed; }
 .loading-inline {
   font-size: 0.85rem;
   color: #666;
   margin-top: 6px;
   font-style: italic;
 }
+
 .action-bar {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  margin-top: 30px;
+  margin-top: 28px;
 }
-.action-bar .btn-cancel, .action-bar .btn-primary {
-  flex: 0 1 auto;
-  min-width: 120px;
+.action-bar .btn-cancel,
+.action-bar .btn-primary { flex: 0 1 auto; min-width: 120px; }
+
+/* Buttons */
+.btn-primary, .btn-confirm, .btn-cancel {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  min-height: 46px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+.btn-primary, .btn-confirm { background: #42b883; color: #fff; border: 1px solid #42b883; }
+.btn-primary:hover:not(:disabled), .btn-confirm:hover { background: #369e6f; border-color: #369e6f; }
+.btn-primary:active:not(:disabled), .btn-confirm:active { transform: scale(0.98); }
+.btn-primary:disabled { background: #9fd4bc; border-color: #9fd4bc; cursor: not-allowed; }
+.btn-cancel { background: #fff; color: #495057; border: 1px solid #ced4da; }
+.btn-cancel:hover:not(:disabled) { background: #f1f3f5; border-color: #adb5bd; }
+.btn-cancel:active:not(:disabled) { transform: scale(0.98); }
+.btn-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-primary:focus-visible, .btn-confirm:focus-visible, .btn-cancel:focus-visible {
+  outline: 2px solid #42b883;
+  outline-offset: 2px;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(33, 37, 41, 0.55);
+  box-sizing: border-box;
+}
+.modal-content {
+  width: 100%;
+  max-width: 420px;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  text-align: left;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #ced4da #f1f3f5;
+}
+.modal-content::-webkit-scrollbar { width: 8px; }
+.modal-content::-webkit-scrollbar-track { background: #f1f3f5; border-radius: 8px; }
+.modal-content::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 8px; }
+.modal-content::-webkit-scrollbar-thumb:hover { background: #42b883; }
+.modal-content h3 { margin: 0 0 10px; font-size: 1.2rem; color: #212529; }
+.modal-content p { margin: 0 0 20px; color: #495057; line-height: 1.55; overflow-wrap: break-word; }
+.modal-actions { display: flex; justify-content: flex-end; }
+.modal-actions .btn-confirm { min-width: 110px; }
+
+/* Mobile */
+@media (max-width: 480px) {
+  .swap-screen { padding: 12px 12px calc(24px + env(safe-area-inset-bottom)); }
+  .form-container { padding: 18px 14px; border-radius: 10px; }
+  .form-group { margin-bottom: 16px; }
+  .action-bar { flex-direction: column-reverse; gap: 10px; }
+  .action-bar .btn-cancel,
+  .action-bar .btn-primary { width: 100%; min-width: 0; min-height: 48px; }
+  .modal-overlay { padding: 16px; }
+  .modal-content { padding: 20px 16px; }
+  .modal-actions .btn-confirm { width: 100%; }
 }
 </style>
