@@ -8,6 +8,8 @@ import CylindersMenu from '../components/CylindersMenu.vue'
 import DetectorsMenu from '../components/DetectorsMenu.vue'
 import DistrictMainMenu from '../components/DistrictMainMenu.vue'
 import DistrictOperationsMenu from '../components/DistrictOperationsMenu.vue'
+import DetectorTransfer from '../components/DetectorTransfer.vue'
+
 
 // Action Components
 import LocationChanger from '../components/LocationChanger.vue'
@@ -95,7 +97,13 @@ const routes = [
     props: true,
     meta: { requiresAuth: true }
   },
-  
+
+{ 
+  path: '/detector-transfer', 
+  name: 'DetectorTransfer', 
+  component: DetectorTransfer, 
+  meta: { requiresAuth: true } 
+}
   // --- STATION MENUS ---
   { path: '/:district/:location_label/mainmenu', name: 'MainMenu', component: MainMenu, props: true, meta: { requiresAuth: true } },
   { path: '/:district/:location_label/cylindermenu', name: 'CylindersMenu', component: CylindersMenu, props: true, meta: { requiresAuth: true } },
