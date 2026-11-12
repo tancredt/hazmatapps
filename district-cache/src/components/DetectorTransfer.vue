@@ -81,13 +81,74 @@
         </div>
       </div>
     </div>
+
+    <!-- Inactivity Warning Modal -->
+    <div v-if="showIdleWarning" class="modal-overlay modal-overlay--idle">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="idle-title" aria-describedby="idle-desc">
+        <h3 id="idle-title">Still there?</h3>
+        <p id="idle-desc">
+          You've been inactive for a while. You'll be returned to the home page in
+          <strong class="idle-count" role="timer" :class="{ 'idle-count--urgent': idleUrgent }">{{ idleSecondsRemaining }}</strong>
+          second{{ idleSecondsRemaining === 1 ? '' : 's' }}.
+        </p>
+        <div class="idle-progress" aria-hidden="true">
+          <span
+            class="idle-progress-bar"
+            :class="{ 'idle-progress-bar--urgent': idleUrgent }"
+            :style="{ width: idleProgressPercent + '%' }"
+          ></span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" @click="goHomeNow">Return home now</button>
+          <button type="button" ref="stayButtonRef" class="btn-confirm" @click="stayOnPage">Stay on this page</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { apiFetch } from '@/utils/api'
 import HomeHeader from './HomeHeader.vue'
+import { useInactivityTimeout } from '@/composables/useInactivityTimeout'
+
+const router = useRouter()
+
+// --- Inactivity timeout (5 minutes, 30-second warning) ---
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000
+const IDLE_WARNING_MS = 30 * 1000
+
+const {
+  isWarningVisible: showIdleWarning,
+  secondsRemaining: idleSecondsRemaining,
+  warningSeconds: idleWarningSeconds,
+  stay: stayOnPage
+} = useInactivityTimeout({
+  timeoutMs: IDLE_TIMEOUT_MS,
+  warningMs: IDLE_WARNING_MS,
+  onTimeout: () => {
+    router.replace({ name: 'Home' }).catch(() => {})
+  }
+})
+
+const idleUrgent = computed(() => idleSecondsRemaining.value <= 10)
+const idleProgressPercent = computed(() =>
+  Math.max(0, Math.min(100, (idleSecondsRemaining.value / idleWarningSeconds) * 100))
+)
+
+const stayButtonRef = ref(null)
+watch(showIdleWarning, async (visible) => {
+  if (visible) {
+    await nextTick()
+    stayButtonRef.value?.focus()
+  }
+})
+
+const goHomeNow = () => {
+  router.replace({ name: 'Home' }).catch(() => {})
+}
 
 // --- State ---
 const detectorLabel = ref('')
@@ -380,8 +441,28 @@ onMounted(() => {
 .modal-content::-webkit-scrollbar-thumb:hover { background: #42b883; }
 .modal-content h3 { margin: 0 0 10px; font-size: 1.2rem; color: #212529; }
 .modal-content p { margin: 0 0 20px; color: #495057; line-height: 1.55; overflow-wrap: break-word; }
-.modal-actions { display: flex; justify-content: flex-end; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .modal-actions .btn-confirm { min-width: 110px; }
+
+/* Inactivity warning */
+.modal-overlay--idle { z-index: 1100; }
+.idle-count { font-variant-numeric: tabular-nums; color: #212529; }
+.idle-count--urgent { color: #c0392b; }
+.idle-progress {
+  height: 6px;
+  margin: 0 0 20px;
+  border-radius: 4px;
+  background: #e9ecef;
+  overflow: hidden;
+}
+.idle-progress-bar {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: #42b883;
+  transition: width 1s linear, background-color 0.3s ease;
+}
+.idle-progress-bar--urgent { background: #e05252; }
 
 /* Mobile */
 @media (max-width: 480px) {
@@ -393,6 +474,12 @@ onMounted(() => {
   .action-bar .btn-primary { width: 100%; min-width: 0; min-height: 48px; }
   .modal-overlay { padding: 16px; }
   .modal-content { padding: 20px 16px; }
-  .modal-actions .btn-confirm { width: 100%; }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn-confirm,
+  .modal-actions .btn-cancel { width: 100%; min-width: 0; min-height: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idle-progress-bar { transition: none; }
 }
 </style>
