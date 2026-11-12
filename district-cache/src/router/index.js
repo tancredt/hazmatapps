@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { apiFetch } from '@/utils/api' // <--- Added for DB validation
+import { apiFetch } from '@/utils/api'
 
 // Menu Components
 import MainMenu from '../components/MainMenu.vue'
@@ -9,7 +9,6 @@ import DetectorsMenu from '../components/DetectorsMenu.vue'
 import DistrictMainMenu from '../components/DistrictMainMenu.vue'
 import DistrictOperationsMenu from '../components/DistrictOperationsMenu.vue'
 import DetectorTransfer from '../components/DetectorTransfer.vue'
-
 
 // Action Components
 import LocationChanger from '../components/LocationChanger.vue'
@@ -20,6 +19,9 @@ import LoginScreen from '../components/LoginScreen.vue'
 import ReportCylinderEmpty from '../components/ReportCylinderEmpty.vue'
 import ReportDetectorFault from '../components/ReportDetectorFault.vue'
 import CylinderSwapScreen from '../components/CylinderSwapScreen.vue'
+
+// Home
+import HomePage from '../components/HomePage.vue'
 
 // ==========================================
 // DATABASE VALIDATION LOGIC
@@ -50,7 +52,6 @@ async function validateRouteParams(to) {
   // 2. Validate Location
   if (location_label) {
     const cacheKey = `${district?.toUpperCase() || 'ANY'}:${location_label.toUpperCase()}`
-    
     if (!validLocations.has(cacheKey)) {
       try {
         let url = `/locations/?label=${encodeURIComponent(location_label)}`
@@ -58,7 +59,6 @@ async function validateRouteParams(to) {
           url += `&district=${encodeURIComponent(district)}`
         }
         const res = await apiFetch(url)
-        
         // The backend uses 'icontains' for label, so we verify exact match on frontend
         const exists = res.some(loc => loc.label.toUpperCase() === location_label.toUpperCase())
         validLocations.set(cacheKey, exists)
@@ -67,7 +67,6 @@ async function validateRouteParams(to) {
         return false
       }
     }
-    
     if (!validLocations.get(cacheKey)) {
       return false // Location not found in DB
     }
@@ -80,9 +79,10 @@ async function validateRouteParams(to) {
 // ROUTES
 // ==========================================
 const routes = [
-  { path: '/', redirect: '/login' },
+  // --- HOME ---
+  { path: '/', name: 'Home', alias: '/home', component: HomePage, meta: { requiresAuth: true } },
   { path: '/login', name: 'Login', component: LoginScreen, meta: { requiresAuth: false } },
-  
+
   // --- DISTRICT ROUTES ---
   {
     path: '/district-menu',
@@ -97,42 +97,36 @@ const routes = [
     props: true,
     meta: { requiresAuth: true }
   },
+  {
+    path: '/detector-transfer',
+    name: 'DetectorTransfer',
+    component: DetectorTransfer,
+    meta: { requiresAuth: true }
+  },
 
-{ 
-  path: '/detector-transfer', 
-  name: 'DetectorTransfer', 
-  component: DetectorTransfer, 
-  meta: { requiresAuth: true } 
-},
   // --- STATION MENUS ---
   { path: '/:district/:location_label/mainmenu', name: 'MainMenu', component: MainMenu, props: true, meta: { requiresAuth: true } },
   { path: '/:district/:location_label/cylindermenu', name: 'CylindersMenu', component: CylindersMenu, props: true, meta: { requiresAuth: true } },
   { path: '/:district/:location_label/cylinder/swap', name: 'CylinderSwap', component: CylinderSwapScreen, props: true, meta: { requiresAuth: true } },
   { path: '/:district/:location_label/detectorsmenu', name: 'DetectorsMenu', component: DetectorsMenu, props: true, meta: { requiresAuth: true } },
-  
+
   // --- STATION ACTIONS ---
   { path: '/:district/:location_label/cylinder/report', name: 'CylinderEmpty', component: ReportCylinderEmpty, props: true, meta: { requiresAuth: true } },
   { path: '/:district/:location_label/detector/report', name: 'DetectorFault', component: ReportDetectorFault, props: true, meta: { requiresAuth: true } },
   { path: '/:district/:location_label/detector/swap', name: 'LocationChanger', component: LocationChanger, props: true, meta: { requiresAuth: true } },
-  
+
   // --- DISTRICT ACTIONS ---
   { path: '/:district/detector/return', name: 'Return', component: ReturnScreen, props: true, meta: { requiresAuth: true } },
   { path: '/:district/detector/restock', name: 'Restock', component: RestockScreen, props: true, meta: { requiresAuth: true } },
   { path: '/:district/detector/status', name: 'DistrictStatus', component: DistrictStatus, props: true, meta: { requiresAuth: true } },
-  
+
   // --- 404 CATCH-ALL ---
-  // Note: Fixed syntax from /:pathMatch(.) to /:pathMatch(.*)* for Vue Router 4
-  { 
-    path: '/:pathMatch(.*)*', 
-    name: 'NotFound', 
-    component: { 
-      template: `
-        <div style="padding: 2rem; text-align: center; color: red;">
-          <h1>404 - Not Found</h1>
-          <p>The route, district, or location you entered does not exist.</p>
-        </div>
-      ` 
-    } 
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: {
+      template: `<div style="padding: 2rem; text-align: center; color: red;"> <h1>404 - Not Found</h1> <p>The route, district, or location you entered does not exist.</p> </div>`
+    }
   }
 ]
 
@@ -146,7 +140,7 @@ const router = createRouter({
 // ==========================================
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  
+
   // 1. Authentication Check
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) await authStore.checkAuth()
