@@ -81,11 +81,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { apiFetch } from '@/utils/api'
 import HomeHeader from './HomeHeader.vue'
-
-const router = useRouter()
 
 // --- State ---
 const detectorLabel = ref('')
@@ -157,7 +154,15 @@ const onDistrictChange = () => {
 }
 
 const handleCancel = () => {
-  router.back()
+  detectorLabel.value = ''
+  destination.value = ''
+  selectedDistrict.value = ''
+  selectedStation.value = ''
+  stations.value = []
+  
+  // Close any open modals just in case
+  showErrorModal.value = false
+  showSuccessModal.value = false
 }
 
 // Helper to safely find exact matches since backend uses icontains
@@ -238,11 +243,7 @@ const handleSubmit = async () => {
 const closeSuccessModal = () => {
   showSuccessModal.value = false
   // Reset form for next use
-  detectorLabel.value = ''
-  destination.value = ''
-  selectedDistrict.value = ''
-  selectedStation.value = ''
-  stations.value = []
+  handleCancel()
 }
 
 // --- Lifecycle ---
