@@ -103,7 +103,7 @@ const routes = [
   name: 'DetectorTransfer', 
   component: DetectorTransfer, 
   meta: { requiresAuth: true } 
-}
+},
   // --- STATION MENUS ---
   { path: '/:district/:location_label/mainmenu', name: 'MainMenu', component: MainMenu, props: true, meta: { requiresAuth: true } },
   { path: '/:district/:location_label/cylindermenu', name: 'CylindersMenu', component: CylindersMenu, props: true, meta: { requiresAuth: true } },
