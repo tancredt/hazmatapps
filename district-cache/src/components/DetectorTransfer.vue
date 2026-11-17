@@ -6,64 +6,111 @@
     <div class="form-container">
       <!-- Detector Label -->
       <div class="form-group">
-        <label for="detector-label">Detector Label (e.g. PGM123)</label>
+        <label for="detector-label">
+          <span>{{ isLocked ? 'Detector Label' : 'Detector Label (e.g. PGM123)' }}</span>
+          <span v-if="isLocked" class="locked-tag" title="This label comes from the page address">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            From link
+          </span>
+        </label>
+
         <input
           id="detector-label"
           type="text"
           v-model="detectorLabel"
           class="form-input"
-          placeholder="Enter detector label..."
+          :class="{ 'locked-input': isLocked }"
+          :readonly="isLocked"
+          :aria-readonly="isLocked ? 'true' : 'false'"
+          :aria-describedby="isLocked ? 'detector-label-help' : null"
+          :placeholder="isLocked ? '' : 'Enter detector label...'"
           autocomplete="off"
           autocapitalize="characters"
           autocorrect="off"
           spellcheck="false"
           :disabled="isProcessing"
         />
+
+        <template v-if="isLocked">
+          <div id="detector-label-help" class="label-help">
+            Locked to the label in the page address.
+            <router-link :to="{ name: 'DetectorTransfer' }" class="inline-link">Use a different detector</router-link>
+          </div>
+
+          <div v-if="isResolvingDetector" class="loading-inline" aria-live="polite">
+            Checking this detector…
+          </div>
+
+          <div v-else-if="matchedDetector" class="detector-meta" aria-live="polite">
+            <span class="meta-dot" aria-hidden="true"></span>
+            <span class="meta-text">
+              Currently at <strong>{{ matchedDetector.location_label || 'Unknown location' }}</strong>
+            </span>
+            <span v-if="currentDistrictLabel" class="meta-district">{{ currentDistrictLabel }}</span>
+          </div>
+
+          <div v-else class="detector-alert" role="alert">
+            <p>{{ detectorError }}</p>
+            <div class="alert-actions">
+              <button type="button" class="btn-inline" @click="resolveDetector()">Try again</button>
+              <router-link :to="{ name: 'DetectorTransfer' }" class="btn-inline">Enter label manually</router-link>
+            </div>
+          </div>
+        </template>
       </div>
 
-      <!-- Destination -->
-      <div class="form-group">
-        <label for="destination">Select Destination</label>
-        <select id="destination" v-model="destination" class="form-input" :disabled="isProcessing" @change="onDestinationChange">
-          <option value="">-- Select Destination --</option>
-          <option value="BURNLEY">Burnley repair/calibration</option>
-          <option value="DISTRICT_CACHE">District Cache</option>
-          <option value="STATION">Fire Station</option>
-        </select>
-      </div>
+      <div v-if="showDestinations" :class="{ reveal: isLocked }">
+        <!-- Destination -->
+        <div class="form-group">
+          <label for="destination"><span>Select Destination</span></label>
+          <select id="destination" v-model="destination" class="form-input" :disabled="isProcessing" @change="onDestinationChange">
+            <option value="">-- Select Destination --</option>
+            <option value="BURNLEY">Burnley repair/calibration</option>
+            <option value="DISTRICT_CACHE">District Cache</option>
+            <option value="STATION">Fire Station</option>
+          </select>
+        </div>
 
-      <!-- District (Conditional) -->
-      <div v-if="destination === 'DISTRICT_CACHE' || destination === 'STATION'" class="form-group">
-        <label for="district">Select District</label>
-        <select id="district" v-model="selectedDistrict" class="form-input" :disabled="isProcessing || isLoadingDistricts" @change="onDistrictChange">
-          <option value="">-- Select District --</option>
-          <option v-for="d in districts" :key="d.value" :value="d.value">{{ d.label }}</option>
-        </select>
-      </div>
+        <!-- District (Conditional) -->
+        <div v-if="destination === 'DISTRICT_CACHE' || destination === 'STATION'" class="form-group">
+          <label for="district"><span>Select District</span></label>
+          <select id="district" v-model="selectedDistrict" class="form-input" :disabled="isProcessing || isLoadingDistricts" @change="onDistrictChange">
+            <option value="">-- Select District --</option>
+            <option v-for="d in districts" :key="d.value" :value="d.value">{{ d.label }}</option>
+          </select>
+          <div v-if="isLoadingDistricts" class="loading-inline" aria-live="polite">Loading districts...</div>
+        </div>
 
-      <!-- Fire Station (Conditional) -->
-      <div v-if="destination === 'STATION'" class="form-group">
-        <label for="station">Select Fire Station</label>
-        <select id="station" v-model="selectedStation" class="form-input" :disabled="isProcessing || isLoadingStations || !selectedDistrict">
-          <option value="">-- Select Fire Station --</option>
-          <option v-for="s in stations" :key="s.id" :value="s.label">{{ s.label }}</option>
-        </select>
-        <div v-if="isLoadingStations" class="loading-inline" aria-live="polite">Loading stations...</div>
-      </div>
+        <!-- Fire Station (Conditional) -->
+        <div v-if="destination === 'STATION'" class="form-group">
+          <label for="station"><span>Select Fire Station</span></label>
+          <select id="station" v-model="selectedStation" class="form-input" :disabled="isProcessing || isLoadingStations || !selectedDistrict">
+            <option value="">-- Select Fire Station --</option>
+            <option v-for="s in stations" :key="s.id" :value="s.label">{{ s.label }}</option>
+          </select>
+          <div v-if="isLoadingStations" class="loading-inline" aria-live="polite">Loading stations...</div>
+          <div v-else-if="selectedDistrict && !stations.length" class="loading-inline">
+            No fire stations recorded for this district.
+          </div>
+        </div>
 
-      <!-- Action Buttons -->
-      <div class="action-bar">
-        <button type="button" class="btn-cancel" @click="handleCancel" :disabled="isProcessing">Cancel</button>
-        <button type="button" class="btn-primary" @click="handleSubmit" :disabled="isSubmitDisabled || isProcessing">
-          {{ isProcessing ? 'Processing...' : 'Submit' }}
-        </button>
+        <!-- Action Buttons -->
+        <div class="action-bar">
+          <button type="button" class="btn-cancel" @click="handleCancel" :disabled="isProcessing">Cancel</button>
+          <button type="button" class="btn-primary" @click="handleSubmit" :disabled="isSubmitDisabled || isProcessing">
+            {{ isProcessing ? 'Processing...' : 'Submit' }}
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Error Modal -->
     <div v-if="showErrorModal" class="modal-overlay" @click.self="showErrorModal = false">
       <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="error-title">
-        <h3 id="error-title">Detector Not Found</h3>
+        <h3 id="error-title">{{ errorTitle }}</h3>
         <p>{{ errorMessage }}</p>
         <div class="modal-actions">
           <button type="button" class="btn-confirm" @click="showErrorModal = false">OK</button>
@@ -75,7 +122,7 @@
     <div v-if="showSuccessModal" class="modal-overlay">
       <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="success-title">
         <h3 id="success-title">Success</h3>
-        <p>Detector location and status have been updated successfully.</p>
+        <p>{{ successMessage || 'Detector location and status have been updated successfully.' }}</p>
         <div class="modal-actions">
           <button type="button" class="btn-confirm" @click="closeSuccessModal">OK</button>
         </div>
@@ -109,11 +156,17 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { apiFetch } from '@/utils/api'
 import HomeHeader from './HomeHeader.vue'
 import { useInactivityTimeout } from '@/composables/useInactivityTimeout'
 
+// Optional prop so the route can pass `props: true`; falls back to the URL param.
+const props = defineProps({
+  detector_label: { type: String, default: '' }
+})
+
+const route = useRoute()
 const router = useRouter()
 
 // --- Inactivity timeout (5 minutes, 30-second warning) ---
@@ -133,9 +186,10 @@ const {
   }
 })
 
+const idleTotalSeconds = Number(idleWarningSeconds) || 30
 const idleUrgent = computed(() => idleSecondsRemaining.value <= 10)
 const idleProgressPercent = computed(() =>
-  Math.max(0, Math.min(100, (idleSecondsRemaining.value / idleWarningSeconds) * 100))
+  Math.max(0, Math.min(100, (idleSecondsRemaining.value / idleTotalSeconds) * 100))
 )
 
 const stayButtonRef = ref(null)
@@ -150,8 +204,19 @@ const goHomeNow = () => {
   router.replace({ name: 'Home' }).catch(() => {})
 }
 
+// --- Locked-label mode ---
+const urlLabel = computed(() => {
+  const raw = props.detector_label || route.params.detector_label || ''
+  return String(Array.isArray(raw) ? raw[0] : raw).trim()
+})
+const isLocked = computed(() => urlLabel.value.length > 0)
+
 // --- State ---
 const detectorLabel = ref('')
+const matchedDetector = ref(null)
+const isResolvingDetector = ref(false)
+const detectorError = ref('')
+
 const destination = ref('')
 const selectedDistrict = ref('')
 const selectedStation = ref('')
@@ -166,10 +231,34 @@ const isProcessing = ref(false)
 const showErrorModal = ref(false)
 const showSuccessModal = ref(false)
 const errorMessage = ref('')
+const errorTitle = ref('Detector Not Found')
+const successMessage = ref('')
+
+const NOT_FOUND_MESSAGE =
+  'No record of this detector exists. Check the spelling and if it still fails, email the Hazmat Unit with the label and destination.'
+
+const STATUS_WORDS = {
+  OF: 'Offline Repair',
+  IS: 'In Stock',
+  OP: 'Operational'
+}
 
 // --- Computed ---
+const showDestinations = computed(() => !isLocked.value || !!matchedDetector.value)
+
+const currentDistrictLabel = computed(() => {
+  const raw = matchedDetector.value?.location_district
+  if (!raw) return ''
+  const hit = districts.value.find(
+    d => String(d.value).toUpperCase() === String(raw).toUpperCase()
+  )
+  return hit?.label || raw
+})
+
 const isSubmitDisabled = computed(() => {
+  if (isResolvingDetector.value) return true
   if (!detectorLabel.value.trim()) return true
+  if (isLocked.value && !matchedDetector.value) return true
   if (!destination.value) return true
   if ((destination.value === 'DISTRICT_CACHE' || destination.value === 'STATION') && !selectedDistrict.value) return true
   if (destination.value === 'STATION' && !selectedStation.value) return true
@@ -177,13 +266,64 @@ const isSubmitDisabled = computed(() => {
 })
 
 // --- Methods ---
+const resetSelections = () => {
+  destination.value = ''
+  selectedDistrict.value = ''
+  selectedStation.value = ''
+  stations.value = []
+}
+
+// Backend uses icontains, so confirm an exact case-insensitive match here.
+const findDetector = async (label) => {
+  const results = await apiFetch(`/detector-labels/?label=${encodeURIComponent(label)}`)
+  const list = Array.isArray(results) ? results : []
+  return list.find(d => String(d.label).toUpperCase() === label.toUpperCase()) || null
+}
+
+const resolveDetector = async ({ silent = false } = {}) => {
+  const label = urlLabel.value
+  detectorLabel.value = label
+  detectorError.value = ''
+
+  if (!label) {
+    matchedDetector.value = null
+    isResolvingDetector.value = false
+    return null
+  }
+
+  if (!silent) {
+    matchedDetector.value = null
+    isResolvingDetector.value = true
+  }
+
+  try {
+    const match = await findDetector(label)
+    matchedDetector.value = match
+    if (match) {
+      detectorLabel.value = match.label
+    } else {
+      detectorError.value = NOT_FOUND_MESSAGE
+    }
+    return match
+  } catch (err) {
+    console.error('Failed to look up detector', err)
+    if (!silent) matchedDetector.value = null
+    detectorError.value =
+      'Could not reach the database to check this detector. Check your connection and try again.'
+    return null
+  } finally {
+    isResolvingDetector.value = false
+  }
+}
+
 const fetchDistricts = async () => {
   isLoadingDistricts.value = true
   try {
     const data = await apiFetch('/districts/')
-    districts.value = data
+    districts.value = Array.isArray(data) ? data : []
   } catch (err) {
     console.error('Failed to fetch districts', err)
+    districts.value = []
   } finally {
     isLoadingDistricts.value = false
   }
@@ -197,10 +337,13 @@ const fetchStations = async () => {
   isLoadingStations.value = true
   selectedStation.value = '' // Reset station when district changes
   try {
-    const data = await apiFetch(`/locations/?location_type=ST&district=${encodeURIComponent(selectedDistrict.value)}`)
-    stations.value = data
+    const data = await apiFetch(
+      `/locations/?location_type=ST&district=${encodeURIComponent(selectedDistrict.value)}`
+    )
+    stations.value = Array.isArray(data) ? data : []
   } catch (err) {
     console.error('Failed to fetch stations', err)
+    stations.value = []
   } finally {
     isLoadingStations.value = false
   }
@@ -220,71 +363,75 @@ const onDistrictChange = () => {
 }
 
 const handleCancel = () => {
-  detectorLabel.value = ''
-  destination.value = ''
-  selectedDistrict.value = ''
-  selectedStation.value = ''
-  stations.value = []
-
-  // Close any open modals just in case
+  resetSelections()
+  if (!isLocked.value) detectorLabel.value = ''
   showErrorModal.value = false
   showSuccessModal.value = false
 }
 
 // Helper to safely find exact matches since backend uses icontains
 const findExactLocation = (results, matchFn) => {
-  return results.find(matchFn) || null
+  const list = Array.isArray(results) ? results : []
+  return list.find(matchFn) || null
 }
 
 const handleSubmit = async () => {
-  if (isSubmitDisabled.value) return
+  if (isSubmitDisabled.value || isProcessing.value) return
   isProcessing.value = true
   errorMessage.value = ''
 
   try {
-    // 1. Check if detector exists (case-insensitive exact match)
-    const inputLabel = detectorLabel.value.trim()
-    const searchResults = await apiFetch(`/detector-labels/?label=${encodeURIComponent(inputLabel)}`)
-
-    // The backend uses icontains, so we filter for exact case-insensitive match on frontend
-    const matchedDetector = searchResults.find(d => d.label.toUpperCase() === inputLabel.toUpperCase())
-
-    if (!matchedDetector) {
-      errorMessage.value = 'No record of this detector exists. Check the spelling and if it still fails, email the Hazmat Unit with the label and destination.'
-      showErrorModal.value = true
-      isProcessing.value = false
-      return
+    // 1. Resolve the detector (already verified when the label came from the URL)
+    let detector = null
+    if (isLocked.value && matchedDetector.value) {
+      detector = matchedDetector.value
+    } else {
+      detector = await findDetector(detectorLabel.value.trim())
+      if (!detector) {
+        errorTitle.value = 'Detector Not Found'
+        errorMessage.value = NOT_FOUND_MESSAGE
+        showErrorModal.value = true
+        return
+      }
     }
 
     // 2. Resolve Target Location ID & Status
-    let targetLocationId = null
+    let targetLocation = null
     let targetStatus = ''
 
     if (destination.value === 'BURNLEY') {
       const res = await apiFetch(`/locations/?label=Burnley`)
-      const loc = findExactLocation(res, l => l.label.toUpperCase() === 'BURNLEY')
-      targetLocationId = loc?.id
+      targetLocation = findExactLocation(res, l => l.label.toUpperCase() === 'BURNLEY')
       targetStatus = 'OF' // OFFLINE
     } else if (destination.value === 'DISTRICT_CACHE') {
-      const res = await apiFetch(`/locations/?location_type=DI&district=${encodeURIComponent(selectedDistrict.value)}`)
-      const loc = findExactLocation(res, l => l.location_type === 'DI' && l.district?.toUpperCase() === selectedDistrict.value.toUpperCase())
-      targetLocationId = loc?.id
+      const res = await apiFetch(
+        `/locations/?location_type=DI&district=${encodeURIComponent(selectedDistrict.value)}`
+      )
+      targetLocation = findExactLocation(
+        res,
+        l => l.location_type === 'DI' &&
+             String(l.district || '').toUpperCase() === selectedDistrict.value.toUpperCase()
+      )
       targetStatus = 'IS' // INSTOCK
     } else if (destination.value === 'STATION') {
-      const res = await apiFetch(`/locations/?label=${encodeURIComponent(selectedStation.value)}&location_type=ST`)
-      const loc = findExactLocation(res, l => l.label.toUpperCase() === selectedStation.value.toUpperCase() && l.location_type === 'ST')
-      targetLocationId = loc?.id
+      const res = await apiFetch(
+        `/locations/?label=${encodeURIComponent(selectedStation.value)}&location_type=ST`
+      )
+      targetLocation = findExactLocation(
+        res,
+        l => l.label.toUpperCase() === selectedStation.value.toUpperCase() && l.location_type === 'ST'
+      )
       targetStatus = 'OP' // OPERATIONAL
     }
 
-    if (!targetLocationId) {
+    if (!targetLocation?.id) {
       throw new Error('Could not resolve the destination location in the database.')
     }
 
     // 3. Execute Update
     const payload = [{
-      detector_id: matchedDetector.id,
-      location_id: targetLocationId,
+      detector_id: detector.id,
+      location_id: targetLocation.id,
       status: targetStatus
     }]
 
@@ -293,10 +440,13 @@ const handleSubmit = async () => {
       body: JSON.stringify(payload)
     })
 
+    successMessage.value =
+      `${detector.label} is now recorded at ${targetLocation.label} and marked as ${STATUS_WORDS[targetStatus]}.`
     showSuccessModal.value = true
   } catch (err) {
     console.error('Update failed:', err)
-    errorMessage.value = err.message || 'An unexpected error occurred. Please try again.'
+    errorTitle.value = 'Update Failed'
+    errorMessage.value = err?.message || 'An unexpected error occurred. Please try again.'
     showErrorModal.value = true
   } finally {
     isProcessing.value = false
@@ -305,13 +455,38 @@ const handleSubmit = async () => {
 
 const closeSuccessModal = () => {
   showSuccessModal.value = false
-  // Reset form for next use
-  handleCancel()
+  resetSelections()
+  if (isLocked.value) {
+    // Keep the URL label, refresh the "currently at" readout
+    resolveDetector({ silent: true })
+  } else {
+    detectorLabel.value = ''
+    matchedDetector.value = null
+  }
 }
 
 // --- Lifecycle ---
 onMounted(() => {
   fetchDistricts()
+  if (isLocked.value) resolveDetector()
+})
+
+// The same component instance is reused when only the URL label changes
+watch(urlLabel, (label) => {
+  resetSelections()
+  successMessage.value = ''
+  errorMessage.value = ''
+  showErrorModal.value = false
+  showSuccessModal.value = false
+
+  if (label) {
+    resolveDetector()
+  } else {
+    detectorLabel.value = ''
+    matchedDetector.value = null
+    detectorError.value = ''
+    isResolvingDetector.value = false
+  }
 })
 </script>
 
@@ -341,7 +516,10 @@ onMounted(() => {
 }
 .form-group { margin-bottom: 20px; }
 .form-group label {
-  display: block;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
@@ -366,11 +544,134 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(66, 184, 131, 0.18);
 }
 .form-input:disabled { background: #e9ecef; cursor: not-allowed; }
+
+/* Locked label field */
+.locked-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #e8f8f2;
+  border: 1px solid #b7e4d0;
+  color: #2f7d5c;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.locked-input {
+  background: #e9ecef;
+  border-color: #ced4da;
+  border-style: dashed;
+  color: #343a40;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: default;
+}
+.locked-input:focus {
+  border-color: #adb5bd;
+  box-shadow: none;
+}
+.locked-input:focus-visible {
+  outline: 2px solid #42b883;
+  outline-offset: 2px;
+}
+.label-help {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #6c757d;
+  line-height: 1.5;
+}
+.inline-link {
+  color: #2f7d5c;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.inline-link:hover { color: #42b883; }
+.inline-link:focus-visible { outline: 2px solid #42b883; outline-offset: 2px; border-radius: 3px; }
+
+.detector-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #e8f8f2;
+  border: 1px solid #b7e4d0;
+  font-size: 0.88rem;
+  color: #2f5d4a;
+}
+.meta-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #42b883;
+  flex: 0 0 auto;
+}
+.meta-text strong { color: #212529; }
+.meta-district {
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #b7e4d0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2f7d5c;
+}
+
+.detector-alert {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+}
+.detector-alert p {
+  margin: 0;
+  color: #a3271b;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+.alert-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.btn-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #495057;
+  background: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.btn-inline:hover { background: #f1f3f5; border-color: #42b883; color: #2f7d5c; }
+.btn-inline:focus-visible { outline: 2px solid #42b883; outline-offset: 2px; }
+
 .loading-inline {
   font-size: 0.85rem;
   color: #666;
   margin-top: 6px;
   font-style: italic;
+}
+
+.reveal { animation: fadeUp 0.25s ease-out; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .action-bar {
@@ -472,6 +773,8 @@ onMounted(() => {
   .action-bar { flex-direction: column-reverse; gap: 10px; }
   .action-bar .btn-cancel,
   .action-bar .btn-primary { width: 100%; min-width: 0; min-height: 48px; }
+  .alert-actions { flex-direction: column; }
+  .btn-inline { width: 100%; min-height: 44px; }
   .modal-overlay { padding: 16px; }
   .modal-content { padding: 20px 16px; }
   .modal-actions { flex-direction: column-reverse; }
@@ -481,5 +784,6 @@ onMounted(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .idle-progress-bar { transition: none; }
+  .reveal { animation: none; }
 }
 </style>
