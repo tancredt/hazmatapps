@@ -9,6 +9,7 @@ import DetectorsMenu from '../components/DetectorsMenu.vue'
 import DistrictMainMenu from '../components/DistrictMainMenu.vue'
 import DistrictOperationsMenu from '../components/DistrictOperationsMenu.vue'
 import DetectorTransfer from '../components/DetectorTransfer.vue'
+import CylinderTransfer from '../components/CylinderTransfer.vue'
 
 // Action Components
 import LocationChanger from '../components/LocationChanger.vue'
@@ -101,6 +102,12 @@ const routes = [
     path: '/detector-transfer',
     name: 'DetectorTransfer',
     component: DetectorTransfer,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cylinder-transfer',
+    name: 'CylinderTransfer',
+    component: CylinderTransfer,
     meta: { requiresAuth: true }
   },
 
