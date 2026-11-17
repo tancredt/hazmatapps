@@ -49,7 +49,8 @@ class DetectorType(models.TextChoices):
     LAPTOP = "LT", "Laptop"
     MERCURY_METER = "MM", "Mercury Meter"
     GCMS = "GC", "GC/MS"
-
+    FTIR = "FT", "FTIR"
+    RAMAN = "RA", "Raman"
 
 class Supplier(models.TextChoices):
     AIRMET = "AM", "AirMet"
