@@ -177,7 +177,7 @@ const routes = [
 
   // --- 404 CATCH-ALL ---
   {
-    path: '/:pathMatch(.*)*', // <--- THE ACTUAL CORRECT VUE ROUTER 4 SYNTAX
+    path: '/:pathMatch(.*)*', // <--- THIS IS THE ONLY VALID VUE ROUTER 4 CATCH-ALL SYNTAX
     name: 'NotFound',
     component: {
       template: `
