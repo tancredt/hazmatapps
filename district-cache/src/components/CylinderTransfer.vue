@@ -1,111 +1,130 @@
 <template>
-  <div class="swap-screen">
-    <HomeHeader />
-    <h2>Update Cylinder Location</h2>
+<div class="swap-screen">
+<HomeHeader />
+<h2>Update Cylinder Location</h2>
 
-    <div class="form-container">
-      <!-- Cylinder Label -->
-      <div class="form-group">
-        <label for="cylinder-label">Cylinder Label (e.g. CYL00123)</label>
-        <input
-          id="cylinder-label"
-          type="text"
-          v-model="cylinderLabel"
-          class="form-input"
-          placeholder="Enter cylinder label..."
-          autocomplete="off"
-          autocapitalize="characters"
-          autocorrect="off"
-          spellcheck="false"
-          :disabled="isProcessing"
-        />
-        <div class="field-hint">The number alone works too — 123 matches CYL00123.</div>
-      </div>
+<!-- INSTRUCTIONS BLOCK -->
+<div class="instructions-block">
+  <p class="home-intro">Record an equipment move in four steps:</p>
+  <ol class="steps">
+    <li class="step">
+      <span class="step-num" aria-hidden="true">1</span>
+      <span class="step-text">Input Label</span>
+    </li>
+    <li class="step">
+      <span class="step-num" aria-hidden="true">2</span>
+      <span class="step-text">Select Destination</span>
+    </li>
+    <li class="step">
+      <span class="step-num" aria-hidden="true">3</span>
+      <span class="step-text">
+        Choose Specific Location
+        <span class="step-note">(if required)</span>
+      </span>
+    </li>
+    <li class="step">
+      <span class="step-num" aria-hidden="true">4</span>
+      <span class="step-text">Submit</span>
+    </li>
+  </ol>
+</div>
 
-      <!-- Destination -->
-      <div class="form-group">
-        <label for="destination">Select Destination</label>
-        <select id="destination" v-model="destination" class="form-input" :disabled="isProcessing" @change="onDestinationChange">
-          <option value="">-- Select Destination --</option>
-          <option value="DISTRICT_CACHE">District Cache</option>
-          <option value="STATION">Fire Station</option>
-        </select>
-      </div>
-
-      <!-- District (Conditional) -->
-      <div v-if="destination === 'DISTRICT_CACHE' || destination === 'STATION'" class="form-group">
-        <label for="district">Select District</label>
-        <select id="district" v-model="selectedDistrict" class="form-input" :disabled="isProcessing || isLoadingDistricts" @change="onDistrictChange">
-          <option value="">-- Select District --</option>
-          <option v-for="d in districts" :key="d.value" :value="d.value">{{ d.label }}</option>
-        </select>
-        <div v-if="isLoadingDistricts" class="loading-inline" aria-live="polite">Loading districts...</div>
-      </div>
-
-      <!-- Fire Station (Conditional) -->
-      <div v-if="destination === 'STATION'" class="form-group">
-        <label for="station">Select Fire Station</label>
-        <select id="station" v-model="selectedStation" class="form-input" :disabled="isProcessing || isLoadingStations || !selectedDistrict">
-          <option value="">-- Select Fire Station --</option>
-          <option v-for="s in stations" :key="s.id" :value="s.label">{{ s.label }}</option>
-        </select>
-        <div v-if="isLoadingStations" class="loading-inline" aria-live="polite">Loading stations...</div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="action-bar">
-        <button type="button" class="btn-cancel" @click="handleCancel" :disabled="isProcessing">Cancel</button>
-        <button type="button" class="btn-primary" @click="handleSubmit" :disabled="isSubmitDisabled || isProcessing">
-          {{ isProcessing ? 'Processing...' : 'Submit' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Error Modal -->
-    <div v-if="showErrorModal" class="modal-overlay" @click.self="showErrorModal = false">
-      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="error-title">
-        <h3 id="error-title">{{ errorTitle }}</h3>
-        <p>{{ errorMessage }}</p>
-        <div class="modal-actions">
-          <button type="button" class="btn-confirm" @click="showErrorModal = false">OK</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Success Modal -->
-    <div v-if="showSuccessModal" class="modal-overlay">
-      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="success-title">
-        <h3 id="success-title">Success</h3>
-        <p>Cylinder location and status have been updated successfully.</p>
-        <div class="modal-actions">
-          <button type="button" class="btn-confirm" @click="closeSuccessModal">OK</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Inactivity Warning Modal -->
-    <div v-if="showIdleWarning" class="modal-overlay modal-overlay--idle">
-      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="idle-title" aria-describedby="idle-desc">
-        <h3 id="idle-title">Still there?</h3>
-        <p id="idle-desc">
-          You've been inactive for a while. You'll be returned to the home page in
-          <strong class="idle-count" role="timer" :class="{ 'idle-count--urgent': idleUrgent }">{{ idleSecondsRemaining }}</strong>
-          second{{ idleSecondsRemaining === 1 ? '' : 's' }}.
-        </p>
-        <div class="idle-progress" aria-hidden="true">
-          <span
-            class="idle-progress-bar"
-            :class="{ 'idle-progress-bar--urgent': idleUrgent }"
-            :style="{ width: idleProgressPercent + '%' }"
-          ></span>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" @click="goHomeNow">Return home now</button>
-          <button type="button" ref="stayButtonRef" class="btn-confirm" @click="stayOnPage">Stay on this page</button>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="form-container">
+   <!-- Cylinder Label -->
+   <div class="form-group">
+     <label for="cylinder-label">Cylinder Label (e.g. CYL00123)</label>
+     <input
+       id="cylinder-label"
+       type="text"
+       v-model="cylinderLabel"
+       class="form-input"
+       placeholder="Enter cylinder label..."
+       autocomplete="off"
+       autocapitalize="characters"
+       autocorrect="off"
+       spellcheck="false"
+       :disabled="isProcessing"
+     />
+     <div class="field-hint">The number alone works too — 123 matches CYL00123.</div>
+   </div>
+   <!-- Destination -->
+   <div class="form-group">
+     <label for="destination">Select Destination</label>
+     <select id="destination" v-model="destination" class="form-input" :disabled="isProcessing" @change="onDestinationChange">
+       <option value="">-- Select Destination --</option>
+       <option value="DISTRICT_CACHE">District Cache</option>
+       <option value="STATION">Fire Station</option>
+     </select>
+   </div>
+   <!-- District (Conditional) -->
+   <div v-if="destination === 'DISTRICT_CACHE' || destination === 'STATION'" class="form-group">
+     <label for="district">Select District</label>
+     <select id="district" v-model="selectedDistrict" class="form-input" :disabled="isProcessing || isLoadingDistricts" @change="onDistrictChange">
+       <option value="">-- Select District --</option>
+       <option v-for="d in districts" :key="d.value" :value="d.value">{{ d.label }}</option>
+     </select>
+     <div v-if="isLoadingDistricts" class="loading-inline" aria-live="polite">Loading districts...</div>
+   </div>
+   <!-- Fire Station (Conditional) -->
+   <div v-if="destination === 'STATION'" class="form-group">
+     <label for="station">Select Fire Station</label>
+     <select id="station" v-model="selectedStation" class="form-input" :disabled="isProcessing || isLoadingStations || !selectedDistrict">
+       <option value="">-- Select Fire Station --</option>
+       <option v-for="s in stations" :key="s.id" :value="s.label">{{ s.label }}</option>
+     </select>
+     <div v-if="isLoadingStations" class="loading-inline" aria-live="polite">Loading stations...</div>
+   </div>
+   <!-- Action Buttons -->
+   <div class="action-bar">
+     <button type="button" class="btn-cancel" @click="handleCancel" :disabled="isProcessing">Cancel</button>
+     <button type="button" class="btn-primary" @click="handleSubmit" :disabled="isSubmitDisabled || isProcessing">
+       {{ isProcessing ? 'Processing...' : 'Submit' }}
+     </button>
+   </div>
+ </div>
+ <!-- Error Modal -->
+ <div v-if="showErrorModal" class="modal-overlay" @click.self="showErrorModal = false">
+   <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="error-title">
+     <h3 id="error-title">{{ errorTitle }}</h3>
+     <p>{{ errorMessage }}</p>
+     <div class="modal-actions">
+       <button type="button" class="btn-confirm" @click="showErrorModal = false">OK</button>
+     </div>
+   </div>
+ </div>
+ <!-- Success Modal -->
+ <div v-if="showSuccessModal" class="modal-overlay">
+   <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="success-title">
+     <h3 id="success-title">Success</h3>
+     <p>Cylinder location and status have been updated successfully.</p>
+     <div class="modal-actions">
+       <button type="button" class="btn-confirm" @click="closeSuccessModal">OK</button>
+     </div>
+   </div>
+ </div>
+ <!-- Inactivity Warning Modal -->
+ <div v-if="showIdleWarning" class="modal-overlay modal-overlay--idle">
+   <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="idle-title" aria-describedby="idle-desc">
+     <h3 id="idle-title">Still there?</h3>
+     <p id="idle-desc">
+       You've been inactive for a while. You'll be returned to the home page in
+       <strong class="idle-count" role="timer" :class="{ 'idle-count--urgent': idleUrgent }">{{ idleSecondsRemaining }}</strong>
+       second{{ idleSecondsRemaining === 1 ? '' : 's' }}.
+     </p>
+     <div class="idle-progress" aria-hidden="true">
+       <span
+         class="idle-progress-bar"
+         :class="{ 'idle-progress-bar--urgent': idleUrgent }"
+         :style="{ width: idleProgressPercent + '%' }"
+       ></span>
+     </div>
+     <div class="modal-actions">
+       <button type="button" class="btn-cancel" @click="goHomeNow">Return home now</button>
+       <button type="button" ref="stayButtonRef" class="btn-confirm" @click="stayOnPage">Stay on this page</button>
+     </div>
+   </div>
+ </div>
+</div>
 </template>
 
 <script setup>
@@ -171,8 +190,6 @@ const errorMessage = ref('')
 const errorTitle = ref('Cylinder Not Found')
 
 // --- Helpers ---
-// The label is the model property CYL{id:05d}. Accept "123", "CYL123",
-// "cyl00123" etc. and canonicalise to CYL00123 for lookup and matching.
 const normalizeCylinderLabel = (value) => {
   const cleaned = String(value ?? '').trim().toUpperCase().replace(/\s+/g, '')
   const match = cleaned.match(/^CYL0*(\d+)$/) || cleaned.match(/^0*(\d+)$/)
@@ -208,7 +225,7 @@ const fetchStations = async () => {
     return
   }
   isLoadingStations.value = true
-  selectedStation.value = '' // Reset station when district changes
+  selectedStation.value = '' 
   try {
     const data = await apiFetch(`/locations/?location_type=ST&district=${encodeURIComponent(selectedDistrict.value)}`)
     stations.value = Array.isArray(data) ? data : []
@@ -240,12 +257,10 @@ const handleCancel = () => {
   selectedStation.value = ''
   stations.value = []
 
-  // Close any open modals just in case
   showErrorModal.value = false
   showSuccessModal.value = false
 }
 
-// Helper to safely find exact matches since backend uses icontains
 const findExactLocation = (results, matchFn) => {
   const list = Array.isArray(results) ? results : []
   return list.find(matchFn) || null
@@ -257,7 +272,6 @@ const handleSubmit = async () => {
   errorMessage.value = ''
 
   try {
-    // 1. Check if cylinder exists (canonical label match)
     const canonicalLabel = normalizeCylinderLabel(cylinderLabel.value)
     const searchResults = await apiFetch(`/cylinders/?label=${encodeURIComponent(canonicalLabel)}`)
     const list = Array.isArray(searchResults) ? searchResults : []
@@ -270,7 +284,6 @@ const handleSubmit = async () => {
       return
     }
 
-    // 2. Resolve Target Location ID & Status
     let targetLocationId = null
     let targetStatus = ''
 
@@ -281,7 +294,7 @@ const handleSubmit = async () => {
         l => l.location_type === 'DI' && l.district?.toUpperCase() === selectedDistrict.value.toUpperCase()
       )
       targetLocationId = loc?.id
-      targetStatus = 'IS' // INSTOCK
+      targetStatus = 'IS' 
     } else if (destination.value === 'STATION') {
       const res = await apiFetch(`/locations/?label=${encodeURIComponent(selectedStation.value)}&location_type=ST`)
       const loc = findExactLocation(
@@ -289,15 +302,13 @@ const handleSubmit = async () => {
         l => l.label.toUpperCase() === selectedStation.value.toUpperCase() && l.location_type === 'ST'
       )
       targetLocationId = loc?.id
-      targetStatus = 'OP' // OPERATIONAL
+      targetStatus = 'OP' 
     }
 
     if (!targetLocationId) {
       throw new Error('Could not resolve the destination location in the database.')
     }
 
-    // 3. Execute Update (partial update via the cylinder detail endpoint;
-    //    the location-change trigger writes the log row automatically)
     await apiFetch(`/cylinders/${matchedCylinder.id}/`, {
       method: 'PATCH',
       body: JSON.stringify({
@@ -319,7 +330,6 @@ const handleSubmit = async () => {
 
 const closeSuccessModal = () => {
   showSuccessModal.value = false
-  // Reset form for next use
   handleCancel()
 }
 
@@ -343,6 +353,79 @@ onMounted(() => {
   margin: 12px 0 20px;
 }
 
+/* --- Instructions Block --- */
+.instructions-block {
+  --green: #278257;
+  --green-tint: #e8f8f2;
+  --green-line: #b7e4d0;
+  --ink-2: #495057;
+  --muted: #6c757d;
+  --line: #dee2e6;
+  max-width: 600px;
+  margin: 0 auto 24px;
+  text-align: center;
+}
+.instructions-block .home-intro {
+  margin: 0 0 20px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+.instructions-block .steps {
+  list-style: none;
+  margin: 0 auto 0;
+  padding: 20px 22px;
+  max-width: 380px;
+  box-sizing: border-box;
+  background: #f8f9fa;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-align: left;
+}
+.instructions-block .step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+}
+.instructions-block .step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 34px;
+  bottom: -7px;
+  width: 2px;
+  background: var(--green-line);
+}
+.instructions-block .step-num {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--green-tint);
+  border: 1px solid var(--green-line);
+  color: var(--green);
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.instructions-block .step-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+.instructions-block .step-note {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .form-container {
   max-width: 600px;
   margin: 0 auto;
@@ -357,7 +440,7 @@ onMounted(() => {
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #333;
+  color: #333; 
   margin-bottom: 8px;
   font-size: 0.95rem;
 }
@@ -365,7 +448,7 @@ onMounted(() => {
   width: 100%;
   min-height: 46px;
   padding: 10px 12px;
-  font-size: 1rem; /* 16px prevents iOS focus zoom */
+  font-size: 1rem; 
   font-family: inherit;
   color: #212529;
   border-radius: 6px;
