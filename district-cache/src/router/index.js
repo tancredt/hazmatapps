@@ -35,10 +35,13 @@ const validDetectors = new Map()
 const validCylinders = new Map()
 
 async function validateRouteParams(to) {
+  console.log('[Router Guard] validateRouteParams triggered. Params:', to.params)
+  
   const { district, location_label, detector_label, cylinder_label } = to.params
 
   // 1. Validate District
   if (district) {
+    console.log('[Router Guard] Validating district:', district)
     if (validDistricts.size === 0) {
       try {
         const res = await apiFetch('/districts/')
@@ -49,12 +52,14 @@ async function validateRouteParams(to) {
       }
     }
     if (!validDistricts.has(district.toUpperCase())) {
+      console.log('[Router Guard] District NOT found in DB.')
       return false
     }
   }
 
   // 2. Validate Location
   if (location_label) {
+    console.log('[Router Guard] Validating location:', location_label)
     const cacheKey = `${district?.toUpperCase() || 'ANY'}:${location_label.toUpperCase()}`
     if (!validLocations.has(cacheKey)) {
       try {
@@ -71,16 +76,20 @@ async function validateRouteParams(to) {
       }
     }
     if (!validLocations.get(cacheKey)) {
+      console.log('[Router Guard] Location NOT found in DB.')
       return false
     }
   }
 
   // 3. Validate Detector Label
   if (detector_label) {
+    console.log('[Router Guard] Validating detector label:', detector_label)
     const key = detector_label.toUpperCase()
     if (!validDetectors.has(key)) {
       try {
+        console.log(`[Router Guard] Fetching: /detector-labels/?label=${detector_label}`)
         const res = await apiFetch(`/detector-labels/?label=${encodeURIComponent(detector_label)}`)
+        console.log('[Router Guard] Detector API Response:', res)
         const exists = Array.isArray(res) && res.some(d => String(d.label).toUpperCase() === key)
         validDetectors.set(key, exists)
       } catch (e) {
@@ -89,13 +98,14 @@ async function validateRouteParams(to) {
       }
     }
     if (!validDetectors.get(key)) {
+      console.log('[Router Guard] Detector NOT found in DB -> Triggering 404')
       return false // Detector not found -> Triggers 404
     }
   }
 
   // 4. Validate Cylinder Label
   if (cylinder_label) {
-    // Normalize to CYL00123 format to match backend response (CYL + 5 digit ID)
+    console.log('[Router Guard] Validating cylinder label:', cylinder_label)
     const cleaned = String(cylinder_label).trim().toUpperCase().replace(/\s+/g, '')
     const match = cleaned.match(/^CYL0*(\d+)$/) || cleaned.match(/^0*(\d+)$/)
     const canonicalLabel = match ? `CYL${match[1].padStart(5, '0')}` : cleaned
@@ -103,7 +113,9 @@ async function validateRouteParams(to) {
 
     if (!validCylinders.has(key)) {
       try {
+        console.log(`[Router Guard] Fetching: /cylinders/?label=${canonicalLabel}`)
         const res = await apiFetch(`/cylinders/?label=${encodeURIComponent(canonicalLabel)}`)
+        console.log('[Router Guard] Cylinder API Response:', res)
         const exists = Array.isArray(res) && res.some(c => {
           const cLabel = String(c.label).toUpperCase().replace(/\s+/g, '')
           const cMatch = cLabel.match(/^CYL0*(\d+)$/) || cLabel.match(/^0*(\d+)$/)
@@ -117,6 +129,7 @@ async function validateRouteParams(to) {
       }
     }
     if (!validCylinders.get(key)) {
+      console.log('[Router Guard] Cylinder NOT found in DB -> Triggering 404')
       return false // Cylinder not found -> Triggers 404
     }
   }
@@ -132,7 +145,7 @@ const routes = [
   { path: '/', name: 'Home', alias: '/home', component: HomePage, meta: { requiresAuth: true } },
   { path: '/login', name: 'Login', component: LoginScreen, meta: { requiresAuth: false } },
 
-  // --- ACTIVE TRANSFER ROUTES (with optional label params for 404 validation) ---
+  // --- ACTIVE TRANSFER ROUTES ---
   {
     path: '/detector-transfer/:detector_label?',
     name: 'DetectorTransfer',
@@ -164,7 +177,7 @@ const routes = [
 
   // --- 404 CATCH-ALL ---
   {
-    path: '/:pathMatch(.*)*', // <--- CRITICAL FIX: Correct Vue Router 4 catch-all syntax
+    path: '/:pathMatch(.*)*', // <--- THE ACTUAL CORRECT VUE ROUTER 4 SYNTAX
     name: 'NotFound',
     component: {
       template: `
@@ -191,6 +204,8 @@ const router = createRouter({
 // GLOBAL NAVIGATION GUARD
 // ==========================================
 router.beforeEach(async (to, from, next) => {
+  console.log('[Router Guard] Navigation triggered. Target:', to.fullPath, 'Params:', to.params)
+  
   const authStore = useAuthStore()
 
   // 1. Authentication Check
@@ -205,11 +220,12 @@ router.beforeEach(async (to, from, next) => {
   if (to.params.district || to.params.location_label || to.params.detector_label || to.params.cylinder_label) {
     const isValid = await validateRouteParams(to)
     if (!isValid) {
-      // If the label isn't in the database, trigger the 404 page
+      console.log('[Router Guard] Validation failed. Redirecting to 404.')
       return next({ name: 'NotFound' })
     }
   }
 
+  console.log('[Router Guard] Validation passed (or no params to validate). Proceeding.')
   next()
 })
 
