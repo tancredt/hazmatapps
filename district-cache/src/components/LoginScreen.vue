@@ -114,7 +114,7 @@ const submitPinLogin = async () => {
   if (result.success) {
     let destination = redirectPath.value
     if (!destination || destination === '/' || destination === '/apps/cache/') {
-      destination = '/apps/cache/' 
+      destination = '/' 
     }
     router.replace(destination)
   } else {

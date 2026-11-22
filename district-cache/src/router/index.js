@@ -8,7 +8,7 @@ import { apiFetch } from '@/utils/api'
 import HomePage from '../components/HomePage.vue'
 import DetectorTransfer from '../components/DetectorTransfer.vue'
 import CylinderTransfer from '../components/CylinderTransfer.vue'
-import LoginScreen from '../components/LoginScreen.vue' // Kept active for auth redirects
+import LoginScreen from '../components/LoginScreen.vue'
 
 // ==========================================
 // COMMENTED OUT IMPORTS
@@ -49,7 +49,7 @@ async function validateRouteParams(to) {
       }
     }
     if (!validDistricts.has(district.toUpperCase())) {
-      return false 
+      return false
     }
   }
 
@@ -71,7 +71,7 @@ async function validateRouteParams(to) {
       }
     }
     if (!validLocations.get(cacheKey)) {
-      return false 
+      return false
     }
   }
 
@@ -164,16 +164,16 @@ const routes = [
 
   // --- 404 CATCH-ALL ---
   {
-    path: '/:pathMatch(.*)*', // <--- CRITICAL FIX: Correct Vue Router 4 syntax
+    path: '/:pathMatch(.*)*', // <--- CRITICAL FIX: Correct Vue Router 4 catch-all syntax
     name: 'NotFound',
     component: {
       template: `
         <div style="padding: 3rem; text-align: center; font-family: sans-serif;">
           <h1 style="color: #c0392b; font-size: 2.5rem; margin-bottom: 1rem;">404 - Not Found</h1>
           <p style="color: #495057; font-size: 1.1rem; margin-bottom: 2rem;">
-            The route, district, location, or equipment label you entered does not exist.
+            The equipment label or route you entered does not exist.
           </p>
-          <router-link to="/" style="color: #fff; background: #42b883; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+          <router-link :to="{ name: 'Home' }" style="color: #fff; background: #42b883; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">
             Return to Home
           </router-link>
         </div>
@@ -205,6 +205,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.params.district || to.params.location_label || to.params.detector_label || to.params.cylinder_label) {
     const isValid = await validateRouteParams(to)
     if (!isValid) {
+      // If the label isn't in the database, trigger the 404 page
       return next({ name: 'NotFound' })
     }
   }
