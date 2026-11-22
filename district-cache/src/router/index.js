@@ -165,7 +165,7 @@ const routes = [
 
   // --- 404 CATCH-ALL ---
   {
-    path: '/:pathMatch(.*)*', // Correct Vue Router 4 catch-all syntax
+    path: '/:pathMatch(.*)*', // <--- CRITICAL FIX: Correct Vue Router 4 catch-all syntax
     name: 'NotFound',
     component: {
       template: `
