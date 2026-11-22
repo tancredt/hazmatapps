@@ -3,32 +3,6 @@
 <HomeHeader />
 <h2>Update Detector Location</h2>
 
-<!-- INSTRUCTIONS BLOCK -->
-<div class="instructions-block">
-  <p class="home-intro">Record an equipment move in four steps:</p>
-  <ol class="steps">
-    <li class="step">
-      <span class="step-num" aria-hidden="true">1</span>
-      <span class="step-text">Input Label</span>
-    </li>
-    <li class="step">
-      <span class="step-num" aria-hidden="true">2</span>
-      <span class="step-text">Select Destination</span>
-    </li>
-    <li class="step">
-      <span class="step-num" aria-hidden="true">3</span>
-      <span class="step-text">
-        Choose Specific Location
-        <span class="step-note">(if required)</span>
-      </span>
-    </li>
-    <li class="step">
-      <span class="step-num" aria-hidden="true">4</span>
-      <span class="step-text">Submit</span>
-    </li>
-  </ol>
-</div>
-
 <div class="form-container">
    <!-- Detector Label -->
    <div class="form-group">
@@ -66,14 +40,8 @@
        <div v-if="isResolvingDetector" class="loading-inline" aria-live="polite">
          Checking this detector…
        </div>
-       <div v-else-if="matchedDetector" class="detector-meta" aria-live="polite">
-         <span class="meta-dot" aria-hidden="true"></span>
-         <span class="meta-text">
-           Currently at <strong>{{ matchedDetector.location_label || 'Unknown location' }}</strong>
-         </span>
-         <span v-if="currentDistrictLabel" class="meta-district">{{ currentDistrictLabel }}</span>
-       </div>
-       <div v-else class="detector-alert" role="alert">
+       <!-- REMOVED: "Currently at" location display block -->
+       <div v-else class="detector-alert" role="alert" v-if="!matchedDetector">
          <p>{{ detectorError }}</p>
          <div class="alert-actions">
            <button type="button" class="btn-inline" @click="resolveDetector()">Try again</button>
@@ -82,6 +50,7 @@
        </div>
      </template>
    </div>
+   
    <div v-if="showDestinations" :class="{ reveal: isLocked }">
      <!-- Destination -->
      <div class="form-group">
@@ -123,6 +92,7 @@
      </div>
    </div>
  </div>
+ 
  <!-- Error Modal -->
  <div v-if="showErrorModal" class="modal-overlay" @click.self="showErrorModal = false">
    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="error-title">
@@ -133,6 +103,7 @@
      </div>
    </div>
  </div>
+ 
  <!-- Success Modal -->
  <div v-if="showSuccessModal" class="modal-overlay">
    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="success-title">
@@ -143,6 +114,7 @@
      </div>
    </div>
  </div>
+ 
  <!-- Inactivity Warning Modal -->
  <div v-if="showIdleWarning" class="modal-overlay modal-overlay--idle">
    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="idle-title" aria-describedby="idle-desc">
@@ -175,6 +147,7 @@ import { apiFetch } from '@/utils/api'
 import HomeHeader from './HomeHeader.vue'
 import { useInactivityTimeout } from '@/composables/useInactivityTimeout'
 
+// Optional prop so the route can pass `props: true`; falls back to the URL param.
 const props = defineProps({
   detector_label: { type: String, default: '' }
 })
@@ -259,15 +232,6 @@ const STATUS_WORDS = {
 // --- Computed ---
 const showDestinations = computed(() => !isLocked.value || !!matchedDetector.value)
 
-const currentDistrictLabel = computed(() => {
-  const raw = matchedDetector.value?.location_district
-  if (!raw) return ''
-  const hit = districts.value.find(
-    d => String(d.value).toUpperCase() === String(raw).toUpperCase()
-  )
-  return hit?.label || raw
-})
-
 const isSubmitDisabled = computed(() => {
   if (isResolvingDetector.value) return true
   if (!detectorLabel.value.trim()) return true
@@ -286,6 +250,7 @@ const resetSelections = () => {
   stations.value = []
 }
 
+// Backend uses icontains, so confirm an exact case-insensitive match here. 
 const findDetector = async (label) => {
   const results = await apiFetch(`/detector-labels/?label=${encodeURIComponent(label)}`)
   const list = Array.isArray(results) ? results : []
@@ -347,7 +312,7 @@ const fetchStations = async () => {
     return
   }
   isLoadingStations.value = true
-  selectedStation.value = '' 
+  selectedStation.value = '' // Reset station when district changes
   try {
     const data = await apiFetch(
       `/locations/?location_type=ST&district=${encodeURIComponent(selectedDistrict.value)}`
@@ -381,6 +346,7 @@ const handleCancel = () => {
   showSuccessModal.value = false
 }
 
+// Helper to safely find exact matches since backend uses icontains
 const findExactLocation = (results, matchFn) => {
   const list = Array.isArray(results) ? results : []
   return list.find(matchFn) || null
@@ -392,6 +358,7 @@ const handleSubmit = async () => {
   errorMessage.value = ''
 
   try {
+    // 1. Resolve the detector (already verified when the label came from the URL)
     let detector = null
     if (isLocked.value && matchedDetector.value) {
       detector = matchedDetector.value
@@ -405,13 +372,14 @@ const handleSubmit = async () => {
       }
     }
 
+    // 2. Resolve Target Location ID & Status
     let targetLocation = null
     let targetStatus = ''
 
     if (destination.value === 'BURNLEY') {
       const res = await apiFetch(`/locations/?label=Burnley`)
       targetLocation = findExactLocation(res, l => l.label.toUpperCase() === 'BURNLEY')
-      targetStatus = 'OF' 
+      targetStatus = 'OF' // OFFLINE
     } else if (destination.value === 'DISTRICT_CACHE') {
       const res = await apiFetch(
         `/locations/?location_type=DI&district=${encodeURIComponent(selectedDistrict.value)}`
@@ -421,7 +389,7 @@ const handleSubmit = async () => {
         l => l.location_type === 'DI' &&
           String(l.district || '').toUpperCase() === selectedDistrict.value.toUpperCase()
       )
-      targetStatus = 'IS' 
+      targetStatus = 'IS' // INSTOCK
     } else if (destination.value === 'STATION') {
       const res = await apiFetch(
         `/locations/?label=${encodeURIComponent(selectedStation.value)}&location_type=ST`
@@ -430,13 +398,14 @@ const handleSubmit = async () => {
         res,
         l => l.label.toUpperCase() === selectedStation.value.toUpperCase() && l.location_type === 'ST'
       )
-      targetStatus = 'OP' 
+      targetStatus = 'OP' // OPERATIONAL
     }
 
     if (!targetLocation?.id) {
       throw new Error('Could not resolve the destination location in the database.')
     }
 
+    // 3. Execute Update
     const payload = [{
       detector_id: detector.id,
       location_id: targetLocation.id,
@@ -465,7 +434,7 @@ const closeSuccessModal = () => {
   showSuccessModal.value = false
   resetSelections()
   if (isLocked.value) {
-    resolveDetector({ silent: true })
+    // Keep the URL label, but we no longer show the "currently at" readout
   } else {
     detectorLabel.value = ''
     matchedDetector.value = null
@@ -478,6 +447,7 @@ onMounted(() => {
   if (isLocked.value) resolveDetector()
 })
 
+// The same component instance is reused when only the URL label changes
 watch(urlLabel, (label) => {
   resetSelections()
   successMessage.value = ''
@@ -508,79 +478,6 @@ watch(urlLabel, (label) => {
   font-size: clamp(1.3rem, 4.5vw, 1.7rem);
   color: #212529;
   margin: 12px 0 20px;
-}
-
-/* --- Instructions Block --- */
-.instructions-block {
-  --green: #278257;
-  --green-tint: #e8f8f2;
-  --green-line: #b7e4d0;
-  --ink-2: #495057;
-  --muted: #6c757d;
-  --line: #dee2e6;
-  max-width: 600px;
-  margin: 0 auto 24px;
-  text-align: center;
-}
-.instructions-block .home-intro {
-  margin: 0 0 20px;
-  font-size: 0.95rem;
-  color: var(--muted);
-}
-.instructions-block .steps {
-  list-style: none;
-  margin: 0 auto 0;
-  padding: 20px 22px;
-  max-width: 380px;
-  box-sizing: border-box;
-  background: #f8f9fa;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  text-align: left;
-}
-.instructions-block .step {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 7px 0;
-}
-.instructions-block .step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 13px;
-  top: 34px;
-  bottom: -7px;
-  width: 2px;
-  background: var(--green-line);
-}
-.instructions-block .step-num {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--green-tint);
-  border: 1px solid var(--green-line);
-  color: var(--green);
-  font-size: 0.85rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.instructions-block .step-text {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--ink-2);
-  line-height: 1.4;
-}
-.instructions-block .step-note {
-  font-weight: 400;
-  font-style: italic;
-  color: var(--muted);
-  white-space: nowrap;
 }
 
 .form-container {
@@ -670,37 +567,6 @@ watch(urlLabel, (label) => {
 }
 .inline-link:hover { color: #42b883; }
 .inline-link:focus-visible { outline: 2px solid #42b883; outline-offset: 2px; border-radius: 3px; }
-
-.detector-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: #e8f8f2;
-  border: 1px solid #b7e4d0;
-  font-size: 0.88rem;
-  color: #2f5d4a;
-}
-.meta-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #42b883;
-  flex: 0 0 auto;
-}
-.meta-text strong { color: #212529; }
-.meta-district {
-  padding: 2px 8px;
-  border-radius: 20px;
-  background: #ffffff;
-  border: 1px solid #b7e4d0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #2f7d5c;
-}
 
 .detector-alert {
   margin-top: 10px;
