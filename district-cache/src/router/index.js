@@ -2,27 +2,29 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { apiFetch } from '@/utils/api'
 
-// Menu Components
+// ==========================================
+// ACTIVE IMPORTS
+// ==========================================
+import HomePage from '../components/HomePage.vue'
+import DetectorTransfer from '../components/DetectorTransfer.vue'
+import CylinderTransfer from '../components/CylinderTransfer.vue'
+import LoginScreen from '../components/LoginScreen.vue' // Kept active for auth redirects
+
+// ==========================================
+// COMMENTED OUT IMPORTS
+// ==========================================
 // import MainMenu from '../components/MainMenu.vue'
 // import CylindersMenu from '../components/CylindersMenu.vue'
 // import DetectorsMenu from '../components/DetectorsMenu.vue'
 // import DistrictMainMenu from '../components/DistrictMainMenu.vue'
 // import DistrictOperationsMenu from '../components/DistrictOperationsMenu.vue'
-import DetectorTransfer from '../components/DetectorTransfer.vue'
-import CylinderTransfer from '../components/CylinderTransfer.vue'
-
-// Action Components
 // import LocationChanger from '../components/LocationChanger.vue'
 // import ReturnScreen from '../components/ReturnScreen.vue'
 // import RestockScreen from '../components/RestockScreen.vue'
 // import DistrictStatus from '../components/DistrictStatus.vue'
-import LoginScreen from '../components/LoginScreen.vue'
 // import ReportCylinderEmpty from '../components/ReportCylinderEmpty.vue'
 // import ReportDetectorFault from '../components/ReportDetectorFault.vue'
 // import CylinderSwapScreen from '../components/CylinderSwapScreen.vue'
-
-// Home
-import HomePage from '../components/HomePage.vue'
 
 // ==========================================
 // DATABASE VALIDATION LOGIC
@@ -48,7 +50,7 @@ async function validateRouteParams(to) {
       }
     }
     if (!validDistricts.has(district.toUpperCase())) {
-      return false // District not found in DB
+      return false 
     }
   }
 
@@ -62,7 +64,6 @@ async function validateRouteParams(to) {
           url += `&district=${encodeURIComponent(district)}`
         }
         const res = await apiFetch(url)
-        // The backend uses 'icontains' for label, so we verify exact match on frontend
         const exists = res.some(loc => loc.label.toUpperCase() === location_label.toUpperCase())
         validLocations.set(cacheKey, exists)
       } catch (e) {
@@ -71,7 +72,7 @@ async function validateRouteParams(to) {
       }
     }
     if (!validLocations.get(cacheKey)) {
-      return false // Location not found in DB
+      return false 
     }
   }
 
@@ -89,13 +90,13 @@ async function validateRouteParams(to) {
       }
     }
     if (!validDetectors.get(key)) {
-      return false // Detector not found in DB -> Triggers 404
+      return false // Detector not found -> Triggers 404
     }
   }
 
   // 4. Validate Cylinder Label
   if (cylinder_label) {
-    // Normalize to CYL00123 format to match backend response
+    // Normalize to CYL00123 format to match backend response (CYL + 5 digit ID)
     const cleaned = String(cylinder_label).trim().toUpperCase().replace(/\s+/g, '')
     const match = cleaned.match(/^CYL0*(\d+)$/) || cleaned.match(/^0*(\d+)$/)
     const canonicalLabel = match ? `CYL${match[1].padStart(5, '0')}` : cleaned
@@ -117,7 +118,7 @@ async function validateRouteParams(to) {
       }
     }
     if (!validCylinders.get(key)) {
-      return false // Cylinder not found in DB -> Triggers 404
+      return false // Cylinder not found -> Triggers 404
     }
   }
 
@@ -132,19 +133,19 @@ const routes = [
   { path: '/', name: 'Home', alias: '/home', component: HomePage, meta: { requiresAuth: true } },
   { path: '/login', name: 'Login', component: LoginScreen, meta: { requiresAuth: false } },
 
-  // --- TRANSFER ROUTES (with optional label params for 404 validation) ---
+  // --- ACTIVE TRANSFER ROUTES (with optional label params for 404 validation) ---
   {
     path: '/detector-transfer/:detector_label?',
     name: 'DetectorTransfer',
     component: DetectorTransfer,
-    props: true,
+    props: true, // Passes the URL param down as a prop
     meta: { requiresAuth: true }
   },
   {
     path: '/cylinder-transfer/:cylinder_label?',
     name: 'CylinderTransfer',
     component: CylinderTransfer,
-    props: true,
+    props: true, // Passes the URL param down as a prop
     meta: { requiresAuth: true }
   },
 
@@ -164,11 +165,20 @@ const routes = [
 
   // --- 404 CATCH-ALL ---
   {
-    // Note: Fixed the catch-all syntax to properly match any unmatched route
-    path: '/:pathMatch(.*)*', 
+    path: '/:pathMatch(.*)*', // Correct Vue Router 4 catch-all syntax
     name: 'NotFound',
     component: {
-      template: `<div style="padding: 2rem; text-align: center; color: red;"> <h1>404 - Not Found</h1> <p>The route, district, location, or equipment label you entered does not exist.</p> </div>`
+      template: `
+        <div style="padding: 3rem; text-align: center; font-family: sans-serif;">
+          <h1 style="color: #c0392b; font-size: 2.5rem; margin-bottom: 1rem;">404 - Not Found</h1>
+          <p style="color: #495057; font-size: 1.1rem; margin-bottom: 2rem;">
+            The route, district, location, or equipment label you entered does not exist.
+          </p>
+          <router-link to="/" style="color: #fff; background: #42b883; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+            Return to Home
+          </router-link>
+        </div>
+      `
     }
   }
 ]
