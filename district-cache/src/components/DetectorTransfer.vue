@@ -7,51 +7,35 @@
    <!-- Detector Label -->
    <div class="form-group">
      <label for="detector-label">
-       <span>{{ isLocked ? 'Detector Label' : 'Detector Label (e.g. PGM123)' }}</span>
-       <span v-if="isLocked" class="locked-tag" title="This label comes from the page address">
-         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-           <rect x="3" y="11" width="18" height="11" rx="2"></rect>
-           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-         </svg>
-         From link
-       </span>
+       <span>Detector Label</span>
      </label>
      <input
        id="detector-label"
        type="text"
        v-model="detectorLabel"
        class="form-input"
-       :class="{ 'locked-input': isLocked }"
-       :readonly="isLocked"
-       :aria-readonly="isLocked ? 'true' : 'false'"
-       :aria-describedby="isLocked ? 'detector-label-help' : null"
-       :placeholder="isLocked ? '' : 'Enter detector label...'"
+       placeholder="Enter detector label..."
        autocomplete="off"
        autocapitalize="characters"
        autocorrect="off"
        spellcheck="false"
        :disabled="isProcessing"
      />
-     <template v-if="isLocked">
-       <div id="detector-label-help" class="label-help">
-         Locked to the label in the page address.
-         <router-link :to="{ name: 'DetectorTransfer' }" class="inline-link">Use a different detector</router-link>
+     
+     <!-- Loading / Error States for URL-pre-filled labels -->
+     <div v-if="isResolvingDetector" class="loading-inline" aria-live="polite">
+       Checking this detector…
+    1</div>
+     <div v-else-if="!matchedDetector && urlLabel" class="detector-alert" role="alert">
+       <p>{{ detectorError }}</p>
+       <div class="alert-actions">
+         <button type="button" class="btn-inline" @click="resolveDetector()">Try again</button>
+         <router-link :to="{ name: 'DetectorTransfer' }" class="btn-inline">Enter label manually</router-link>
        </div>
-       <div v-if="isResolvingDetector" class="loading-inline" aria-live="polite">
-         Checking this detector…
-       </div>
-       <!-- REMOVED: "Currently at" location display block -->
-       <div v-else class="detector-alert" role="alert" v-if="!matchedDetector">
-         <p>{{ detectorError }}</p>
-         <div class="alert-actions">
-           <button type="button" class="btn-inline" @click="resolveDetector()">Try again</button>
-           <router-link :to="{ name: 'DetectorTransfer' }" class="btn-inline">Enter label manually</router-link>
-         </div>
-       </div>
-     </template>
+     </div>
    </div>
    
-   <div v-if="showDestinations" :class="{ reveal: isLocked }">
+   <div v-if="showDestinations" :class="{ reveal: urlLabel && matchedDetector }">
      <!-- Destination -->
      <div class="form-group">
        <label for="destination"><span>Select Destination</span></label>
@@ -190,12 +174,11 @@ const goHomeNow = () => {
   router.replace({ name: 'Home' }).catch(() => {})
 }
 
-// --- Locked-label mode ---
+// --- URL Label Logic ---
 const urlLabel = computed(() => {
   const raw = props.detector_label || route.params.detector_label || ''
   return String(Array.isArray(raw) ? raw[0] : raw).trim()
 })
-const isLocked = computed(() => urlLabel.value.length > 0)
 
 // --- State ---
 const detectorLabel = ref('')
@@ -230,12 +213,11 @@ const STATUS_WORDS = {
 }
 
 // --- Computed ---
-const showDestinations = computed(() => !isLocked.value || !!matchedDetector.value)
+const showDestinations = computed(() => !urlLabel.value || !!matchedDetector.value)
 
 const isSubmitDisabled = computed(() => {
   if (isResolvingDetector.value) return true
   if (!detectorLabel.value.trim()) return true
-  if (isLocked.value && !matchedDetector.value) return true
   if (!destination.value) return true
   if ((destination.value === 'DISTRICT_CACHE' || destination.value === 'STATION') && !selectedDistrict.value) return true
   if (destination.value === 'STATION' && !selectedStation.value) return true
@@ -341,7 +323,7 @@ const onDistrictChange = () => {
 
 const handleCancel = () => {
   resetSelections()
-  if (!isLocked.value) detectorLabel.value = ''
+  if (!urlLabel.value) detectorLabel.value = ''
   showErrorModal.value = false
   showSuccessModal.value = false
 }
@@ -358,9 +340,9 @@ const handleSubmit = async () => {
   errorMessage.value = ''
 
   try {
-    // 1. Resolve the detector (already verified when the label came from the URL)
+    // 1. Resolve the detector (use cached match if label hasn't changed, otherwise fetch)
     let detector = null
-    if (isLocked.value && matchedDetector.value) {
+    if (matchedDetector.value && detectorLabel.value.toUpperCase() === matchedDetector.value.label.toUpperCase()) {
       detector = matchedDetector.value
     } else {
       detector = await findDetector(detectorLabel.value.trim())
@@ -433,8 +415,10 @@ const handleSubmit = async () => {
 const closeSuccessModal = () => {
   showSuccessModal.value = false
   resetSelections()
-  if (isLocked.value) {
-    // Keep the URL label, but we no longer show the "currently at" readout
+  if (urlLabel.value) {
+    // Keep the URL label pre-filled, but clear the matched state so it re-validates if needed
+    detectorLabel.value = urlLabel.value
+    matchedDetector.value = null
   } else {
     detectorLabel.value = ''
     matchedDetector.value = null
@@ -444,7 +428,7 @@ const closeSuccessModal = () => {
 // --- Lifecycle ---
 onMounted(() => {
   fetchDistricts()
-  if (isLocked.value) resolveDetector()
+  if (urlLabel.value) resolveDetector()
 })
 
 // The same component instance is reused when only the URL label changes
@@ -520,53 +504,6 @@ watch(urlLabel, (label) => {
   box-shadow: 0 0 0 3px rgba(66, 184, 131, 0.18);
 }
 .form-input:disabled { background: #e9ecef; cursor: not-allowed; }
-
-/* Locked label field */
-.locked-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  background: #e8f8f2;
-  border: 1px solid #b7e4d0;
-  color: #2f7d5c;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-.locked-input {
-  background: #e9ecef;
-  border-color: #ced4da;
-  border-style: dashed;
-  color: #343a40;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  cursor: default;
-}
-.locked-input:focus {
-  border-color: #adb5bd;
-  box-shadow: none;
-}
-.locked-input:focus-visible {
-  outline: 2px solid #42b883;
-  outline-offset: 2px;
-}
-.label-help {
-  margin-top: 6px;
-  font-size: 0.8rem;
-  color: #6c757d;
-  line-height: 1.5;
-}
-.inline-link {
-  color: #2f7d5c;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.inline-link:hover { color: #42b883; }
-.inline-link:focus-visible { outline: 2px solid #42b883; outline-offset: 2px; border-radius: 3px; }
 
 .detector-alert {
   margin-top: 10px;
