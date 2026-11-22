@@ -29,7 +29,6 @@ import LoginScreen from '../components/LoginScreen.vue' // Kept active for auth 
 // ==========================================
 // DATABASE VALIDATION LOGIC
 // ==========================================
-// Caches to prevent redundant API calls on every route change
 const validDistricts = new Set()
 const validLocations = new Map()
 const validDetectors = new Map()
@@ -138,14 +137,14 @@ const routes = [
     path: '/detector-transfer/:detector_label?',
     name: 'DetectorTransfer',
     component: DetectorTransfer,
-    props: true, // Passes the URL param down as a prop
+    props: true,
     meta: { requiresAuth: true }
   },
   {
     path: '/cylinder-transfer/:cylinder_label?',
     name: 'CylinderTransfer',
     component: CylinderTransfer,
-    props: true, // Passes the URL param down as a prop
+    props: true,
     meta: { requiresAuth: true }
   },
 
@@ -165,7 +164,7 @@ const routes = [
 
   // --- 404 CATCH-ALL ---
   {
-    path: '/:pathMatch(.*)*', // <--- CRITICAL FIX: Correct Vue Router 4 catch-all syntax
+    path: '/:pathMatch(.*)*', // <--- CRITICAL FIX: Correct Vue Router 4 syntax
     name: 'NotFound',
     component: {
       template: `
@@ -206,7 +205,6 @@ router.beforeEach(async (to, from, next) => {
   if (to.params.district || to.params.location_label || to.params.detector_label || to.params.cylinder_label) {
     const isValid = await validateRouteParams(to)
     if (!isValid) {
-      // If the parameter isn't in the database, trigger the 404 page
       return next({ name: 'NotFound' })
     }
   }
