@@ -27,7 +27,6 @@
           <strong>{{ matchedDetector.label }}</strong>
           <span>{{ verifiedDetail }}</span>
         </div>
-        <button type="button" class="verified-change" @click="enterManually">Change</button>
       </div>
 
       <div class="form-container" :class="{ reveal: labelLocked }">
@@ -510,24 +509,6 @@ watch(urlLabel, () => {
   overflow-wrap: break-word;
 }
 .verified-text span { font-size: 0.82rem; color: #495057; overflow-wrap: break-word; }
-.verified-change {
-  flex: 0 0 auto;
-  min-height: 38px;
-  padding: 6px 13px;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #2f7d5c;
-  background: #fff;
-  border: 1px solid #b7e4d0;
-  border-radius: 7px;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.18s ease, border-color 0.18s ease;
-}
-.verified-change:hover { background: #f1f8f4; border-color: #42b883; }
-.verified-change:focus-visible { outline: 2px solid #42b883; outline-offset: 2px; }
 
 .form-container {
   max-width: 600px;
@@ -674,8 +655,6 @@ watch(urlLabel, () => {
   .swap-screen { padding: 12px 12px calc(24px + env(safe-area-inset-bottom)); }
   .form-container { padding: 18px 14px; border-radius: 10px; }
   .form-group { margin-bottom: 16px; }
-  .verified-banner { flex-wrap: wrap; }
-  .verified-change { width: 100%; min-height: 44px; }
   .action-bar { flex-direction: column-reverse; gap: 10px; }
   .action-bar .btn-cancel,
   .action-bar .btn-primary { width: 100%; min-width: 0; min-height: 48px; }
